@@ -1,0 +1,49 @@
+import uuid
+from typing import Optional
+
+from sqlalchemy import CheckConstraint, Column, ForeignKey, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlmodel import Field
+
+from app.shared.infrastructure.db.base_model import BaseModel
+
+
+class LayerModel(BaseModel, table=True):
+    """
+    Modelo de persistencia SQLModel para la tabla 'layers'.
+    Hereda de BaseModel (id, created_date, modified_date, deleted_date).
+    La disponibilidad activa se deriva exclusivamente de deleted_date IS NULL.
+    """
+
+    __tablename__ = "layers"
+    __table_args__ = (
+        UniqueConstraint("kind", name="uq_layers_kind"),
+        CheckConstraint(
+            "(kind = 'CODIGOS_FIJOS' AND name = 'Códigos Fijos' AND geometry_type = 'POINT') OR "
+            "(kind = 'LOTES' AND name = 'Lotes' AND geometry_type = 'POLYGON') OR "
+            "(kind = 'MANZANAS' AND name = 'Manzanas' AND geometry_type = 'POLYGON') OR "
+            "(kind = 'VIAS' AND name = 'Vías' AND geometry_type = 'LINE')",
+            name="ck_layers_kind_name_geom",
+        ),
+    )
+
+    kind: str = Field(
+        sa_column=Column(String(30), nullable=False, unique=True, index=True),
+    )
+    name: str = Field(
+        sa_column=Column(String(120), nullable=False, index=True),
+    )
+    geometry_type: str = Field(
+        sa_column=Column(String(20), nullable=False),
+    )
+    color: str = Field(
+        sa_column=Column(String(20), nullable=False),
+    )
+    active_data_version_id: Optional[uuid.UUID] = Field(
+        default=None,
+        sa_column=Column(
+            PG_UUID(as_uuid=True),
+            ForeignKey("data_versions.id", ondelete="SET NULL", use_alter=True, name="fk_layers_active_data_version_id"),
+            nullable=True,
+        ),
+    )

@@ -1,4 +1,4 @@
-# visor-sig
+
 # 🗺️ Visor SIG
  
 Sistema de Información Geográfica (SIG) desarrollado con **Next.js** y **FastAPI** para la visualización, gestión y análisis de información geografica.

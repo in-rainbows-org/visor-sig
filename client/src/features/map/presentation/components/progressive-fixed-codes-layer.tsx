@@ -4,12 +4,16 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { useMap } from "react-leaflet";
 import type { MapGeoJsonFeature } from "../../domain/models/map.types";
+import { HighlightedMapEntity } from "../../domain/models/highlighted-entity.types";
+import { FIXED_CODE_STATUSES, FixedCodeStatusValue } from "../../domain/models/fixed-code-status.types";
 import { getCachedFixedCodeIcon } from "./fixed-code-marker";
 
 export type ProgressiveFixedCodesLayerProps = {
   features: MapGeoJsonFeature[];
+  visibleFixedCodeStatuses?: Set<number>;
   versionId?: string | null;
   revision?: number;
+  onSelectFixedCode?: (entity: HighlightedMapEntity) => void;
 };
 
 function getFeatureCoordinates(feature: MapGeoJsonFeature): [number, number] {
@@ -34,8 +38,10 @@ function getFeatureCoordinates(feature: MapGeoJsonFeature): [number, number] {
 
 export function ProgressiveFixedCodesLayer({
   features,
+  visibleFixedCodeStatuses,
   versionId,
   revision = 0,
+  onSelectFixedCode,
 }: ProgressiveFixedCodesLayerProps) {
   const map = useMap();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -101,7 +107,17 @@ export function ProgressiveFixedCodesLayer({
       return;
     }
 
-    if (!features || features.length === 0) {
+    if (!features || features.length === 0 || (visibleFixedCodeStatuses && visibleFixedCodeStatuses.size === 0)) {
+      layerGroup.clearLayers();
+      return;
+    }
+
+    // Filtrar reactivamente en cliente según los estados habilitados
+    const activeFeatures = visibleFixedCodeStatuses
+      ? features.filter((f) => visibleFixedCodeStatuses.has(f.properties.status ?? 1))
+      : features;
+
+    if (activeFeatures.length === 0) {
       layerGroup.clearLayers();
       return;
     }
@@ -109,7 +125,7 @@ export function ProgressiveFixedCodesLayer({
     const center = map.getCenter();
 
     // 1. Calcular distancia radial al centro actual del mapa
-    const withDistance = features.map((f) => {
+    const withDistance = activeFeatures.map((f) => {
       const [lat, lng] = getFeatureCoordinates(f);
       const distSq = (lat - center.lat) ** 2 + (lng - center.lng) ** 2;
       return { feature: f, lat, lng, distSq };
@@ -150,7 +166,7 @@ export function ProgressiveFixedCodesLayer({
       const chunk = targetItems.slice(currentIndex, currentIndex + CHUNK_SIZE);
       for (const item of chunk) {
         const { feature, lat, lng } = item;
-        const statusVal = feature.properties.status ?? 1;
+        const statusVal = (feature.properties.status ?? 1) as FixedCodeStatusValue;
         const icon = getCachedFixedCodeIcon(statusVal);
         const marker = L.marker([lat, lng], { icon });
 
@@ -166,6 +182,33 @@ export function ProgressiveFixedCodesLayer({
             offset: [0, -10],
           });
         }
+
+        marker.on("click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          const statusDef = FIXED_CODE_STATUSES[statusVal] || FIXED_CODE_STATUSES[1];
+          const codeVal =
+            feature.properties.fixedCode !== undefined
+              ? String(feature.properties.fixedCode)
+              : String(feature.id);
+
+          const entity: HighlightedMapEntity = {
+            id: feature.properties.id ? String(feature.properties.id) : String(feature.id),
+            layerKind: "CODIGOS_FIJOS",
+            code: codeVal,
+            fixedCodeNumber: feature.properties.fixedCode,
+            name: feature.properties.name || feature.properties.label || "Predio Registrado",
+            uv: feature.properties.uv ? String(feature.properties.uv) : "14",
+            mz: feature.properties.blockNumber ? String(feature.properties.blockNumber) : "08",
+            lote: feature.properties.lotNumber ? String(feature.properties.lotNumber) : "12",
+            status: statusDef.label,
+            statusVal: statusVal,
+            statusColor: statusDef.badgeBgClass,
+            lat,
+            lng,
+          };
+
+          onSelectFixedCode?.(entity);
+        });
 
         layerGroup.addLayer(marker);
       }
@@ -186,7 +229,7 @@ export function ProgressiveFixedCodesLayer({
         timeoutRef.current = null;
       }
     };
-  }, [map, features, versionId, revision]);
+  }, [map, features, visibleFixedCodeStatuses, versionId, revision, onSelectFixedCode]);
 
   return null;
 }

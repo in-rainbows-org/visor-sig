@@ -6,7 +6,7 @@ import { Toaster } from "sileo";
 import { appFontVariables } from "@/styles/fonts";
 
 export const metadata: Metadata = {
-  title: "next-scaffoldcito",
+  title: "VisorSIG",
   description:
     "Scaffold de Next.js con Better Auth, shadcn/ui y Clean Architecture",
 };

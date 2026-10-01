@@ -120,7 +120,11 @@ def health_check():
 # ==============================================================================
 from app.modules.layers.infrastructure.api.routers.layers_router import router as layers_router
 from app.modules.map.infrastructure.api.routers.map_router import router as map_router
+from app.modules.consultations.infrastructure.api.routers.consultation_router import (
+    router as consultation_router,
+)
 
 app.include_router(layers_router, prefix="/api")
 app.include_router(map_router, prefix="/api")
+app.include_router(consultation_router, prefix="/api")
 

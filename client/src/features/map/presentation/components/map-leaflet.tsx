@@ -8,15 +8,27 @@ import {
   DEFAULT_MAP_ZOOM,
   type MapViewport,
 } from "../../domain/models/map.types";
+import { HighlightedMapEntity } from "../../domain/models/highlighted-entity.types";
 import { useMapFeatures } from "../hooks/use-map-features";
 import { useMapView } from "../state/map-view-store";
 import { MapBasemap } from "./map-basemap";
 import { MapLayerOverlays } from "./map-layer-overlays";
 import { MapViewportListener } from "./map-viewport-listener";
+import { HighlightedConsultationMarker } from "./elements/highlighted-consultation-marker";
 
-export function MapLeaflet() {
+export type MapLeafletProps = {
+  highlightedEntity?: HighlightedMapEntity | null;
+  onClearHighlight?: () => void;
+  onSelectEntity?: (entity: HighlightedMapEntity) => void;
+};
+
+export function MapLeaflet({
+  highlightedEntity,
+  onClearHighlight,
+  onSelectEntity,
+}: MapLeafletProps = {}) {
   const { state, setViewport } = useMapView();
-  const { visibleLayerKinds, isBasemapVisible } = state;
+  const { visibleLayerKinds, isBasemapVisible, visibleFixedCodeStatuses } = state;
   const { featuresByKind, layerMetadataByKind, revision } = useMapFeatures();
 
   const handleViewportChange = useCallback(
@@ -47,8 +59,16 @@ export function MapLeaflet() {
           featuresByKind={featuresByKind}
           layerMetadataByKind={layerMetadataByKind}
           visibleLayerKinds={visibleLayerKinds}
+          visibleFixedCodeStatuses={visibleFixedCodeStatuses}
           revision={revision}
+          onSelectFixedCode={onSelectEntity}
         />
+        {highlightedEntity && (
+          <HighlightedConsultationMarker
+            entity={highlightedEntity}
+            onClose={onClearHighlight}
+          />
+        )}
       </MapContainer>
     </div>
   );

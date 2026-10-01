@@ -33,6 +33,8 @@ export async function proxy(request: NextRequest) {
     "/reports": "/reportes",
     "/historial-reportes": "/reportes",
     "/users": "/usuarios",
+    "/consulta": "/consultation",
+    "/consultas": "/consultation",
   };
 
   for (const [legacyPath, targetPath] of Object.entries(legacyRouteMap)) {
@@ -67,7 +69,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/reportes" ||
     pathname.startsWith("/reportes/") ||
     pathname === "/usuarios" ||
-    pathname.startsWith("/usuarios/");
+    pathname.startsWith("/usuarios/") ||
+    pathname === "/consultation" ||
+    pathname.startsWith("/consultation/");
 
   if (isProtectedRoute) {
     if (!isAuthenticated) {
@@ -103,6 +107,12 @@ export const config = {
     "/reportes/:path*",
     "/usuarios",
     "/usuarios/:path*",
+    "/consultation",
+    "/consultation/:path*",
+    "/consulta",
+    "/consulta/:path*",
+    "/consultas",
+    "/consultas/:path*",
     "/map",
     "/map/:path*",
     "/layers",

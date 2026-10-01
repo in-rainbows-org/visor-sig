@@ -10,6 +10,7 @@ import type {
   MapGeoJsonFeatureCollection,
   MapLayerFeatures,
 } from "../../domain/models/map.types";
+import type { HighlightedMapEntity } from "../../domain/models/highlighted-entity.types";
 import { ProgressiveFixedCodesLayer } from "./progressive-fixed-codes-layer";
 import { ProgressiveLotesLayer } from "./progressive-lotes-layer";
 
@@ -17,14 +18,18 @@ export type MapLayerOverlaysProps = {
   featuresByKind: Partial<Record<LayerKind, MapGeoJsonFeatureCollection>>;
   layerMetadataByKind: Partial<Record<LayerKind, MapLayerFeatures>>;
   visibleLayerKinds: Set<LayerKind>;
+  visibleFixedCodeStatuses?: Set<number>;
   revision?: number;
+  onSelectFixedCode?: (entity: HighlightedMapEntity) => void;
 };
 
 export function MapLayerOverlays({
   featuresByKind,
   layerMetadataByKind,
   visibleLayerKinds,
+  visibleFixedCodeStatuses,
   revision = 0,
+  onSelectFixedCode,
 }: MapLayerOverlaysProps) {
   return (
     <>
@@ -86,10 +91,12 @@ export function MapLayerOverlays({
         featuresByKind.CODIGOS_FIJOS &&
         featuresByKind.CODIGOS_FIJOS.features.length > 0 && (
           <ProgressiveFixedCodesLayer
-            key={`codigos-rev${revision}-${layerMetadataByKind.CODIGOS_FIJOS?.activeDataVersionId ?? "v"}-${featuresByKind.CODIGOS_FIJOS.features.length}`}
+            key={`codigos-rev${revision}-${layerMetadataByKind.CODIGOS_FIJOS?.activeDataVersionId ?? "v"}-${featuresByKind.CODIGOS_FIJOS.features.length}-${Array.from(visibleFixedCodeStatuses ?? []).sort().join(",")}`}
             features={featuresByKind.CODIGOS_FIJOS.features}
+            visibleFixedCodeStatuses={visibleFixedCodeStatuses}
             versionId={layerMetadataByKind.CODIGOS_FIJOS?.activeDataVersionId}
             revision={revision}
+            onSelectFixedCode={onSelectFixedCode}
           />
         )}
     </>

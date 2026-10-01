@@ -74,9 +74,14 @@ export type MobileSubHeaderTab = "capas" | "estado" | null;
  */
 export const DEFAULT_MAP_CENTER: [number, number] = [-16.382, -60.957];
 export const DEFAULT_MAP_ZOOM = 14;
-export const DEFAULT_VISIBLE_LAYER_KINDS: LayerKind[] = ["MANZANAS", "VIAS"];
+export const DEFAULT_VISIBLE_LAYER_KINDS: LayerKind[] = [
+  "CODIGOS_FIJOS",
+  "MANZANAS",
+  "VIAS",
+];
 
 export type SearchResultItem = {
+  id?: string;
   code: string;
   name: string;
   zone: string;
@@ -85,37 +90,10 @@ export type SearchResultItem = {
   actionTag: string;
   tagColor: string;
   score: number;
+  uv?: string;
+  mz?: string;
+  lote?: string;
+  statusVal?: number;
 };
 
-export const DEFAULT_SEARCH_RESULTS: SearchResultItem[] = [
-  {
-    code: "CF-8042",
-    name: "Hub Central San Martín",
-    zone: "Zona Centro",
-    lat: -16.382,
-    lng: -60.957,
-    actionTag: "Normal",
-    tagColor: "text-emerald-700 bg-emerald-50 border-emerald-200/50",
-    score: 0.98,
-  },
-  {
-    code: "CF-5120",
-    name: "Subestación Plaza Principal",
-    zone: "Casco Viejo",
-    lat: -16.375,
-    lng: -60.962,
-    actionTag: "Cortado",
-    tagColor: "text-red-700 bg-red-50 border-red-200/50",
-    score: 0.89,
-  },
-  {
-    code: "CF-3210",
-    name: "Punto Conexión Terminal",
-    zone: "Barrio Lindo",
-    lat: -16.391,
-    lng: -60.948,
-    actionTag: "En Proceso",
-    tagColor: "text-amber-700 bg-amber-50 border-amber-200/50",
-    score: 0.82,
-  },
-];
+export const DEFAULT_SEARCH_RESULTS: SearchResultItem[] = [];

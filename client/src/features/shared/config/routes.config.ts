@@ -5,6 +5,7 @@ import {
   Layers,
   BarChart3,
   Users,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +50,14 @@ export const APP_ROUTES: NavigationRoute[] = [
     href: "/reportes",
     icon: BarChart3,
     allowedRoles: [APP_ROLES.CONSULTANT],
+  },
+  {
+    key: "consultation",
+    label: "Consultas",
+    shortLabel: "Consultas",
+    href: "/consultation",
+    icon: Search,
+    allowedRoles: [APP_ROLES.ADMIN, APP_ROLES.CONSULTANT],
   },
   {
     key: "usuarios",

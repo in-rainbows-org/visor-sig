@@ -149,6 +149,9 @@ class SqlModelActiveMapFeaturesReader(ActiveMapFeaturesReader):
         fixed_code_statuses: Optional[List[int]],
     ) -> tuple[GeoJsonFeatureCollectionDTO, MapLayerLoadStatus]:
         if kind == LayerKind.CODIGOS_FIJOS:
+            if fixed_code_statuses is not None and len(fixed_code_statuses) == 0:
+                return GeoJsonFeatureCollectionDTO(features=[]), MapLayerLoadStatus.READY
+
             model = CodigoFijoModel
             max_limit = self._get_max_features_limit(kind, zoom)
 
@@ -157,6 +160,7 @@ class SqlModelActiveMapFeaturesReader(ActiveMapFeaturesReader):
                 model.status,
                 model.fixed_code,
                 model.label,
+                model.name,
                 ST_AsGeoJSON(model.geometry).label("geojson"),
             ).where(
                 model.data_version_id == active_version_id,
@@ -181,6 +185,7 @@ class SqlModelActiveMapFeaturesReader(ActiveMapFeaturesReader):
                             status=r.status,
                             fixed_code=r.fixed_code,
                             label=r.label,
+                            name=r.name,
                         ),
                     )
                 )

@@ -1,5 +1,5 @@
 import { sileo } from "sileo";
-import { CircleCheck, CircleX, CircleAlert, TriangleAlert } from "lucide-react";
+import { Check, X, TriangleAlert, Info, Loader2 } from "lucide-react";
 
 const DEFAULT_ERROR_MESSAGE = "Ocurrió un error inesperado";
 const DEFAULT_ERROR_TITLE = "Error";
@@ -16,7 +16,7 @@ export function showErrorList(
     sileo.error({
       title: options?.title ?? DEFAULT_ERROR_TITLE,
       description: message,
-      icon: <CircleX className="text-destructive size-5" />,
+      icon: <X className="w-3.5 h-3.5 stroke-[2.5]" />,
     });
   };
 
@@ -30,25 +30,38 @@ export function showErrorList(
 }
 
 export const appToast = {
-  success: (message: string) =>
+  success: (title: string, description?: string) =>
     sileo.success({
-      title: message,
-      icon: <CircleCheck className="text-emerald-500 size-5" />,
+      title,
+      description,
+      icon: <Check className="w-3.5 h-3.5 stroke-[2.5]" />,
     }),
-  error: (title: string, message: string) =>
+  error: (title: string, message?: string) =>
     sileo.error({
-      title: title,
+      title,
       description: message,
-      icon: <CircleX className="text-destructive size-5" />,
+      icon: <X className="w-3.5 h-3.5 stroke-[2.5]" />,
     }),
-  info: (message: string) =>
+  info: (title: string, description?: string) =>
     sileo.info({
-      title: message,
-      icon: <CircleAlert className="text-blue-500 size-5" />,
+      title,
+      description,
+      icon: <Info className="w-3.5 h-3.5 stroke-[2.5]" />,
     }),
-  warning: (message: string) =>
+  warning: (title: string, description?: string) =>
     sileo.warning({
-      title: message,
-      icon: <TriangleAlert className="text-amber-500 size-5" />,
+      title,
+      description,
+      icon: <TriangleAlert className="w-3.5 h-3.5 stroke-[2.5]" />,
     }),
+  loading: (title: string, description?: string) =>
+    sileo.show({
+      type: "loading",
+      title,
+      description,
+      icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
+    }),
+  promise: sileo.promise,
+  dismiss: sileo.dismiss,
+  clear: sileo.clear,
 };

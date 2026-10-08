@@ -1,13 +1,21 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
-
-from geoalchemy2 import Geometry
-from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, Index, SmallInteger, String
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlmodel import Field
 
 from app.shared.infrastructure.db.base_model import BaseModel
+from geoalchemy2 import Geometry
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    SmallInteger,
+    String,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlmodel import Field
 
 
 class CodigoFijoModel(BaseModel, table=True):
@@ -22,6 +30,8 @@ class CodigoFijoModel(BaseModel, table=True):
         Index("idx_codigos_fijos_version_fixed_code", "data_version_id", "fixed_code"),
         Index("idx_codigos_fijos_version_sql_code", "data_version_id", "sql_code"),
         Index("idx_codigos_fijos_version_status", "data_version_id", "status"),
+        Index("idx_codigos_fijos_lote_id", "lote_id"),
+        Index("idx_codigos_fijos_name", "name"),
     )
 
     data_version_id: uuid.UUID = Field(
@@ -31,27 +41,36 @@ class CodigoFijoModel(BaseModel, table=True):
             nullable=False,
         ),
     )
-    source_feature_id: Optional[str] = Field(
+    lote_id: uuid.UUID | None = Field(
+        default=None,
+        sa_column=Column(
+            PG_UUID(as_uuid=True),
+            ForeignKey("lotes.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
+    source_feature_id: str | None = Field(
         default=None,
         sa_column=Column(String(120), nullable=True),
     )
-    label: Optional[str] = Field(
+    label: str | None = Field(
         default=None,
         sa_column=Column(String(254), nullable=True),
     )
-    sql_code: Optional[int] = Field(
+    sql_code: int | None = Field(
         default=None,
         sa_column=Column(BigInteger, nullable=True),
     )
-    sig_code: Optional[str] = Field(
+    sig_code: str | None = Field(
         default=None,
         sa_column=Column(String(25), nullable=True),
     )
-    fixed_code: Optional[int] = Field(
+    fixed_code: int | None = Field(
         default=None,
         sa_column=Column(BigInteger, nullable=True),
     )
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         sa_column=Column(String(120), nullable=True),
     )
@@ -74,4 +93,8 @@ class CodigoFijoModel(BaseModel, table=True):
             Geometry(geometry_type="MULTIPOINT", srid=4326, spatial_index=False),
             nullable=False,
         ),
+    )
+    properties: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB, nullable=False, server_default="{}"),
     )

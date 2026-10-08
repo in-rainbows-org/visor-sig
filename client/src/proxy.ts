@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "./lib/auth";
 import { headers } from "next/headers";
-import { AppRole, DEFAULT_ROLE } from "./lib/auth-roles";
+import { AppRole, APP_ROLES, DEFAULT_ROLE } from "./lib/auth-roles";
 import { isRouteAllowedForRole } from "./features/shared/config/routes.config";
 
 export async function proxy(request: NextRequest) {
@@ -15,26 +15,29 @@ export async function proxy(request: NextRequest) {
 
   const isAuthenticated = !!session;
   const userRole = (session?.user?.role as AppRole) || DEFAULT_ROLE;
+  const defaultLandingPath = userRole === APP_ROLES.ADMIN ? "/dashboard" : "/mapa";
 
   // 1. Redirección de la raíz (/)
   if (pathname === "/") {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/mapa", request.url));
+      return NextResponse.redirect(new URL(defaultLandingPath, request.url));
     }
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
   // 2. Redirección de rutas obsoletas o en inglés hacia las rutas oficiales en español
   const legacyRouteMap: Record<string, string> = {
-    "/home": "/mapa",
+    "/home": defaultLandingPath,
     "/map": "/mapa",
-    "/layers": "/capas",
+    "/layers": "/dashboard",
+    "/capas": "/dashboard",
     "/audit": "/bitacora",
     "/reports": "/reportes",
     "/historial-reportes": "/reportes",
     "/users": "/usuarios",
-    "/consulta": "/consultation",
-    "/consultas": "/consultation",
+    "/consulta": "/consultar",
+    "/consultas": "/consultar",
+    "/consultation": "/consultar",
   };
 
   for (const [legacyPath, targetPath] of Object.entries(legacyRouteMap)) {
@@ -53,13 +56,15 @@ export async function proxy(request: NextRequest) {
   // 3. Rutas de autenticación (/auth/*)
   if (pathname.startsWith("/auth/")) {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/mapa", request.url));
+      return NextResponse.redirect(new URL(defaultLandingPath, request.url));
     }
     return NextResponse.next();
   }
 
-  // 4. Rutas protegidas del dashboard en español (/mapa, /bitacora, /capas, /reportes, /usuarios)
+  // 4. Rutas protegidas del dashboard en español (/dashboard, /mapa, /bitacora, /reportes, /usuarios, /consultar)
   const isProtectedRoute =
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
     pathname === "/mapa" ||
     pathname.startsWith("/mapa/") ||
     pathname === "/bitacora" ||
@@ -70,8 +75,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/reportes/") ||
     pathname === "/usuarios" ||
     pathname.startsWith("/usuarios/") ||
-    pathname === "/consultation" ||
-    pathname.startsWith("/consultation/");
+    pathname === "/consultar" ||
+    pathname.startsWith("/consultar/");
 
   if (isProtectedRoute) {
     if (!isAuthenticated) {
@@ -97,6 +102,8 @@ export const config = {
     "/home",
     "/home/:path*",
     "/auth/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
     "/mapa",
     "/mapa/:path*",
     "/bitacora",
@@ -107,23 +114,7 @@ export const config = {
     "/reportes/:path*",
     "/usuarios",
     "/usuarios/:path*",
-    "/consultation",
-    "/consultation/:path*",
-    "/consulta",
-    "/consulta/:path*",
-    "/consultas",
-    "/consultas/:path*",
-    "/map",
-    "/map/:path*",
-    "/layers",
-    "/layers/:path*",
-    "/audit",
-    "/audit/:path*",
-    "/reports",
-    "/reports/:path*",
-    "/historial-reportes",
-    "/historial-reportes/:path*",
-    "/users",
-    "/users/:path*",
+    "/consultar",
+    "/consultar/:path*",
   ],
 };

@@ -1,12 +1,12 @@
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import Any
 
 from app.modules.layers.domain.enums import CodigoFijoStatus
 
 
-@dataclass
+@dataclass(slots=True)
 class CodigoFijo:
     """
     Entidad de dominio pura que representa un código fijo (suministro/usuario).
@@ -15,14 +15,16 @@ class CodigoFijo:
 
     id: uuid.UUID
     data_version_id: uuid.UUID
-    source_feature_id: Optional[str]
-    label: Optional[str]
-    sql_code: Optional[int]
-    sig_code: Optional[str]
-    fixed_code: Optional[int]
-    name: Optional[str]
+    source_feature_id: str | None
+    label: str | None
+    sql_code: int | None
+    sig_code: str | None
+    fixed_code: int | None
+    name: str | None
     longitude: float
     latitude: float
     status: CodigoFijoStatus
     status_changed_at: datetime
     geometry_wkt: str
+    lote_id: uuid.UUID | None = None
+    properties: dict[str, Any] = field(default_factory=dict)

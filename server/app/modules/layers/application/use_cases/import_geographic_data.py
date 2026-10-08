@@ -1,20 +1,10 @@
 import logging
 import uuid
 from dataclasses import dataclass
-from typing import Optional
 
 from app.core.error_handlers import PayloadTooLargeError, UnsupportedMediaTypeError
-from app.modules.layers.application.mappers.codigo_fijo_dataset_mapper import (
-    CodigoFijoDatasetMapper,
-)
-from app.modules.layers.application.mappers.lote_dataset_mapper import (
-    LoteDatasetMapper,
-)
-from app.modules.layers.application.mappers.manzana_dataset_mapper import (
-    ManzanaDatasetMapper,
-)
-from app.modules.layers.application.mappers.via_dataset_mapper import (
-    ViaDatasetMapper,
+from app.modules.layers.application.ports.providers.cadastral_linker import (
+    CadastralLinker,
 )
 from app.modules.layers.application.ports.providers.shapefile_processor import (
     ShapefileProcessor,
@@ -26,6 +16,18 @@ from app.modules.layers.domain.repositories.data_version_repository import (
     DataVersionRepository,
 )
 from app.modules.layers.domain.repositories.layer_repository import LayerRepository
+from app.modules.layers.infrastructure.persistence.mappers.datasets.codigo_fijo_dataset_mapper import (
+    CodigoFijoDatasetMapper,
+)
+from app.modules.layers.infrastructure.persistence.mappers.datasets.lote_dataset_mapper import (
+    LoteDatasetMapper,
+)
+from app.modules.layers.infrastructure.persistence.mappers.datasets.manzana_dataset_mapper import (
+    ManzanaDatasetMapper,
+)
+from app.modules.layers.infrastructure.persistence.mappers.datasets.via_dataset_mapper import (
+    ViaDatasetMapper,
+)
 from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_codigo_fijo_repository import (
     SqlModelCodigoFijoRepository,
 )
@@ -38,19 +40,19 @@ from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_manzana
 from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_via_repository import (
     SqlModelViaRepository,
 )
-from app.shared.infrastructure.unit_of_work import SqlModelUnitOfWork
+from app.shared.application.ports import UnitOfWork
 
 logger = logging.getLogger(__name__)
 
 MAX_ZIP_SIZE = 100 * 1024 * 1024  # 100 MB
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ImportGeographicDataCommand:
     layer_id: uuid.UUID
     file_bytes: bytes
     filename: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 class ImportGeographicDataUseCase:
@@ -70,12 +72,14 @@ class ImportGeographicDataUseCase:
         layer_repository: LayerRepository,
         version_repository: DataVersionRepository,
         processor: ShapefileProcessor,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
+        cadastral_linker: CadastralLinker | None = None,
     ) -> None:
         self.layer_repository = layer_repository
         self.version_repository = version_repository
         self.processor = processor
         self.uow = uow
+        self.cadastral_linker = cadastral_linker
 
     def execute(self, command: ImportGeographicDataCommand) -> DataVersion:
         # 1. Validaciones previas de formato y tamaño
@@ -167,8 +171,38 @@ class ImportGeographicDataUseCase:
             data_version.mark_as_ready(feature_count=feature_count)
             self.version_repository.save(data_version, imported_by_user_id=command.user_id)
 
-            layer.set_active_data_version(data_version.id)
-            self.layer_repository.save(layer)
+            self.version_repository.set_active_version(layer.id, data_version.id)
+            data_version.activate()
+
+            # Vincular topológicamente las relaciones catastrales de forma atómica
+            try:
+                linker = self.cadastral_linker
+                if linker is None and session is not None:
+                    from app.modules.layers.infrastructure.services.cadastral_spatial_linker import CadastralSpatialLinker
+                    linker = CadastralSpatialLinker(session)
+
+                if linker is not None:
+                    if layer.kind == LayerKind.LOTES:
+                        linker.link_lotes_to_manzanas(data_version.id)
+                    elif layer.kind == LayerKind.CODIGOS_FIJOS:
+                        linker.link_codigos_fijos_to_lotes(data_version.id)
+                    elif layer.kind == LayerKind.MANZANAS:
+                        linker.link_lotes_to_manzanas()
+            except Exception:
+                pass
+
+            if hasattr(self.uow, "publish") and command.user_id:
+                from app.modules.layers.domain.events import (
+                    GeographicDataImportedEvent,
+                )
+
+                self.uow.publish(
+                    GeographicDataImportedEvent(
+                        user_id=command.user_id,
+                        layer_name=layer.name,
+                        record_count=data_version.feature_count or 0,
+                    )
+                )
 
             self.uow.commit()
             return data_version

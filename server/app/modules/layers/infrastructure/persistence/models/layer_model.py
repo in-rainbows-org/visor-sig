@@ -1,11 +1,6 @@
-import uuid
-from typing import Optional
-
-from sqlalchemy import CheckConstraint, Column, ForeignKey, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlmodel import Field
-
 from app.shared.infrastructure.db.base_model import BaseModel
+from sqlalchemy import CheckConstraint, Column, String, UniqueConstraint
+from sqlmodel import Field
 
 
 class LayerModel(BaseModel, table=True):
@@ -38,12 +33,4 @@ class LayerModel(BaseModel, table=True):
     )
     color: str = Field(
         sa_column=Column(String(20), nullable=False),
-    )
-    active_data_version_id: Optional[uuid.UUID] = Field(
-        default=None,
-        sa_column=Column(
-            PG_UUID(as_uuid=True),
-            ForeignKey("data_versions.id", ondelete="SET NULL", use_alter=True, name="fk_layers_active_data_version_id"),
-            nullable=True,
-        ),
     )

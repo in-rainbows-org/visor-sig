@@ -1,8 +1,10 @@
 import uuid
+
+from app.modules.layers.infrastructure.persistence.models.manzana_model import (
+    ManzanaModel,
+)
 from sqlalchemy import func
 from sqlmodel import Session, select
-
-from app.modules.layers.infrastructure.persistence.models.manzana_model import ManzanaModel
 
 
 class SqlModelManzanaRepository:

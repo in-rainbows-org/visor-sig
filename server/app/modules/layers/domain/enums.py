@@ -29,6 +29,15 @@ class DataVersionStatus(StrEnum):
     READY = "READY"
     FAILED = "FAILED"
 
+    def is_ready(self) -> bool:
+        return self is DataVersionStatus.READY
+
+    def is_processing(self) -> bool:
+        return self is DataVersionStatus.PROCESSING
+
+    def is_failed(self) -> bool:
+        return self is DataVersionStatus.FAILED
+
 
 class CodigoFijoStatus(IntEnum):
     NORMAL = 1

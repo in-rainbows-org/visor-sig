@@ -1,7 +1,4 @@
-import type {
-  ApiMaybeResult,
-  ApiResult,
-} from "@/features/shared/domain/types/api-results";
+import type { ApiResult } from "@/features/shared/domain/types/api-results";
 import type {
   ChangeLayerColorInput,
   Layer,
@@ -9,7 +6,6 @@ import type {
 
 export type LayerRepository = {
   list(): Promise<ApiResult<Layer[]>>;
-  getById(layerId: string): Promise<ApiMaybeResult<Layer>>;
   changeColor(
     layerId: string,
     input: ChangeLayerColorInput

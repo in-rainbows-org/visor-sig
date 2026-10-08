@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import Image from "next/image";
 
 export function AuthBackground() {
   return (
@@ -59,94 +59,184 @@ export function AuthBackground() {
         </defs>
       </svg>
 
-      {/* ── Geometría Izquierda: Radar & Dotted Flight-Path Geometry ──────────── */}
-      <div className="absolute left-[20%] sm:left-[22%] lg:left-[25%] top-[14%] sm:top-[16%] w-[320px] h-[480px] pointer-events-none z-10 hidden sm:block">
-        <svg className="w-full h-full overflow-visible" fill="none" viewBox="0 0 320 480">
-          <circle
-            cx="160"
-            cy="120"
-            opacity="0.75"
-            r="105"
-            stroke="#93c5fd"
-            strokeDasharray="4 4"
-            strokeWidth="1.2"
-          />
-          <circle
-            cx="160"
-            cy="120"
-            opacity="0.5"
-            r="75"
-            stroke="#93c5fd"
-            strokeWidth="1"
-          />
-          <circle
-            cx="160"
-            cy="120"
-            opacity="0.6"
-            r="45"
-            stroke="#bfdbfe"
-            strokeWidth="1"
-          />
-          <path
-            d="M 160 160 C 175 220, 182 280, 168 340 C 150 410, 100 480, -40 540"
-            opacity="0.75"
-            stroke="#60a5fa"
-            strokeDasharray="4 5"
-            strokeWidth="1.6"
-          />
+      {/* ── SECTOR IZQUIERDO (0% a 50% del ancho de pantalla) ────────────────── */}
+
+      {/* Detalle 1: Mapa 3D con Pin (Superior Izquierda, movido ~40% más a la derecha) */}
+      <div className="hidden lg:flex absolute top-[9%] sm:top-[11%] lg:top-[12%] left-[17%] sm:left-[19%] lg:left-[22%] xl:left-[24%] z-10 pointer-events-none items-center justify-center animate-float-1 transition-transform duration-500 hover:scale-105">
+        {/* Resplandor suave */}
+        <div className="absolute inset-0 -m-5 rounded-full bg-blue-300/35 blur-xl pointer-events-none" />
+
+        {/* Linework SVG: Retícula de radar y anillos concéntricos */}
+        <svg
+          className="absolute -inset-6 w-[calc(100%+48px)] h-[calc(100%+48px)] pointer-events-none"
+          viewBox="0 0 140 140"
+          fill="none"
+        >
+          <circle cx="70" cy="70" r="54" stroke="#93c5fd" strokeWidth="1" strokeDasharray="3 3" opacity="0.65" />
+          <circle cx="70" cy="70" r="42" stroke="#60a5fa" strokeWidth="0.75" opacity="0.45" />
+          <line x1="70" y1="8" x2="70" y2="18" stroke="#2563eb" strokeWidth="1.2" opacity="0.7" />
+          <line x1="70" y1="122" x2="70" y2="132" stroke="#2563eb" strokeWidth="1.2" opacity="0.7" />
+          <line x1="8" y1="70" x2="18" y2="70" stroke="#2563eb" strokeWidth="1.2" opacity="0.7" />
+          <line x1="122" y1="70" x2="132" y2="70" stroke="#2563eb" strokeWidth="1.2" opacity="0.7" />
+          <path d="M 70 16 A 54 54 0 0 1 124 70" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" opacity="0.55" />
+          <circle cx="108" cy="32" r="2.5" fill="#2563eb" opacity="0.85" />
+          <line x1="108" y1="32" x2="124" y2="20" stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
         </svg>
 
-        {/* Pin Circular Flotante Izquierdo */}
-        <div className="absolute top-[80px] left-[120px] w-20 h-20 bg-white rounded-full shadow-[0_12px_30px_rgba(37,99,235,0.18)] flex items-center justify-center border border-blue-50 transition-transform duration-300">
-          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30">
-            <MapPin className="size-6 text-white fill-white" />
-          </div>
-        </div>
+        <Image
+          src="/assets/detail1.png"
+          alt="Detalle mapa con pin"
+          width={84}
+          height={84}
+          className="w-[61px] sm:w-[69px] lg:w-[78px] h-auto object-contain -rotate-12 drop-shadow-[0_12px_22px_rgba(37,99,235,0.2)] opacity-90"
+        />
       </div>
 
-      {/* ── Geometría Derecha: Radar & Dotted Flight-Path Geometry (Debajo de la carta derecha) ─── */}
-      <div className="absolute right-[3%] top-[14%] sm:top-[16%] w-[320px] h-[480px] pointer-events-none z-10 hidden sm:block">
-        <svg className="w-full h-full overflow-visible" fill="none" viewBox="0 0 320 480">
-          <circle
-            cx="160"
-            cy="120"
-            opacity="0.75"
-            r="105"
-            stroke="#93c5fd"
-            strokeDasharray="4 4"
-            strokeWidth="1.2"
-          />
-          <circle
-            cx="160"
-            cy="120"
-            opacity="0.5"
-            r="75"
-            stroke="#93c5fd"
-            strokeWidth="1"
-          />
-          <circle
-            cx="160"
-            cy="120"
-            opacity="0.6"
-            r="45"
-            stroke="#bfdbfe"
-            strokeWidth="1"
-          />
-          <path
-            d="M 160 160 C 145 220, 138 280, 152 340 C 170 410, 220 480, 360 540"
-            opacity="0.75"
-            stroke="#60a5fa"
-            strokeDasharray="4 5"
-            strokeWidth="1.6"
-          />
+      {/* Detalle 3: Brújula y flecha de rumbo (Centro-Interior del sector izquierdo, mantenido sin mover) */}
+      <div className="hidden lg:flex absolute top-[41%] sm:top-[43%] lg:top-[44%] left-[22%] sm:left-[26%] lg:left-[30%] xl:left-[33%] z-10 pointer-events-none items-center justify-center animate-float-2 transition-transform duration-500 hover:scale-105">
+        {/* Resplandor suave */}
+        <div className="absolute inset-0 -m-5 rounded-full bg-indigo-300/30 blur-xl pointer-events-none" />
+
+        {/* Linework SVG: Rosa de los vientos y líneas cardinales */}
+        <svg
+          className="absolute -inset-6 w-[calc(100%+48px)] h-[calc(100%+48px)] pointer-events-none"
+          viewBox="0 0 140 140"
+          fill="none"
+        >
+          <circle cx="70" cy="70" r="50" stroke="#93c5fd" strokeWidth="1" opacity="0.55" />
+          <circle cx="70" cy="70" r="58" stroke="#60a5fa" strokeWidth="0.75" strokeDasharray="3 4" opacity="0.45" />
+          <line x1="70" y1="12" x2="70" y2="22" stroke="#2563eb" strokeWidth="1.5" opacity="0.8" />
+          <line x1="128" y1="70" x2="118" y2="70" stroke="#2563eb" strokeWidth="1" opacity="0.6" />
+          <line x1="70" y1="128" x2="70" y2="118" stroke="#2563eb" strokeWidth="1" opacity="0.6" />
+          <line x1="12" y1="70" x2="22" y2="70" stroke="#2563eb" strokeWidth="1" opacity="0.6" />
+          <circle cx="112" cy="42" r="2.5" fill="#2563eb" opacity="0.85" />
+          <line x1="112" y1="42" x2="126" y2="28" stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
         </svg>
 
-        {/* Pin Circular Flotante Derecho */}
-        <div className="absolute top-[80px] right-[120px] w-20 h-20 bg-white rounded-full shadow-[0_12px_30px_rgba(37,99,235,0.18)] flex items-center justify-center border border-blue-50 transition-transform duration-300">
-          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30">
-            <MapPin className="size-6 text-white fill-white" />
-          </div>
-        </div>
+        <Image
+          src="/assets/detail3.png"
+          alt="Detalle brújula de navegación"
+          width={77}
+          height={77}
+          className="w-[55px] sm:w-[65px] lg:w-[74px] h-auto object-contain rotate-6 drop-shadow-[0_10px_18px_rgba(37,99,235,0.18)] opacity-85"
+        />
+      </div>
+
+      {/* Detalle 5: Dial de rumbo / compás (Inferior del sector izquierdo, movido cerca del borde izquierdo) */}
+      <div className="hidden lg:flex absolute bottom-[10%] sm:bottom-[12%] lg:bottom-[13%] left-[2%] sm:left-[2.5%] lg:left-[3%] xl:left-[3.5%] z-10 pointer-events-none items-center justify-center animate-float-3 transition-transform duration-500 hover:scale-105">
+        {/* Resplandor suave */}
+        <div className="absolute inset-0 -m-5 rounded-full bg-blue-300/30 blur-xl pointer-events-none" />
+
+        {/* Linework SVG: Dial graduado y arco de rumbo */}
+        <svg
+          className="absolute -inset-6 w-[calc(100%+48px)] h-[calc(100%+48px)] pointer-events-none"
+          viewBox="0 0 140 140"
+          fill="none"
+        >
+          <circle cx="70" cy="70" r="54" stroke="#93c5fd" strokeWidth="1" opacity="0.5" />
+          <circle cx="70" cy="70" r="46" stroke="#60a5fa" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.45" />
+          <path d="M 70 16 A 54 54 0 0 1 120 46" stroke="#2563eb" strokeWidth="1.75" strokeLinecap="round" opacity="0.6" />
+          <line x1="70" y1="10" x2="70" y2="18" stroke="#2563eb" strokeWidth="1.5" opacity="0.8" />
+          <circle cx="28" cy="98" r="2.5" fill="#2563eb" opacity="0.8" />
+          <line x1="28" y1="98" x2="16" y2="110" stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
+        </svg>
+
+        <Image
+          src="/assets/detail5.png"
+          alt="Detalle brújula"
+          width={84}
+          height={84}
+          className="w-[61px] sm:w-[69px] lg:w-[78px] h-auto object-contain -rotate-6 drop-shadow-[0_12px_22px_rgba(37,99,235,0.2)] opacity-85"
+        />
+      </div>
+
+      {/* ── SECTOR DERECHO (50% a 100% del ancho de pantalla) ────────────────── */}
+
+      {/* Detalle 2: Globo terráqueo con anillo orbital (Superior del sector derecho, movido 20-30% más a la derecha) */}
+      <div className="hidden lg:flex absolute top-[9%] sm:top-[11%] lg:top-[12%] right-[14%] sm:right-[16%] lg:right-[18%] xl:right-[20%] z-10 pointer-events-none items-center justify-center animate-float-2 transition-transform duration-500 hover:scale-105">
+        {/* Resplandor suave */}
+        <div className="absolute inset-0 -m-5 rounded-full bg-sky-300/35 blur-xl pointer-events-none" />
+
+        {/* Linework SVG: Órbita elíptica satelital inclinada */}
+        <svg
+          className="absolute -inset-8 w-[calc(100%+64px)] h-[calc(100%+64px)] pointer-events-none"
+          viewBox="0 0 160 160"
+          fill="none"
+        >
+          <ellipse cx="80" cy="80" rx="66" ry="28" transform="rotate(-24 80 80)" stroke="#93c5fd" strokeWidth="1" strokeDasharray="4 3" opacity="0.65" />
+          <circle cx="80" cy="80" r="46" stroke="#bfdbfe" strokeWidth="0.75" strokeDasharray="2 2" opacity="0.45" />
+          <circle cx="26" cy="62" r="3" fill="#2563eb" opacity="0.9" />
+          <line x1="26" y1="62" x2="14" y2="50" stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
+          <line x1="80" y1="26" x2="80" y2="34" stroke="#60a5fa" strokeWidth="1" opacity="0.5" />
+          <line x1="80" y1="126" x2="80" y2="134" stroke="#60a5fa" strokeWidth="1" opacity="0.5" />
+        </svg>
+
+        <Image
+          src="/assets/detail2.png"
+          alt="Detalle globo terráqueo con pin"
+          width={88}
+          height={88}
+          className="w-[65px] sm:w-[74px] lg:w-[84px] h-auto object-contain rotate-12 drop-shadow-[0_14px_26px_rgba(37,99,235,0.22)] opacity-90"
+        />
+      </div>
+
+      {/* Detalle 4: Pin sobre diana de coordenadas (Centro del sector derecho, movido un 10% más a la derecha hacia el borde) */}
+      <div className="hidden lg:flex absolute top-[42%] sm:top-[44%] lg:top-[45%] right-[2%] sm:right-[2.5%] lg:right-[3%] xl:right-[3.5%] z-10 pointer-events-none items-center justify-center animate-float-1 transition-transform duration-500 hover:scale-105">
+        {/* Resplandor suave */}
+        <div className="absolute inset-0 -m-5 rounded-full bg-blue-300/30 blur-xl pointer-events-none" />
+
+        {/* Linework SVG: Diana de radar y retícula de puntería */}
+        <svg
+          className="absolute -inset-6 w-[calc(100%+48px)] h-[calc(100%+48px)] pointer-events-none"
+          viewBox="0 0 140 140"
+          fill="none"
+        >
+          <circle cx="70" cy="70" r="52" stroke="#93c5fd" strokeWidth="1" strokeDasharray="5 3" opacity="0.6" />
+          <circle cx="70" cy="70" r="38" stroke="#60a5fa" strokeWidth="1" opacity="0.45" />
+          <line x1="70" y1="10" x2="70" y2="130" stroke="#60a5fa" strokeWidth="0.75" strokeDasharray="4 4" opacity="0.4" />
+          <line x1="10" y1="70" x2="130" y2="70" stroke="#60a5fa" strokeWidth="0.75" strokeDasharray="4 4" opacity="0.4" />
+          <path d="M 28 42 L 28 28 L 42 28" stroke="#2563eb" strokeWidth="1.25" opacity="0.65" />
+          <path d="M 112 42 L 112 28 L 98 28" stroke="#2563eb" strokeWidth="1.25" opacity="0.65" />
+          <circle cx="98" cy="98" r="2.5" fill="#2563eb" opacity="0.85" />
+          <line x1="98" y1="98" x2="114" y2="112" stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
+        </svg>
+
+        <Image
+          src="/assets/detail4.png"
+          alt="Detalle pin de destino"
+          width={78}
+          height={78}
+          className="w-[55px] sm:w-[65px] lg:w-[76px] h-auto object-contain -rotate-12 drop-shadow-[0_10px_18px_rgba(37,99,235,0.18)] opacity-85"
+        />
+      </div>
+
+      {/* Detalle 6: Mapa con gráficos de análisis (Inferior del sector derecho, subido un 10% más arriba) */}
+      <div className="hidden lg:flex absolute bottom-[19%] sm:bottom-[21%] lg:bottom-[22%] right-[34%] sm:right-[38%] lg:right-[41%] xl:right-[43%] z-10 pointer-events-none items-center justify-center animate-float-3 transition-transform duration-500 hover:scale-105">
+        {/* Resplandor suave */}
+        <div className="absolute inset-0 -m-5 rounded-full bg-blue-300/30 blur-xl pointer-events-none" />
+
+        {/* Linework SVG: Marco de análisis y cuadrícula métrica */}
+        <svg
+          className="absolute -inset-6 w-[calc(100%+48px)] h-[calc(100%+48px)] pointer-events-none"
+          viewBox="0 0 140 140"
+          fill="none"
+        >
+          <rect x="22" y="22" width="96" height="96" rx="8" stroke="#93c5fd" strokeWidth="1" strokeDasharray="4 4" opacity="0.5" />
+          <path d="M 18 32 L 18 18 L 32 18" stroke="#2563eb" strokeWidth="1.5" opacity="0.7" />
+          <path d="M 122 32 L 122 18 L 108 18" stroke="#2563eb" strokeWidth="1.5" opacity="0.7" />
+          <path d="M 18 108 L 18 122 L 32 122" stroke="#2563eb" strokeWidth="1.5" opacity="0.7" />
+          <path d="M 122 108 L 122 122 L 108 122" stroke="#2563eb" strokeWidth="1.5" opacity="0.7" />
+          <circle cx="96" cy="44" r="2.5" fill="#2563eb" opacity="0.85" />
+          <line x1="96" y1="44" x2="112" y2="32" stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
+        </svg>
+
+        <Image
+          src="/assets/detail6.png"
+          alt="Detalle mapa y métricas"
+          width={84}
+          height={84}
+          className="w-[61px] sm:w-[69px] lg:w-[78px] h-auto object-contain rotate-6 drop-shadow-[0_12px_22px_rgba(37,99,235,0.2)] opacity-85"
+        />
       </div>
 
       {/* ── Patrones de Coordenadas Geográficas Sutiles en el Fondo ─────────── */}
@@ -156,3 +246,4 @@ export function AuthBackground() {
 }
 
 export default AuthBackground;
+

@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-export const layerKindSchema = z.enum(["CODIGOS_FIJOS", "LOTES", "MANZANAS", "VIAS"]);
+export const LayerKindSchema = z.enum(["CODIGOS_FIJOS", "LOTES", "MANZANAS", "VIAS"]);
 
-export const geometryTypeSchema = z.enum(["POINT", "POLYGON", "LINE"]);
+export const GeometryTypeSchema = z.enum(["POINT", "POLYGON", "LINE"]);
 
-export const layerColorSchema = z.enum([
+export const LayerColorSchema = z.enum([
   "BLUE",
   "ORANGE",
   "GREEN",
@@ -14,14 +14,14 @@ export const layerColorSchema = z.enum([
   "YELLOW",
 ]);
 
-export const mapLayerLoadStatusSchema = z.enum([
+export const MapLayerLoadStatusSchema = z.enum([
   "READY",
   "NO_ACTIVE_VERSION",
   "ZOOM_REQUIRED",
   "FEATURE_LIMIT_REACHED",
 ]);
 
-export const mapViewportSchema = z.object({
+export const MapViewportSchema = z.object({
   west: z.number(),
   south: z.number(),
   east: z.number(),
@@ -29,12 +29,12 @@ export const mapViewportSchema = z.object({
   zoom: z.number().int(),
 });
 
-export const geoJsonGeometrySchema = z.object({
+export const GeoJsonGeometrySchema = z.object({
   type: z.string(),
   coordinates: z.unknown(),
 });
 
-export const mapFeaturePropertiesSchema = z
+export const MapFeaturePropertiesSchema = z
   .object({
     id: z.string(),
     status: z
@@ -57,35 +57,46 @@ export const mapFeaturePropertiesSchema = z
   })
   .passthrough();
 
-export const geoJsonFeatureSchema = z.object({
+export const GeoJsonFeatureSchema = z.object({
   type: z.literal("Feature"),
   id: z.string(),
-  geometry: geoJsonGeometrySchema,
-  properties: mapFeaturePropertiesSchema,
+  geometry: GeoJsonGeometrySchema,
+  properties: MapFeaturePropertiesSchema,
 });
 
-export const geoJsonFeatureCollectionSchema = z.object({
+export const GeoJsonFeatureCollectionSchema = z.object({
   type: z.literal("FeatureCollection"),
-  features: z.array(geoJsonFeatureSchema),
+  features: z.array(GeoJsonFeatureSchema),
 });
 
-export const mapLayerFeaturesSchema = z.object({
+export const MapLayerFeaturesResponseSchema = z.object({
   layer_id: z.string(),
-  kind: layerKindSchema,
+  kind: LayerKindSchema,
   name: z.string(),
-  color: layerColorSchema,
-  geometry_type: geometryTypeSchema,
+  color: LayerColorSchema,
+  geometry_type: GeometryTypeSchema,
   active_data_version_id: z.string().nullish(),
-  load_status: mapLayerLoadStatusSchema,
+  load_status: MapLayerLoadStatusSchema,
   min_zoom: z.number().int().nullish(),
   feature_count: z.number().int().nonnegative(),
-  features: geoJsonFeatureCollectionSchema,
+  features: GeoJsonFeatureCollectionSchema,
 });
 
-export const mapFeaturesResponseSchema = z.object({
-  viewport: mapViewportSchema,
-  layers: z.array(mapLayerFeaturesSchema),
+export const MapFeaturesResponseSchema = z.object({
+  viewport: MapViewportSchema,
+  layers: z.array(MapLayerFeaturesResponseSchema),
 });
 
-export type MapFeaturesResponseDto = z.infer<typeof mapFeaturesResponseSchema>;
-export type MapLayerFeaturesDto = z.infer<typeof mapLayerFeaturesSchema>;
+export const MapMacroLayersResponseSchema = z.object({
+  layers: z.array(MapLayerFeaturesResponseSchema),
+});
+
+// Inferencias de tipos DTO
+export type MapFeaturesResponseDto = z.infer<typeof MapFeaturesResponseSchema>;
+export type MapMacroLayersResponseDto = z.infer<typeof MapMacroLayersResponseSchema>;
+export type MapLayerFeaturesDto = z.infer<typeof MapLayerFeaturesResponseSchema>;
+
+// Aliases para compatibilidad transicional
+export const mapFeaturesResponseSchema = MapFeaturesResponseSchema;
+export const mapMacroLayersResponseSchema = MapMacroLayersResponseSchema;
+export const mapLayerFeaturesSchema = MapLayerFeaturesResponseSchema;

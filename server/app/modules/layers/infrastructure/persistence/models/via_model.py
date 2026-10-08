@@ -1,12 +1,11 @@
 import uuid
-from typing import Optional
-
-from geoalchemy2 import Geometry
-from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Index, Integer, String
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlmodel import Field
 
 from app.shared.infrastructure.db.base_model import BaseModel
+from geoalchemy2 import Geometry
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Index, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlmodel import Field
 
 
 class ViaModel(BaseModel, table=True):
@@ -29,51 +28,51 @@ class ViaModel(BaseModel, table=True):
             nullable=False,
         ),
     )
-    source_feature_id: Optional[str] = Field(
+    source_feature_id: str | None = Field(
         default=None,
         sa_column=Column(String(120), nullable=True),
     )
-    osm_id: Optional[int] = Field(
+    osm_id: int | None = Field(
         default=None,
         sa_column=Column(BigInteger, nullable=True),
     )
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         sa_column=Column(String(48), nullable=True),
     )
-    reference: Optional[str] = Field(
+    reference: str | None = Field(
         default=None,
         sa_column=Column(String(16), nullable=True),
     )
-    road_type: Optional[str] = Field(
+    road_type: str | None = Field(
         default=None,
         sa_column=Column(String(16), nullable=True),
     )
-    is_one_way: Optional[bool] = Field(
+    is_one_way: bool | None = Field(
         default=None,
         sa_column=Column(Boolean, nullable=True),
     )
-    is_bridge: Optional[bool] = Field(
+    is_bridge: bool | None = Field(
         default=None,
         sa_column=Column(Boolean, nullable=True),
     )
-    max_speed: Optional[int] = Field(
+    max_speed: int | None = Field(
         default=None,
         sa_column=Column(Integer, nullable=True),
     )
-    object_id: Optional[int] = Field(
+    object_id: int | None = Field(
         default=None,
         sa_column=Column(BigInteger, nullable=True),
     )
-    legacy_name: Optional[str] = Field(
+    legacy_name: str | None = Field(
         default=None,
         sa_column=Column(String(40), nullable=True),
     )
-    legacy_osm_id: Optional[int] = Field(
+    legacy_osm_id: int | None = Field(
         default=None,
         sa_column=Column(BigInteger, nullable=True),
     )
-    highway_code: Optional[int] = Field(
+    highway_code: int | None = Field(
         default=None,
         sa_column=Column(BigInteger, nullable=True),
     )
@@ -82,4 +81,8 @@ class ViaModel(BaseModel, table=True):
             Geometry(geometry_type="MULTILINESTRING", srid=4326, spatial_index=False),
             nullable=False,
         ),
+    )
+    properties: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB, nullable=False, server_default="{}"),
     )

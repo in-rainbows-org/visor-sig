@@ -70,8 +70,8 @@ class TestActivateDataVersionUseCase:
         result = use_case.execute(ActivateDataVersionCommand(layer_id=layer_id, version_id=version_id))
 
         assert result.id == version_id
-        assert layer.active_data_version_id == version_id
-        mock_layer_repo.save.assert_called_once_with(layer)
+        assert result.is_active is True
+        mock_version_repo.set_active_version.assert_called_once_with(layer_id, version_id)
         mock_uow.commit.assert_called_once()
 
     def test_activate_failed_version_raises_conflict(

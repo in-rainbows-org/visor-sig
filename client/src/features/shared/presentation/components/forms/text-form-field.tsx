@@ -9,6 +9,8 @@ export type TextFormFieldProps = {
   name: string;
   placeholder?: string;
   label?: string;
+  labelClassName?: string;
+  inputClassName?: string;
   type?: "text" | "email" | "password" | string;
   icon?: ReactNode;
   autoComplete?: string;
@@ -22,6 +24,8 @@ export function TextFormField({
   name,
   placeholder,
   label,
+  labelClassName,
+  inputClassName,
   type = "text",
   icon,
   autoComplete,
@@ -39,7 +43,10 @@ export function TextFormField({
       {label && (
         <label
           htmlFor={id}
-          className="text-xs font-medium text-slate-600 tracking-wide pl-1 select-none"
+          className={cn(
+            "text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1 select-none font-label",
+            labelClassName
+          )}
         >
           {label}
         </label>
@@ -58,11 +65,12 @@ export function TextFormField({
           autoComplete={autoComplete}
           required={required}
           className={cn(
-            "w-full h-12 rounded-full border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 transition-all",
+            "w-full h-12 rounded-full border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 font-sans transition-all",
             "focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 hover:border-slate-300",
             icon ? "pl-11" : "pl-5",
             isPassword ? "pr-11" : "pr-5",
-            error && "border-red-400 focus:border-red-500 focus:ring-red-500/10"
+            error && "border-red-400 focus:border-red-500 focus:ring-red-500/10",
+            inputClassName
           )}
           {...props}
         />
@@ -82,7 +90,7 @@ export function TextFormField({
           </button>
         )}
       </div>
-      {error && <span className="text-xs text-red-500 pl-3">{error}</span>}
+      {error && <span className="text-xs text-red-500 pl-3 font-sans">{error}</span>}
     </div>
   );
 }

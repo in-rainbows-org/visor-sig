@@ -62,8 +62,8 @@ def test_get_active_map_features_query_and_router(db_session):
         imported_by_user_id="admin-test",
     )
     version_repo.save(vias_version)
-    vias_layer.set_active_data_version(vias_version.id)
-    layer_repo.save(vias_layer)
+    version_repo.set_active_version(vias_layer.id, vias_version.id)
+    db_session.commit()
 
     line = shapely.geometry.LineString([(-63.18, -17.78), (-63.17, -17.77)])
     mline = shapely.geometry.MultiLineString([line])
@@ -90,8 +90,8 @@ def test_get_active_map_features_query_and_router(db_session):
         imported_by_user_id="admin-test",
     )
     version_repo.save(codigos_version)
-    codigos_layer.set_active_data_version(codigos_version.id)
-    layer_repo.save(codigos_layer)
+    version_repo.set_active_version(codigos_layer.id, codigos_version.id)
+    db_session.commit()
 
     p1 = shapely.geometry.Point(-63.181, -17.781)
     mp1 = shapely.geometry.MultiPoint([p1])
@@ -166,5 +166,20 @@ def test_get_active_map_features_query_and_router(db_session):
     )
     assert res_invalid_bbox.status_code == 422
 
+    # 6. Test GET /api/map/macro-layers (Manzanas y Vías completas sin BBOX)
+    res_macro = client.get("/api/map/macro-layers")
+    assert res_macro.status_code == 200
+    macro_data = res_macro.json()
+    assert "layers" in macro_data
+    assert len(macro_data["layers"]) == 2
+    vias_macro = next(l for l in macro_data["layers"] if l["kind"] == "VIAS")
+    assert vias_macro["load_status"] == "READY"
+    assert vias_macro["feature_count"] == 1
+    assert vias_macro["features"]["features"][0]["properties"]["name"] == "Av. Principal"
+    manzanas_macro = next(l for l in macro_data["layers"] if l["kind"] == "MANZANAS")
+    assert manzanas_macro["load_status"] in ("READY", "NO_ACTIVE_VERSION")
+    assert "features" in manzanas_macro
+
     # Limpiar overrides
     app.dependency_overrides.clear()
+

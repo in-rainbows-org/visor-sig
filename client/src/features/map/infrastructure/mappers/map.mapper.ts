@@ -1,24 +1,35 @@
-import type { FixedCodeStatusValue } from "../../domain/models/fixed-code-status.types";
+import type { FixedCodeStatusValue } from "../../domain/entities/fixed-code-status.entity";
 import type {
   GeoJsonGeometry,
   MapFeatureProperties,
-  MapFeaturesResponse,
+  MapFeatures,
   MapGeoJsonFeature,
   MapGeoJsonFeatureCollection,
   MapLayerFeatures,
+  MapMacroLayers,
   MapViewport,
-} from "../../domain/models/map.types";
-import type { MapFeaturesResponseDto, MapLayerFeaturesDto } from "../schemas/map.schemas";
+} from "../../domain/entities/map.entity";
+import type {
+  MapFeaturesResponseDto,
+  MapLayerFeaturesDto,
+  MapMacroLayersResponseDto,
+} from "../schemas/map.schemas";
 
-export class MapMapper {
-  static toDomain(dto: MapFeaturesResponseDto): MapFeaturesResponse {
+export const mapMapper = {
+  toFeatures(dto: MapFeaturesResponseDto): MapFeatures {
     return {
-      viewport: this.mapViewportToDomain(dto.viewport),
-      layers: dto.layers.map((l) => this.mapLayerFeaturesToDomain(l)),
+      viewport: this.toViewport(dto.viewport),
+      layers: dto.layers.map((l) => this.toLayerFeatures(l)),
     };
-  }
+  },
 
-  static mapViewportToDomain(dto: MapFeaturesResponseDto["viewport"]): MapViewport {
+  toMacroLayers(dto: MapMacroLayersResponseDto): MapMacroLayers {
+    return {
+      layers: dto.layers.map((l) => this.toLayerFeatures(l)),
+    };
+  },
+
+  toViewport(dto: MapFeaturesResponseDto["viewport"]): MapViewport {
     return {
       west: dto.west,
       south: dto.south,
@@ -26,9 +37,9 @@ export class MapMapper {
       north: dto.north,
       zoom: dto.zoom,
     };
-  }
+  },
 
-  static mapLayerFeaturesToDomain(dto: MapLayerFeaturesDto): MapLayerFeatures {
+  toLayerFeatures(dto: MapLayerFeaturesDto): MapLayerFeatures {
     return {
       layerId: dto.layer_id,
       kind: dto.kind,
@@ -39,20 +50,20 @@ export class MapMapper {
       loadStatus: dto.load_status,
       minZoom: dto.min_zoom ?? null,
       featureCount: dto.feature_count,
-      features: this.mapFeatureCollectionToDomain(dto.features),
+      features: this.toFeatureCollection(dto.features),
     };
-  }
+  },
 
-  static mapFeatureCollectionToDomain(
+  toFeatureCollection(
     dto: MapLayerFeaturesDto["features"]
   ): MapGeoJsonFeatureCollection {
     return {
       type: "FeatureCollection",
-      features: dto.features.map((f) => this.mapFeatureToDomain(f)),
+      features: dto.features.map((f) => this.toFeature(f)),
     };
-  }
+  },
 
-  static mapFeatureToDomain(
+  toFeature(
     dto: MapLayerFeaturesDto["features"]["features"][number]
   ): MapGeoJsonFeature {
     return {
@@ -75,7 +86,16 @@ export class MapMapper {
         roadType: dto.properties.road_type ?? undefined,
       } as MapFeatureProperties,
     };
-  }
-}
+  },
 
-export const mapMapper = MapMapper;
+  // Aliases transicionales
+  toDomain(dto: MapFeaturesResponseDto): MapFeatures {
+    return this.toFeatures(dto);
+  },
+
+  macroLayersToDomain(dto: MapMacroLayersResponseDto): MapMacroLayers {
+    return this.toMacroLayers(dto);
+  },
+};
+
+export const MapMapper = mapMapper;

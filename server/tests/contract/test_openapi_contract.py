@@ -47,24 +47,23 @@ class TestOpenAPIContract:
         # POST /api/layers no debe existir
         if "/api/layers" in app_paths:
             assert "post" not in app_paths["/api/layers"], "POST /api/layers no debe existir en catálogo fijo"
-        # PATCH /api/layers/{layer_id} genérico no debe existir (solo /color)
-        if "/api/layers/{layer_id}" in app_paths:
-            assert "patch" not in app_paths["/api/layers/{layer_id}"], "PATCH /api/layers/{layer_id} no debe existir"
-            assert "post" not in app_paths["/api/layers/{layer_id}"], "POST /api/layers/{layer_id} no debe existir"
-            assert "delete" not in app_paths["/api/layers/{layer_id}"], "DELETE /api/layers/{layer_id} no debe existir"
+        # /api/layers/{layer_id} individual read/mutation no debe existir (solo /color)
+        assert "/api/layers/{layer_id}" not in app_paths, "/api/layers/{layer_id} no debe existir"
+        # /api/layers/{layer_id}/data-versions/{version_id} individual read no debe existir
+        assert "/api/layers/{layer_id}/data-versions/{version_id}" not in app_paths, "/api/layers/{layer_id}/data-versions/{version_id} no debe existir"
         # /activate y /deactivate a nivel de capa no deben existir
         assert "/api/layers/{layer_id}/activate" not in app_paths
         assert "/api/layers/{layer_id}/deactivate" not in app_paths
 
     def test_layer_schema_conformance(self, openapi_yaml, fastapi_openapi):
-        layer_schema = fastapi_openapi["components"]["schemas"]["LayerResponse"]
+        layer_schema = fastapi_openapi["components"]["schemas"]["LayerRead"]
         required_fields = {"id", "kind", "name", "geometry_type", "color", "active_data_version_id", "updated_at"}
         actual_fields = set(layer_schema["properties"].keys())
         assert required_fields.issubset(actual_fields)
         assert "is_enabled" not in actual_fields
 
     def test_data_version_schema_conformance(self, openapi_yaml, fastapi_openapi):
-        version_schema = fastapi_openapi["components"]["schemas"]["DataVersionResponse"]
+        version_schema = fastapi_openapi["components"]["schemas"]["DataVersionRead"]
         required_fields = {
             "id",
             "layer_id",

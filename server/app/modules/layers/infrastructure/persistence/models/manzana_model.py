@@ -1,12 +1,11 @@
 import uuid
-from typing import Optional
-
-from geoalchemy2 import Geometry
-from sqlalchemy import Column, ForeignKey, Index, Integer, String
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlmodel import Field
 
 from app.shared.infrastructure.db.base_model import BaseModel
+from geoalchemy2 import Geometry
+from sqlalchemy import Column, ForeignKey, Index, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlmodel import Field
 
 
 class ManzanaModel(BaseModel, table=True):
@@ -29,23 +28,23 @@ class ManzanaModel(BaseModel, table=True):
             nullable=False,
         ),
     )
-    source_feature_id: Optional[str] = Field(
+    source_feature_id: str | None = Field(
         default=None,
         sa_column=Column(String(120), nullable=True),
     )
-    source_id: Optional[int] = Field(
+    source_id: int | None = Field(
         default=None,
         sa_column=Column(Integer, nullable=True),
     )
-    uv_block_code: Optional[str] = Field(
+    uv_block_code: str | None = Field(
         default=None,
         sa_column=Column(String(20), nullable=True),
     )
-    uv: Optional[str] = Field(
+    uv: str | None = Field(
         default=None,
         sa_column=Column(String(15), nullable=True),
     )
-    block_number: Optional[str] = Field(
+    block_number: str | None = Field(
         default=None,
         sa_column=Column(String(10), nullable=True),
     )
@@ -54,4 +53,8 @@ class ManzanaModel(BaseModel, table=True):
             Geometry(geometry_type="MULTIPOLYGON", srid=4326, spatial_index=False),
             nullable=False,
         ),
+    )
+    properties: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB, nullable=False, server_default="{}"),
     )

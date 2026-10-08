@@ -1,9 +1,9 @@
 import uuid
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any
 
 
-@dataclass
+@dataclass(slots=True)
 class Manzana:
     """
     Entidad de dominio pura que representa una manzana catastral.
@@ -12,9 +12,10 @@ class Manzana:
 
     id: uuid.UUID
     data_version_id: uuid.UUID
-    source_feature_id: Optional[str]
-    source_id: Optional[int]
-    uv_block_code: Optional[str]
-    uv: Optional[str]
-    block_number: Optional[str]
+    source_feature_id: str | None
+    source_id: int | None
+    uv_block_code: str | None
+    uv: str | None
+    block_number: str | None
     geometry_wkt: str
+    properties: dict[str, Any] = field(default_factory=dict)

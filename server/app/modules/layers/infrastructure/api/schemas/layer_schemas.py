@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field
 
 from app.modules.layers.domain.enums import GeometryType, LayerColor, LayerKind
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChangeLayerColorRequest(BaseModel):
@@ -14,7 +13,7 @@ class ChangeLayerColorRequest(BaseModel):
     color: LayerColor = Field(..., description="Nuevo color de la simbología")
 
 
-class LayerResponse(BaseModel):
+class LayerRead(BaseModel):
     """Esquema de respuesta que representa una capa fija del catálogo."""
 
     model_config = ConfigDict(from_attributes=True)
@@ -24,11 +23,11 @@ class LayerResponse(BaseModel):
     name: str
     geometry_type: GeometryType
     color: LayerColor
-    active_data_version_id: Optional[uuid.UUID] = None
+    active_data_version_id: uuid.UUID | None = None
     updated_at: datetime
 
 
-class LayerListResponse(BaseModel):
+class LayerListRead(BaseModel):
     """Esquema de respuesta para la colección de capas fijas."""
 
-    items: list[LayerResponse]
+    items: list[LayerRead]

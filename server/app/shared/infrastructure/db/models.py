@@ -16,10 +16,19 @@
 # ============================================================
 
 # ruff: noqa: F401
+from app.modules.layers.infrastructure.persistence.models.codigo_fijo_model import (
+    CodigoFijoModel,
+)
+from app.modules.layers.infrastructure.persistence.models.data_version_model import (
+    DataVersionModel,
+)
 from app.modules.layers.infrastructure.persistence.models.layer_model import LayerModel
-from app.modules.layers.infrastructure.persistence.models.data_version_model import DataVersionModel
-from app.modules.layers.infrastructure.persistence.models.codigo_fijo_model import CodigoFijoModel
 from app.modules.layers.infrastructure.persistence.models.lote_model import LoteModel
-from app.modules.layers.infrastructure.persistence.models.manzana_model import ManzanaModel
+from app.modules.layers.infrastructure.persistence.models.manzana_model import (
+    ManzanaModel,
+)
+from app.modules.audit_logs.infrastructure.persistence.models.audit_log_model import (
+    AuditLogModel,
+)
 from app.modules.layers.infrastructure.persistence.models.via_model import ViaModel
 

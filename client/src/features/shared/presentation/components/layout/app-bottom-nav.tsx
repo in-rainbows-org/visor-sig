@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -22,36 +23,43 @@ export function AppBottomNav({ className = "" }: AppBottomNavProps) {
     <nav
       aria-label="Navegación Móvil"
       data-purpose="bottom-nav-dock"
-      className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md rounded-full shadow-float border border-gray-200/80 px-4 sm:px-6 py-2 flex items-center gap-3 sm:gap-5 max-w-[calc(100vw-2rem)] select-none lg:hidden ${className}`}
+      className={`fixed bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md rounded-full shadow-float border border-slate-200/90 px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2.5 max-w-[calc(100vw-1.5rem)] select-none lg:hidden ${className}`}
     >
-      {navigationRoutes.map((route, index) => {
-        const Icon = route.icon;
+      {navigationRoutes.map((route) => {
         const isActive =
           pathname === route.href ||
           (route.href !== "/mapa" && pathname.startsWith(route.href));
 
         return (
-          <React.Fragment key={route.key}>
-            {index > 0 && <div className="h-6 w-px bg-gray-200/80 shrink-0" />}
-
-            <Link
-              href={route.href}
-              className={`flex flex-col items-center gap-1 transition focus:outline-hidden py-0.5 px-1.5 rounded-lg ${
+          <Link
+            key={route.key}
+            href={route.href}
+            className={`flex flex-col items-center gap-1 transition-all duration-150 focus:outline-hidden py-1 px-2.5 sm:px-3 rounded-xl active:scale-95 ${
+              isActive
+                ? "text-blue-600 font-bold"
+                : "text-slate-500 hover:text-slate-900 font-medium"
+            }`}
+          >
+            <Image
+              src={route.icon}
+              alt={route.label}
+              width={28}
+              height={28}
+              className={`w-[26px] h-[26px] sm:w-7 sm:h-7 shrink-0 object-contain transition-transform duration-200 ${
                 isActive
-                  ? "text-blue-600 font-bold"
-                  : "text-gray-500 hover:text-gray-900 font-medium"
+                  ? "scale-110 drop-shadow-[0_2px_4px_rgba(37,99,235,0.25)]"
+                  : "opacity-85 hover:opacity-100"
               }`}
-            >
-              <Icon
-                className={`w-5 h-5 shrink-0 transition-transform ${
-                  isActive ? "scale-105" : ""
-                }`}
-              />
-              <span className="text-[10px] sm:text-xs leading-none tracking-tight">
-                {route.shortLabel || route.label}
-              </span>
-            </Link>
-          </React.Fragment>
+            />
+            <span className="text-[10.5px] sm:text-[11.5px] leading-tight tracking-tight text-center">
+              {route.shortLabel || route.label}
+            </span>
+            <span
+              className={`h-0.5 rounded-full transition-all duration-200 ${
+                isActive ? "w-4.5 bg-blue-600" : "w-0 bg-transparent"
+              }`}
+            />
+          </Link>
         );
       })}
     </nav>

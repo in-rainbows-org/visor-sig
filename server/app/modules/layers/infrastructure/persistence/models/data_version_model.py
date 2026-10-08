@@ -1,11 +1,18 @@
 import uuid
-from typing import Optional
-
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlmodel import Field
 
 from app.shared.infrastructure.db.base_model import BaseModel
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlmodel import Field
 
 
 class DataVersionModel(BaseModel, table=True):
@@ -35,6 +42,10 @@ class DataVersionModel(BaseModel, table=True):
     status: str = Field(
         sa_column=Column(String(20), nullable=False, index=True),
     )
+    is_active: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False, default=False),
+    )
     source_filename: str = Field(
         sa_column=Column(String(255), nullable=False),
     )
@@ -42,11 +53,11 @@ class DataVersionModel(BaseModel, table=True):
         default=0,
         sa_column=Column(Integer, nullable=False, default=0),
     )
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         default=None,
         sa_column=Column(Text, nullable=True),
     )
-    imported_by_user_id: Optional[str] = Field(
+    imported_by_user_id: str | None = Field(
         default=None,
         sa_column=Column(String, nullable=True),
     )

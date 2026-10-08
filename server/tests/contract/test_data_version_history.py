@@ -94,24 +94,19 @@ class TestDataVersionHistoryContract:
         assert v2_item["is_active"] is True
         assert v1_item["is_active"] is False
 
-        # 4. Obtener detalle de versión 1
-        get_v1_res = admin_client.get(f"/api/layers/{layer_id}/data-versions/{v1['id']}")
-        assert get_v1_res.status_code == 200
-        assert get_v1_res.json()["id"] == v1["id"]
-        assert get_v1_res.json()["is_active"] is False
-
-        # 5. Activar versión 1 (Rollback a v1)
+        # 4. Activar versión 1 (Rollback a v1)
         act_res = admin_client.post(f"/api/layers/{layer_id}/data-versions/{v1['id']}/activate")
         assert act_res.status_code == 200
         assert act_res.json()["id"] == v1["id"]
         assert act_res.json()["is_active"] is True
 
-        # 6. Verificar que el puntero en la capa ahora es v1
-        layer_res = admin_client.get(f"/api/layers/{layer_id}")
-        assert layer_res.status_code == 200
-        assert layer_res.json()["active_data_version_id"] == v1["id"]
+        # 5. Verificar que el puntero en la capa ahora es v1
+        list_layers_res = admin_client.get("/api/layers")
+        assert list_layers_res.status_code == 200
+        layer_item = next(i for i in list_layers_res.json()["items"] if i["id"] == layer_id)
+        assert layer_item["active_data_version_id"] == v1["id"]
 
-        # 7. Re-listar y confirmar que v1 es is_active=True y v2 es is_active=False
+        # 6. Re-listar y confirmar que v1 es is_active=True y v2 es is_active=False
         list_res_after = admin_client.get(f"/api/layers/{layer_id}/data-versions")
         assert list_res_after.status_code == 200
         items_after = list_res_after.json()["items"]
@@ -123,12 +118,6 @@ class TestDataVersionHistoryContract:
     def test_list_versions_forbidden_for_consultant(self, consultant_client):
         layer_id = str(uuid.uuid4())
         res = consultant_client.get(f"/api/layers/{layer_id}/data-versions")
-        assert res.status_code == 403
-
-    def test_get_version_forbidden_for_consultant(self, consultant_client):
-        layer_id = str(uuid.uuid4())
-        version_id = str(uuid.uuid4())
-        res = consultant_client.get(f"/api/layers/{layer_id}/data-versions/{version_id}")
         assert res.status_code == 403
 
     def test_activate_version_forbidden_for_consultant(self, consultant_client):

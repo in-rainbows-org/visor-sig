@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { clearJWT } from "@/features/shared/infrastructure/http/jwt-manager";
+import { recordLogoutAuditAction } from "@/features/audit-logs/presentation/hooks/use-audit-auth-log";
 import { appToast } from "@/features/shared/presentation/components/notifications/toast";
 import { User, LogOut } from "lucide-react";
 
@@ -30,6 +31,7 @@ export function AppHeader({ className }: AppHeaderProps) {
   const handleSignOut = async () => {
     try {
       setProfileOpen(false);
+      await recordLogoutAuditAction();
       clearJWT();
       const { error } = await authClient.signOut();
       if (error) {
@@ -77,7 +79,7 @@ export function AppHeader({ className }: AppHeaderProps) {
                 aria-label="Menú de perfil de usuario"
               >
                 <span className="text-sm font-medium text-gray-600 truncate max-w-[140px] sm:max-w-xs md:max-w-none">
-                  Hi, <strong className="text-gray-900 font-semibold">{userName}</strong>
+                  Hola, <strong className="text-gray-900 font-semibold">{userName}</strong>
                 </span>
                 <div className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 shadow-2xs">
                   {userImage ? (
@@ -97,7 +99,7 @@ export function AppHeader({ className }: AppHeaderProps) {
             <PopoverContent
               align="end"
               sideOffset={12}
-              className="p-0 border-0 bg-transparent shadow-none w-auto max-w-[calc(100vw-2rem)] z-50"
+              className="p-0 border-0 bg-transparent shadow-none w-auto max-w-[calc(100vw-2rem)] z-[2100]"
             >
               <div
                 className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-float border border-gray-100 select-none w-72 flex flex-col gap-3"

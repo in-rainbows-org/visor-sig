@@ -3,8 +3,11 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import L from "leaflet";
 import { Marker, Popup, useMap } from "react-leaflet";
-import { HighlightedMapEntity } from "../../../domain/models/highlighted-entity.types";
-import { FIXED_CODE_STATUSES, FixedCodeStatusValue } from "../../../domain/models/fixed-code-status.types";
+import type { HighlightedMapEntity } from "@/features/map/domain/entities/highlighted-entity.entity";
+import {
+  FIXED_CODE_STATUSES,
+  type FixedCodeStatusValue,
+} from "@/features/map/domain/entities/fixed-code-status.entity";
 
 export interface HighlightedConsultationMarkerProps {
   entity: HighlightedMapEntity;
@@ -102,23 +105,38 @@ export function HighlightedConsultationMarker({
     });
   }, [styling]);
 
-  // Centrado flyTo suave hacia el punto y apertura automática del globo de información
+  // Centrado hacia el punto y apertura automática del globo de información
   useEffect(() => {
-    const currentZoom = map.getZoom();
-    const targetZoom = currentZoom < 16 ? 17 : currentZoom;
-    map.flyTo([entity.lat, entity.lng], targetZoom, {
-      animate: true,
-      duration: 0.8,
-    });
+    if (isNaN(entity.lat) || isNaN(entity.lng)) return;
 
-    const timer = setTimeout(() => {
-      if (markerRef.current) {
-        markerRef.current.openPopup();
-      }
-    }, 250);
+    let cancelled = false;
+    let popupTimerId: NodeJS.Timeout | null = null;
 
-    return () => clearTimeout(timer);
-  }, [map, entity.id, entity.lat, entity.lng, entity.code]);
+    const doZoomAndFocus = () => {
+      if (cancelled) return;
+
+      map.invalidateSize({ pan: false });
+      map.setView([entity.lat, entity.lng], 18, { animate: false });
+
+      popupTimerId = setTimeout(() => {
+        if (!cancelled && markerRef.current) {
+          markerRef.current.openPopup();
+        }
+      }, 150);
+    };
+
+    const timer = setTimeout(doZoomAndFocus, 60);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      if (popupTimerId) clearTimeout(popupTimerId);
+    };
+  }, [map, entity.id, entity.lat, entity.lng]);
+
+  if (isNaN(entity.lat) || isNaN(entity.lng)) {
+    return null;
+  }
 
   const displayCode = entity.fixedCodeNumber || entity.code;
   const displayName = entity.name || "Predio Registrado";
@@ -139,6 +157,7 @@ export function HighlightedConsultationMarker({
         autoClose={false}
         closeOnClick={false}
         autoPan={true}
+        autoPanPadding={[24, 24]}
         className="consultation-speech-bubble-popup"
       >
         <div className="w-56 p-1 text-slate-800 font-sans select-none">
@@ -165,17 +184,17 @@ export function HighlightedConsultationMarker({
           <div className="flex items-center justify-between bg-slate-50/90 border border-slate-200/80 rounded-lg px-2.5 py-1.5 mt-2 text-[11px] font-semibold text-slate-700 shadow-2xs">
             <span className="flex items-center gap-1">
               <span className="text-slate-400 font-normal text-[10px]">UV:</span>
-              <span className="text-slate-900">{entity.uv || "14"}</span>
+              <span className="text-slate-900">{entity.uv || "-"}</span>
             </span>
             <span className="text-slate-300 font-light">•</span>
             <span className="flex items-center gap-1">
               <span className="text-slate-400 font-normal text-[10px]">MZA:</span>
-              <span className="text-slate-900">{entity.mz || "08"}</span>
+              <span className="text-slate-900">{entity.mz || "-"}</span>
             </span>
             <span className="text-slate-300 font-light">•</span>
             <span className="flex items-center gap-1">
               <span className="text-slate-400 font-normal text-[10px]">LOTE:</span>
-              <span className="text-slate-900">{entity.lote || "12"}</span>
+              <span className="text-slate-900">{entity.lote || "-"}</span>
             </span>
           </div>
 

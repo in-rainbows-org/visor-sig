@@ -1,72 +1,139 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { HighlightedMapEntity } from "../../domain/models/highlighted-entity.types";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import type { HighlightedMapEntity } from "../../domain/entities/highlighted-entity.entity";
+import { consultationRepositoryImpl } from "@/features/consultations/infrastructure/repositories/consultation.repository-impl";
+import { useMapView } from "../state/map-view-store";
+import { appToast } from "@/features/shared/presentation/components/notifications/toast";
 
 export interface UseConsultationHighlightResult {
   highlightedEntity: HighlightedMapEntity | null;
   isFromConsultation: boolean;
+  isLoading: boolean;
+  isInitialLandingWithParam: boolean;
+  focusEntityById: (id: string) => Promise<void>;
   clearHighlight: () => void;
 }
 
+function getStatusStyling(statusVal: number): { status: string; statusColor: string } {
+  switch (statusVal) {
+    case 1:
+      return { status: "Normal", statusColor: "emerald" };
+    case 2:
+      return { status: "Para corte", statusColor: "amber" };
+    case 3:
+      return { status: "Cortado", statusColor: "rose" };
+    case 4:
+      return { status: "Baja parcial", statusColor: "yellow" };
+    case 5:
+      return { status: "Baja total", statusColor: "slate" };
+    default:
+      return { status: `Estado ${statusVal}`, statusColor: "slate" };
+  }
+}
+
 export function useConsultationHighlight(): UseConsultationHighlightResult {
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const pathname = usePathname();
+  const { setLayerVisibility } = useMapView();
+
+  const fixedCodeIdParam = searchParams.get("fixed_code_id") || searchParams.get("entity_id");
+  const isFromConsultation = Boolean(fixedCodeIdParam || searchParams.get("from") === "consultation");
 
   const [highlightedEntity, setHighlightedEntity] = useState<HighlightedMapEntity | null>(null);
+  const [isLoading, setIsLoading] = useState(Boolean(fixedCodeIdParam));
 
-  const isFromConsultation = searchParams.get("from") === "consultation";
+  const fetchedIdRef = useRef<string | null>(null);
 
-  // Parse highlighted entity from search parameters
-  const parsedEntity = useMemo((): HighlightedMapEntity | null => {
-    if (!isFromConsultation) return null;
+  const fetchAndFocusEntity = useCallback(
+    async (id: string) => {
+      setIsLoading(true);
+      try {
+        const res = await consultationRepositoryImpl.getCodigoFijoById(id);
+        if (res.ok) {
+          const detail = res.data;
 
-    const latStr = searchParams.get("lat");
-    const lngStr = searchParams.get("lng");
-    const lat = latStr ? parseFloat(latStr) : -21.5355;
-    const lng = lngStr ? parseFloat(lngStr) : -64.7296;
+          if (
+            typeof detail.latitude !== "number" ||
+            typeof detail.longitude !== "number" ||
+            isNaN(detail.latitude) ||
+            isNaN(detail.longitude)
+          ) {
+            appToast.warning("El código fijo no posee coordenadas georreferenciadas válidas.");
+            setHighlightedEntity(null);
+            return;
+          }
 
-    if (isNaN(lat) || isNaN(lng)) return null;
+          const { status, statusColor } = getStatusStyling(detail.status);
 
-    const code = searchParams.get("code") || "";
-    const fixedCodeNum = searchParams.get("fixed_code_num") || code;
-    const name = searchParams.get("name") || "Predio Registrado";
-    const uv = searchParams.get("uv") || "14";
-    const mz = searchParams.get("mz") || "08";
-    const lote = searchParams.get("lote") || "12";
-    const status = searchParams.get("status") || "Normal";
-    const statusVal = Number(searchParams.get("status_val")) || 1;
-    const statusColor = searchParams.get("status_color") || "emerald";
+          const entity: HighlightedMapEntity = {
+            id: detail.id,
+            layerKind: "CODIGOS_FIJOS",
+            code: String(detail.fixedCode || detail.label || "CF"),
+            fixedCodeNumber: detail.fixedCode ?? detail.label ?? "",
+            name: detail.name || "Sin titular registrado",
+            uv: detail.uv || "-",
+            mz: detail.blockNumber || "-",
+            lote: detail.lotNumber || "-",
+            status,
+            statusVal: detail.status,
+            statusColor,
+            lat: detail.latitude,
+            lng: detail.longitude,
+          };
 
-    return {
-      id: searchParams.get("entity_id") || "highlighted-from-consultation",
-      layerKind: searchParams.get("layer") || "CODIGOS_FIJOS",
-      code,
-      fixedCodeNumber: fixedCodeNum,
-      name,
-      uv,
-      mz,
-      lote,
-      status,
-      statusVal,
-      statusColor,
-      lat,
-      lng,
-    };
-  }, [searchParams, isFromConsultation]);
+          fetchedIdRef.current = id;
+          setLayerVisibility("CODIGOS_FIJOS", true);
+          setHighlightedEntity(entity);
+        } else {
+          appToast.error("No encontrado", res.errors?.[0] || "Código fijo no encontrado.");
+          setHighlightedEntity(null);
+        }
+      } catch {
+        appToast.error("Error", "No se pudo cargar la información del código fijo.");
+        setHighlightedEntity(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setLayerVisibility]
+  );
 
+  // Sincronización cuando cambia el query param en la URL
   useEffect(() => {
-    if (parsedEntity) {
-      setHighlightedEntity(parsedEntity);
+    if (!fixedCodeIdParam || fetchedIdRef.current === fixedCodeIdParam) {
+      return;
     }
-  }, [parsedEntity]);
+
+    const timer = setTimeout(() => {
+      void fetchAndFocusEntity(fixedCodeIdParam);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [fixedCodeIdParam, fetchAndFocusEntity]);
+
+  const focusEntityById = useCallback(
+    async (id: string) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set("fixed_code_id", id);
+      const targetUrl = `${pathname}?${nextParams.toString()}`;
+      router.replace(targetUrl, { scroll: false });
+      await fetchAndFocusEntity(id);
+    },
+    [pathname, searchParams, router, fetchAndFocusEntity]
+  );
 
   const clearHighlight = useCallback(() => {
     setHighlightedEntity(null);
+    fetchedIdRef.current = null;
+
     const nextParams = new URLSearchParams(searchParams.toString());
     const keysToRemove = [
+      "fixed_code_id",
       "from",
       "layer",
       "entity_id",
@@ -84,12 +151,19 @@ export function useConsultationHighlight(): UseConsultationHighlightResult {
     ];
     keysToRemove.forEach((k) => nextParams.delete(k));
     const qs = nextParams.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [pathname, router, searchParams]);
+    const targetUrl = qs ? `${pathname}?${qs}` : pathname;
+    router.replace(targetUrl, { scroll: false });
+  }, [pathname, searchParams, router]);
+
+  const activeHighlightedEntity = fixedCodeIdParam ? highlightedEntity : null;
+  const isInitialLandingWithParam = Boolean(fixedCodeIdParam && !highlightedEntity && isLoading);
 
   return {
-    highlightedEntity,
+    highlightedEntity: activeHighlightedEntity,
     isFromConsultation,
+    isLoading,
+    isInitialLandingWithParam,
+    focusEntityById,
     clearHighlight,
   };
 }

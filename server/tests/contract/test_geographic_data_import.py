@@ -163,7 +163,8 @@ class TestGeographicDataImportContract:
         assert data["error_message"] is None
 
         # Verificar que la capa ahora tiene active_data_version_id actualizado
-        get_res = admin_client.get(f"/api/layers/{layer_id}")
-        assert get_res.status_code == 200
-        assert get_res.json()["active_data_version_id"] == data["id"]
+        list_res = admin_client.get("/api/layers")
+        assert list_res.status_code == 200
+        lote_layer = next(item for item in list_res.json()["items"] if item["id"] == layer_id)
+        assert lote_layer["active_data_version_id"] == data["id"]
 

@@ -45,6 +45,7 @@ class SqlModelUnitOfWork:
         self.session = session
         self._event_bus = event_bus
         self._tracked_aggregates: list[AggregateRoot] = []
+        self._pending_events: list[DomainEvent] = []
 
     def __enter__(self) -> "SqlModelUnitOfWork":
         return self
@@ -63,6 +64,10 @@ class SqlModelUnitOfWork:
         if isinstance(entity, AggregateRoot):
             if not any(tracked is entity for tracked in self._tracked_aggregates):
                 self._tracked_aggregates.append(entity)
+
+    def publish(self, event: DomainEvent) -> None:
+        """Encola un evento de dominio para ser publicado tras commit exitoso."""
+        self._pending_events.append(event)
 
     def commit(self) -> None:
         """
@@ -86,6 +91,7 @@ class SqlModelUnitOfWork:
         try:
             for aggregate in self._tracked_aggregates:
                 events.extend(aggregate.pull_events())
+            events.extend(self._pending_events)
 
             for event in events:
                 try:
@@ -98,6 +104,7 @@ class SqlModelUnitOfWork:
                     )
         finally:
             self._tracked_aggregates.clear()
+            self._pending_events.clear()
 
     def rollback(self) -> None:
         """
@@ -107,4 +114,5 @@ class SqlModelUnitOfWork:
         for aggregate in self._tracked_aggregates:
             aggregate.discard_events()
         self._tracked_aggregates.clear()
+        self._pending_events.clear()
         logger.debug("UnitOfWork — rollback ejecutado")

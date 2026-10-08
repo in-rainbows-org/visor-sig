@@ -1,4 +1,4 @@
-import { Montserrat, JetBrains_Mono } from "next/font/google";
+import { Montserrat } from "next/font/google";
 
 /*
  * Roles tipográficos para toda la aplicación. system.css los expone como
@@ -16,11 +16,10 @@ const body = Montserrat({
   display: "swap",
 });
 
-const label = JetBrains_Mono({
+const label = Montserrat({
   subsets: ["latin"],
-  variable: "--app-font-label",
+  variable: "--app-font-body",
   display: "swap",
 });
-
 export const appFontVariables = `${headline.variable} ${body.variable} ${label.variable}`;
 

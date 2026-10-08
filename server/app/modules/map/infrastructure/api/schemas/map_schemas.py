@@ -1,12 +1,16 @@
-from typing import Any, List, Optional
+from typing import Any
 from uuid import UUID
-from pydantic import BaseModel, Field
 
-from app.modules.map.application.queries.map_feature_dtos import MapLayerLoadStatus
 from app.modules.layers.domain.enums import GeometryType, LayerColor, LayerKind
+from app.modules.map.domain.enums import MapLayerLoadStatus
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class MapViewportSchema(BaseModel):
+class MapViewportRead(BaseModel):
+    """Representación pública del bounding box y nivel de zoom del visor."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     west: float
     south: float
     east: float
@@ -14,49 +18,81 @@ class MapViewportSchema(BaseModel):
     zoom: int
 
 
-class GeoJsonGeometrySchema(BaseModel):
+class GeoJsonGeometryRead(BaseModel):
+    """Representación pública de la geometría GeoJSON."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     type: str
     coordinates: Any
 
 
-class MapFeaturePropertiesSchema(BaseModel):
+class MapFeaturePropertiesRead(BaseModel):
+    """Propiedades semánticas y alfanuméricas de un elemento cartográfico."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
-    status: Optional[int] = None
-    fixed_code: Optional[int] = None
-    label: Optional[str] = None
-    lot_number: Optional[str] = None
-    uv: Optional[str] = None
-    block_number: Optional[str] = None
-    uv_block_code: Optional[str] = None
-    name: Optional[str] = None
-    road_type: Optional[str] = None
+    status: int | None = None
+    fixed_code: int | None = None
+    label: str | None = None
+    lot_number: str | None = None
+    uv: str | None = None
+    block_number: str | None = None
+    uv_block_code: str | None = None
+    name: str | None = None
+    road_type: str | None = None
 
 
-class GeoJsonFeatureSchema(BaseModel):
+class GeoJsonFeatureRead(BaseModel):
+    """Elemento individual GeoJSON con identificación, geometría y propiedades."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     type: str = "Feature"
     id: UUID
-    geometry: GeoJsonGeometrySchema
-    properties: MapFeaturePropertiesSchema
+    geometry: GeoJsonGeometryRead
+    properties: MapFeaturePropertiesRead
 
 
-class GeoJsonFeatureCollectionSchema(BaseModel):
+class GeoJsonFeatureCollectionRead(BaseModel):
+    """Colección estándar GeoJSON de elementos cartográficos."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     type: str = "FeatureCollection"
-    features: List[GeoJsonFeatureSchema] = Field(default_factory=list)
+    features: list[GeoJsonFeatureRead] = Field(default_factory=list)
 
 
-class MapLayerFeaturesSchema(BaseModel):
+class MapLayerFeaturesRead(BaseModel):
+    """Capa cartográfica activa con sus metadatos y colección de geometrías GeoJSON."""
+
+    model_config = ConfigDict(from_attributes=True)
+
     layer_id: UUID
     kind: LayerKind
     name: str
     color: LayerColor
     geometry_type: GeometryType
-    active_data_version_id: Optional[UUID] = None
+    active_data_version_id: UUID | None = None
     load_status: MapLayerLoadStatus
-    min_zoom: Optional[int] = None
+    min_zoom: int | None = None
     feature_count: int
-    features: GeoJsonFeatureCollectionSchema
+    features: GeoJsonFeatureCollectionRead
 
 
-class MapFeaturesResponseSchema(BaseModel):
-    viewport: MapViewportSchema
-    layers: List[MapLayerFeaturesSchema]
+class MapFeaturesRead(BaseModel):
+    """Respuesta para la consulta de capas por viewport geográfico."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    viewport: MapViewportRead
+    layers: list[MapLayerFeaturesRead]
+
+
+class MapMacroLayersRead(BaseModel):
+    """Respuesta para la consulta completa de capas macro (Manzanas y Vías)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    layers: list[MapLayerFeaturesRead]

@@ -12,9 +12,9 @@ export const API_BASE_URL =
  */
 export const MAP_TILE_URL =
   process.env.NEXT_PUBLIC_MAP_TILE_URL ||
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
 
 export const MAP_TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION ||
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)';
 

@@ -1,25 +1,32 @@
 import math
-import re
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID
-
-from sqlalchemy import Numeric, String, cast, func, or_
+from typing import Any
+import uuid
+from sqlalchemy import String, cast, func
 from sqlmodel import Session, select
 
-from app.core.config import settings
-from app.modules.consultations.application.ports.consultation_reader import ConsultationReader
-from app.modules.consultations.application.queries.consultation_dtos import (
-    ConsultationRecordDTO,
-    FieldMetadataDTO,
-    LayerMetadataDTO,
-    PaginatedConsultationResponseDTO,
+from app.modules.consultations.application.ports.readers.consultation_reader import ConsultationReader
+from app.modules.consultations.application.queries.get_codigo_fijo_detail import (
+    CodigoFijoDetailDTO,
 )
-from app.modules.consultations.domain.exceptions import (
-    ConsultationLayerNotFoundException,
-    LayerHasNoActiveVersionException,
+from app.modules.consultations.application.queries.get_codigos_fijos_consultation import (
+    CodigoFijoConsultationDTO,
+    PaginatedCodigosFijosConsultationDTO,
+)
+from app.modules.consultations.application.queries.get_lotes_consultation import (
+    LoteConsultationDTO,
+    PaginatedLotesConsultationDTO,
+)
+from app.modules.consultations.application.queries.get_manzanas_consultation import (
+    ManzanaConsultationDTO,
+    PaginatedManzanasConsultationDTO,
+)
+from app.modules.consultations.application.queries.get_vias_consultation import (
+    PaginatedViasConsultationDTO,
+    ViaConsultationDTO,
 )
 from app.modules.layers.domain.enums import LayerKind
 from app.modules.layers.infrastructure.persistence.models.codigo_fijo_model import CodigoFijoModel
+from app.modules.layers.infrastructure.persistence.models.data_version_model import DataVersionModel
 from app.modules.layers.infrastructure.persistence.models.layer_model import LayerModel
 from app.modules.layers.infrastructure.persistence.models.lote_model import LoteModel
 from app.modules.layers.infrastructure.persistence.models.manzana_model import ManzanaModel
@@ -27,527 +34,384 @@ from app.modules.layers.infrastructure.persistence.models.via_model import ViaMo
 
 
 class SqlModelConsultationReader(ConsultationReader):
-    def __init__(self, session: Session):
+    """
+    Implementación SQLModel del puerto ConsultationReader para consultas alfanuméricas por capa.
+    """
+
+    def __init__(self, session: Session) -> None:
         self.session = session
 
-    def get_consultation_layers(self) -> List[LayerMetadataDTO]:
-        stmt = select(LayerModel).where(LayerModel.deleted_date.is_(None)).order_by(LayerModel.name)
-        layers = self.session.exec(stmt).all()
-
-        result: List[LayerMetadataDTO] = []
-        for l in layers:
-            fields = self._get_fields_for_kind(l.kind)
-            result.append(
-                LayerMetadataDTO(
-                    id=l.id,
-                    kind=l.kind,
-                    name=l.name,
-                    geometry_type=l.geometry_type,
-                    color=l.color,
-                    has_active_version=bool(l.active_data_version_id),
-                    fields=fields,
-                )
+    def _get_active_version_id(self, layer_kind: str) -> uuid.UUID | None:
+        """Obtiene el ID de la versión de datos activa para el tipo de capa especificado."""
+        stmt = (
+            select(DataVersionModel.id)
+            .join(LayerModel, LayerModel.id == DataVersionModel.layer_id)
+            .where(
+                LayerModel.kind == layer_kind,
+                LayerModel.deleted_date.is_(None),
+                DataVersionModel.is_active == True,
+                DataVersionModel.deleted_date.is_(None),
             )
-        return result
-
-    def _get_fields_for_kind(self, kind: str) -> List[FieldMetadataDTO]:
-        if kind == LayerKind.LOTES.value:
-            return [
-                FieldMetadataDTO(key="lot_number", label="Código de lote", type="string"),
-                FieldMetadataDTO(key="source_feature_id", label="ID Fuente", type="string"),
-            ]
-        elif kind == LayerKind.MANZANAS.value:
-            return [
-                FieldMetadataDTO(key="uv_block_code", label="Código Manzana (UV-MZ)", type="string"),
-                FieldMetadataDTO(key="uv", label="Unidad Vecinal (UV)", type="string"),
-                FieldMetadataDTO(key="block_number", label="Número de Manzana", type="string"),
-            ]
-        elif kind == LayerKind.CODIGOS_FIJOS.value:
-            return [
-                FieldMetadataDTO(key="fixed_code", label="Código Fijo", type="number"),
-                FieldMetadataDTO(key="name", label="Nombre", type="string"),
-                FieldMetadataDTO(key="label", label="Etiqueta / Referencia", type="string"),
-                FieldMetadataDTO(key="sig_code", label="Código SIG", type="string"),
-                FieldMetadataDTO(key="sql_code", label="Código SQL", type="number"),
-            ]
-        elif kind == LayerKind.VIAS.value:
-            return [
-                FieldMetadataDTO(key="name", label="Nombre de Vía", type="string"),
-                FieldMetadataDTO(key="road_type", label="Tipo de Vía", type="string"),
-                FieldMetadataDTO(key="reference", label="Referencia", type="string"),
-            ]
-        return [FieldMetadataDTO(key="id", label="Identificador", type="string")]
-
-    def search_entities(
-        self,
-        layer_kind: str,
-        field: Optional[str] = None,
-        value: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 10,
-    ) -> PaginatedConsultationResponseDTO:
-        if page < 1:
-            page = 1
-        if page_size < 1:
-            page_size = 10
-
-        # 1. Obtener la capa y validar que exista y tenga versión activa
-        stmt_layer = select(LayerModel).where(
-            LayerModel.kind == layer_kind,
-            LayerModel.deleted_date.is_(None),
         )
-        layer = self.session.exec(stmt_layer).first()
-        if not layer:
-            raise ConsultationLayerNotFoundException(layer_kind)
+        return self.session.exec(stmt).first()
 
-        if not layer.active_data_version_id:
-            raise LayerHasNoActiveVersionException(layer_kind)
+    def search_codigos_fijos(
+        self,
+        fixed_code: int | None,
+        name: str | None,
+        page: int,
+        page_size: int,
+    ) -> PaginatedCodigosFijosConsultationDTO:
+        """Consulta alfanumérica paginada de códigos fijos con resolución de lote."""
+        version_id = self._get_active_version_id(LayerKind.CODIGOS_FIJOS.value)
+        if not version_id:
+            return PaginatedCodigosFijosConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
 
-        active_version_id = layer.active_data_version_id
+        base_where: list[Any] = [
+            CodigoFijoModel.data_version_id == version_id,
+            CodigoFijoModel.deleted_date.is_(None),
+        ]
 
-        # 2. Despachar según tipo de capa
-        if layer_kind == LayerKind.LOTES.value:
-            return self._search_lotes(layer, active_version_id, field, value, page, page_size)
-        elif layer_kind == LayerKind.MANZANAS.value:
-            return self._search_manzanas(layer, active_version_id, field, value, page, page_size)
-        elif layer_kind == LayerKind.CODIGOS_FIJOS.value:
-            return self._search_codigos_fijos(layer, active_version_id, field, value, page, page_size)
-        elif layer_kind == LayerKind.VIAS.value:
-            return self._search_vias(layer, active_version_id, field, value, page, page_size)
-        else:
-            raise ConsultationLayerNotFoundException(layer_kind)
+        if fixed_code is not None:
+            base_where.append(cast(CodigoFijoModel.fixed_code, String).like(f"{fixed_code}%"))
 
-    def _build_filter(self, model: Any, field_name: Optional[str], value: Optional[str], default_columns: List[Any]):
-        if not value or not value.strip():
+        if name is not None and name.strip():
+            base_where.append(CodigoFijoModel.name.ilike(f"%{name.strip()}%"))
+
+        count_stmt = (
+            select(func.count(CodigoFijoModel.id))
+            .where(*base_where)
+        )
+        total = self.session.exec(count_stmt).one() or 0
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
+
+        if total == 0:
+            return PaginatedCodigosFijosConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
+        offset = (page - 1) * page_size
+        stmt = (
+            select(
+                CodigoFijoModel.id,
+                CodigoFijoModel.label,
+                CodigoFijoModel.fixed_code,
+                CodigoFijoModel.name,
+                CodigoFijoModel.status,
+                LoteModel.lot_number,
+            )
+            .outerjoin(
+                LoteModel,
+                (LoteModel.id == CodigoFijoModel.lote_id) & (LoteModel.deleted_date.is_(None)),
+            )
+            .where(*base_where)
+            .order_by(CodigoFijoModel.fixed_code.asc().nulls_last(), CodigoFijoModel.id)
+            .offset(offset)
+            .limit(page_size)
+        )
+
+        rows = self.session.exec(stmt).all()
+        items = [
+            CodigoFijoConsultationDTO(
+                id=r.id,
+                label=r.label,
+                fixed_code=r.fixed_code,
+                name=r.name,
+                status=r.status,
+                lot_number=r.lot_number,
+            )
+            for r in rows
+        ]
+
+        return PaginatedCodigosFijosConsultationDTO(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+        )
+
+    def get_codigo_fijo_by_id(self, id: uuid.UUID) -> CodigoFijoDetailDTO | None:
+        """Obtiene el detalle georreferenciado completo de un código fijo por ID con lote y manzana."""
+        stmt = (
+            select(
+                CodigoFijoModel.id,
+                CodigoFijoModel.label,
+                CodigoFijoModel.fixed_code,
+                CodigoFijoModel.name,
+                CodigoFijoModel.status,
+                CodigoFijoModel.latitude,
+                CodigoFijoModel.longitude,
+                LoteModel.lot_number,
+                ManzanaModel.uv,
+                ManzanaModel.block_number,
+                ManzanaModel.uv_block_code,
+            )
+            .outerjoin(
+                LoteModel,
+                (LoteModel.id == CodigoFijoModel.lote_id) & (LoteModel.deleted_date.is_(None)),
+            )
+            .outerjoin(
+                ManzanaModel,
+                (ManzanaModel.id == LoteModel.manzana_id) & (ManzanaModel.deleted_date.is_(None)),
+            )
+            .where(
+                CodigoFijoModel.id == id,
+                CodigoFijoModel.deleted_date.is_(None),
+            )
+        )
+
+        row = self.session.exec(stmt).first()
+        if not row:
             return None
 
-        clean_val = f"%{value.strip()}%"
+        return CodigoFijoDetailDTO(
+            id=row.id,
+            label=row.label,
+            fixed_code=row.fixed_code,
+            name=row.name,
+            status=row.status,
+            latitude=row.latitude,
+            longitude=row.longitude,
+            lot_number=row.lot_number,
+            uv=row.uv,
+            block_number=row.block_number,
+            uv_block_code=row.uv_block_code,
+        )
 
-        FIELD_ALIASES = {
-            "nombre": "name",
-            "codigo": "fixed_code",
-            "codigo_fijo": "fixed_code",
-            "codigo de lote": "lot_number",
-            "lote": "lot_number",
-            "manzana": "block_number",
-        }
-        actual_field = FIELD_ALIASES.get(field_name.lower(), field_name) if field_name else None
-
-        if actual_field and hasattr(model, actual_field):
-            col = getattr(model, actual_field)
-            return cast(col, String).ilike(clean_val)
-
-        # Si no se especifica campo, buscar sobre las columnas por defecto
-        or_conditions = [cast(c, String).ilike(clean_val) for c in default_columns]
-        return or_(*or_conditions)
-
-    def _extract_uv_mz_lote(self, text: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        if not text:
-            return None, None, None
-
-        uv_match = re.search(r"(?:UV|uv)[-:\s]*([0-9A-Za-z]+)", text)
-        mz_match = re.search(r"(?:MZ|MZA|Mza|mza|MZ\.|M\.)[-:\s]*([0-9A-Za-z]+)", text)
-        lt_match = re.search(r"(?:LT|LOTE|Lote|lt|lote|L\.)[-:\s]*([0-9A-Za-z]+)", text)
-
-        uv = uv_match.group(1) if uv_match else None
-        mz = mz_match.group(1) if mz_match else None
-        lt = lt_match.group(1) if lt_match else None
-
-        if not (uv and mz and lt):
-            triplet = re.search(r"\b(\d{1,3})[-/. ](\d{1,3})[-/. ](\d{1,3})\b", text)
-            if triplet:
-                if not uv:
-                    uv = triplet.group(1)
-                if not mz:
-                    mz = triplet.group(2)
-                if not lt:
-                    lt = triplet.group(3)
-
-        return uv, mz, lt
-
-    def _search_lotes(
+    def search_lotes(
         self,
-        layer: LayerModel,
-        version_id: UUID,
-        field: Optional[str],
-        value: Optional[str],
+        lot_number: str | None,
         page: int,
         page_size: int,
-    ) -> PaginatedConsultationResponseDTO:
-        model = LoteModel
-        base_where = [
-            model.data_version_id == version_id,
-            model.deleted_date.is_(None),
+    ) -> PaginatedLotesConsultationDTO:
+        """Consulta alfanumérica paginada de lotes con resolución de manzana."""
+        version_id = self._get_active_version_id(LayerKind.LOTES.value)
+        if not version_id:
+            return PaginatedLotesConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
+        base_where: list[Any] = [
+            LoteModel.data_version_id == version_id,
+            LoteModel.deleted_date.is_(None),
         ]
 
-        filter_cond = self._build_filter(model, field, value, [model.lot_number, model.source_feature_id])
-        if filter_cond is not None:
-            base_where.append(filter_cond)
+        if lot_number is not None and lot_number.strip():
+            base_where.append(LoteModel.lot_number.ilike(f"%{lot_number.strip()}%"))
 
-        # Count total
-        count_stmt = select(func.count(model.id)).where(*base_where)
+        count_stmt = select(func.count(LoteModel.id)).where(*base_where)
         total = self.session.exec(count_stmt).one() or 0
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
 
-        total_pages = math.ceil(total / page_size) if total > 0 else 1
+        if total == 0:
+            return PaginatedLotesConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
         offset = (page - 1) * page_size
-
-        # PostGIS Area calculation if not sqlite
-        if not settings.is_sqlite:
-            try:
-                from geoalchemy2.functions import ST_Centroid, ST_X, ST_Y
-                from geoalchemy2.types import Geography
-                area_expr = func.round(cast(func.ST_Area(cast(model.geometry, Geography)), Numeric), 1)
-                centroid = ST_Centroid(model.geometry)
-                lat_expr = ST_Y(centroid)
-                lon_expr = ST_X(centroid)
-            except Exception:
-                area_expr = cast(0.0, Numeric)
-                lat_expr = cast(0.0, Numeric)
-                lon_expr = cast(0.0, Numeric)
-        else:
-            area_expr = cast(0.0, Numeric)
-            lat_expr = cast(0.0, Numeric)
-            lon_expr = cast(0.0, Numeric)
-
         stmt = (
             select(
-                model.id,
-                model.lot_number,
-                model.source_feature_id,
-                area_expr.label("area"),
-                lat_expr.label("lat"),
-                lon_expr.label("lon"),
+                LoteModel.id,
+                LoteModel.lot_number,
+                ManzanaModel.uv_block_code,
+            )
+            .outerjoin(
+                ManzanaModel,
+                (ManzanaModel.id == LoteModel.manzana_id) & (ManzanaModel.deleted_date.is_(None)),
             )
             .where(*base_where)
-            .order_by(model.lot_number.asc().nulls_last(), model.id)
+            .order_by(LoteModel.lot_number.asc().nulls_last(), LoteModel.id)
             .offset(offset)
             .limit(page_size)
         )
 
         rows = self.session.exec(stmt).all()
-        items: List[ConsultationRecordDTO] = []
-        for r in rows:
-            if r.lot_number and str(r.lot_number).strip() and str(r.lot_number).strip() != "0":
-                lot_code = f"Lote {r.lot_number}"
-            elif r.source_feature_id:
-                lot_code = f"Lote {r.source_feature_id}"
-            else:
-                lot_code = f"Lote #{str(r.id)[:6].upper()}"
-
-            area_val = f"{float(r.area):.0f} m²" if r.area and float(r.area) > 0 else "260 m²"
-            items.append(
-                ConsultationRecordDTO(
-                    id=r.id,
-                    layer_kind=layer.kind,
-                    code=lot_code,
-                    manzana="-",
-                    surface=area_val,
-                    status="Registrado",
-                    status_color="emerald",
-                    latitude=float(r.lat) if r.lat and float(r.lat) != 0 else None,
-                    longitude=float(r.lon) if r.lon and float(r.lon) != 0 else None,
-                    attributes={"source_feature_id": r.source_feature_id},
-                )
+        items = [
+            LoteConsultationDTO(
+                id=r.id,
+                lot_number=r.lot_number,
+                manzana_uv_block_code=r.uv_block_code,
             )
+            for r in rows
+        ]
 
-        return PaginatedConsultationResponseDTO(
+        return PaginatedLotesConsultationDTO(
             items=items,
             total=total,
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-            layer_name=layer.name,
         )
 
-    def _search_manzanas(
+    def search_manzanas(
         self,
-        layer: LayerModel,
-        version_id: UUID,
-        field: Optional[str],
-        value: Optional[str],
+        uv_block_code: str | None,
+        uv: str | None,
+        block_number: str | None,
         page: int,
         page_size: int,
-    ) -> PaginatedConsultationResponseDTO:
-        model = ManzanaModel
-        base_where = [
-            model.data_version_id == version_id,
-            model.deleted_date.is_(None),
+    ) -> PaginatedManzanasConsultationDTO:
+        """Consulta alfanumérica paginada de manzanas catastrales."""
+        version_id = self._get_active_version_id(LayerKind.MANZANAS.value)
+        if not version_id:
+            return PaginatedManzanasConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
+        base_where: list[Any] = [
+            ManzanaModel.data_version_id == version_id,
+            ManzanaModel.deleted_date.is_(None),
         ]
 
-        filter_cond = self._build_filter(model, field, value, [model.uv_block_code, model.uv, model.block_number])
-        if filter_cond is not None:
-            base_where.append(filter_cond)
+        if uv_block_code is not None and uv_block_code.strip():
+            base_where.append(ManzanaModel.uv_block_code.ilike(f"%{uv_block_code.strip()}%"))
 
-        count_stmt = select(func.count(model.id)).where(*base_where)
+        if uv is not None and uv.strip():
+            base_where.append(ManzanaModel.uv.ilike(f"%{uv.strip()}%"))
+
+        if block_number is not None and block_number.strip():
+            base_where.append(ManzanaModel.block_number.ilike(f"%{block_number.strip()}%"))
+
+        count_stmt = select(func.count(ManzanaModel.id)).where(*base_where)
         total = self.session.exec(count_stmt).one() or 0
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
 
-        total_pages = math.ceil(total / page_size) if total > 0 else 1
+        if total == 0:
+            return PaginatedManzanasConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
         offset = (page - 1) * page_size
-
-        if not settings.is_sqlite:
-            try:
-                from geoalchemy2.functions import ST_Centroid, ST_X, ST_Y
-                from geoalchemy2.types import Geography
-                area_expr = func.round(cast(func.ST_Area(cast(model.geometry, Geography)), Numeric), 1)
-                centroid = ST_Centroid(model.geometry)
-                lat_expr = ST_Y(centroid)
-                lon_expr = ST_X(centroid)
-            except Exception:
-                area_expr = cast(0.0, Numeric)
-                lat_expr = cast(0.0, Numeric)
-                lon_expr = cast(0.0, Numeric)
-        else:
-            area_expr = cast(0.0, Numeric)
-            lat_expr = cast(0.0, Numeric)
-            lon_expr = cast(0.0, Numeric)
-
         stmt = (
             select(
-                model.id,
-                model.uv_block_code,
-                model.uv,
-                model.block_number,
-                area_expr.label("area"),
-                lat_expr.label("lat"),
-                lon_expr.label("lon"),
+                ManzanaModel.id,
+                ManzanaModel.uv_block_code,
+                ManzanaModel.uv,
+                ManzanaModel.block_number,
             )
             .where(*base_where)
-            .order_by(model.uv_block_code.asc().nulls_last(), model.id)
+            .order_by(ManzanaModel.uv_block_code.asc().nulls_last(), ManzanaModel.id)
             .offset(offset)
             .limit(page_size)
         )
 
         rows = self.session.exec(stmt).all()
-        items: List[ConsultationRecordDTO] = []
-        for r in rows:
-            code = r.uv_block_code or f"MZ-{r.block_number or str(r.id)[:8]}"
-            manzana_label = f"M-{r.block_number}" if r.block_number else (f"UV-{r.uv}" if r.uv else "-")
-            area_val = f"{float(r.area):.0f} m²" if r.area and float(r.area) > 0 else "-"
-            items.append(
-                ConsultationRecordDTO(
-                    id=r.id,
-                    layer_kind=layer.kind,
-                    code=code,
-                    manzana=manzana_label,
-                    surface=area_val,
-                    status="Registrado",
-                    status_color="emerald",
-                    latitude=float(r.lat) if r.lat and float(r.lat) != 0 else None,
-                    longitude=float(r.lon) if r.lon and float(r.lon) != 0 else None,
-                    attributes={"uv": r.uv, "block_number": r.block_number},
-                )
+        items = [
+            ManzanaConsultationDTO(
+                id=r.id,
+                uv_block_code=r.uv_block_code,
+                uv=r.uv,
+                block_number=r.block_number,
             )
+            for r in rows
+        ]
 
-        return PaginatedConsultationResponseDTO(
+        return PaginatedManzanasConsultationDTO(
             items=items,
             total=total,
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-            layer_name=layer.name,
         )
 
-    def _search_codigos_fijos(
+    def search_vias(
         self,
-        layer: LayerModel,
-        version_id: UUID,
-        field: Optional[str],
-        value: Optional[str],
+        road_type: str | None,
+        name: str | None,
         page: int,
         page_size: int,
-    ) -> PaginatedConsultationResponseDTO:
-        model = CodigoFijoModel
-        base_where = [
-            model.data_version_id == version_id,
-            model.deleted_date.is_(None),
+    ) -> PaginatedViasConsultationDTO:
+        """Consulta alfanumérica paginada de vías y calles."""
+        version_id = self._get_active_version_id(LayerKind.VIAS.value)
+        if not version_id:
+            return PaginatedViasConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
+        base_where: list[Any] = [
+            ViaModel.data_version_id == version_id,
+            ViaModel.deleted_date.is_(None),
         ]
 
-        filter_cond = self._build_filter(model, field, value, [model.fixed_code, model.label, model.sig_code, model.name])
-        if filter_cond is not None:
-            base_where.append(filter_cond)
+        if road_type is not None and road_type.strip():
+            base_where.append(ViaModel.road_type.ilike(f"%{road_type.strip()}%"))
 
-        count_stmt = select(func.count(model.id)).where(*base_where)
+        if name is not None and name.strip():
+            base_where.append(ViaModel.name.ilike(f"%{name.strip()}%"))
+
+        count_stmt = select(func.count(ViaModel.id)).where(*base_where)
         total = self.session.exec(count_stmt).one() or 0
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
 
-        total_pages = math.ceil(total / page_size) if total > 0 else 1
+        if total == 0:
+            return PaginatedViasConsultationDTO(
+                items=[],
+                total=0,
+                page=page,
+                page_size=page_size,
+                total_pages=0,
+            )
+
         offset = (page - 1) * page_size
-
-        if field in ("name", "nombre"):
-            order_col = model.name.asc().nulls_last()
-        else:
-            order_col = model.fixed_code.asc().nulls_last()
-
         stmt = (
             select(
-                model.id,
-                model.fixed_code,
-                model.sig_code,
-                model.sql_code,
-                model.label,
-                model.name,
-                model.status,
-                model.latitude,
-                model.longitude,
+                ViaModel.id,
+                ViaModel.name,
+                ViaModel.reference,
+                ViaModel.road_type,
             )
             .where(*base_where)
-            .order_by(order_col, model.id)
-            .offset(offset)
-            .limit(page_size)
-        )
-
-        STATUS_CONFIG = {
-            1: ("Normal", "emerald"),
-            2: ("Para corte", "amber"),
-            3: ("Cortado", "rose"),
-            4: ("Baja parcial", "yellow"),
-            5: ("Baja total", "slate"),
-        }
-
-        rows = self.session.exec(stmt).all()
-        items: List[ConsultationRecordDTO] = []
-        for r in rows:
-            code = str(r.fixed_code) if r.fixed_code else (r.sig_code or f"CF-{str(r.id)[:8]}")
-            label = r.label or r.name or "-"
-            status_info = STATUS_CONFIG.get(r.status, ("Normal", "emerald"))
-            status_text = status_info[0]
-            status_color = status_info[1]
-
-            # Extraer UV, Manzana y Lote desde label, sig_code o name
-            uv, mz, lt = self._extract_uv_mz_lote(r.label)
-            if not (uv and mz and lt):
-                u2, m2, l2 = self._extract_uv_mz_lote(r.sig_code)
-                uv = uv or u2
-                mz = mz or m2
-                lt = lt or l2
-            if not (uv and mz and lt):
-                u3, m3, l3 = self._extract_uv_mz_lote(r.name)
-                uv = uv or u3
-                mz = mz or m3
-                lt = lt or l3
-
-            uv = uv or "14"
-            mz = mz or "08"
-            lt = lt or "12"
-
-            items.append(
-                ConsultationRecordDTO(
-                    id=r.id,
-                    layer_kind=layer.kind,
-                    code=code,
-                    manzana=f"M-{mz}",
-                    surface="-",
-                    status=status_text,
-                    status_color=status_color,
-                    latitude=r.latitude,
-                    longitude=r.longitude,
-                    attributes={
-                        "label": label,
-                        "name": r.name or label,
-                        "fixed_code": r.fixed_code,
-                        "sig_code": r.sig_code,
-                        "sql_code": r.sql_code,
-                        "status": r.status,
-                        "uv": uv,
-                        "mz": mz,
-                        "lote": lt,
-                        "block_number": mz,
-                        "lot_number": lt,
-                    },
-                )
-            )
-
-        return PaginatedConsultationResponseDTO(
-            items=items,
-            total=total,
-            page=page,
-            page_size=page_size,
-            total_pages=total_pages,
-            layer_name=layer.name,
-        )
-
-    def _search_vias(
-        self,
-        layer: LayerModel,
-        version_id: UUID,
-        field: Optional[str],
-        value: Optional[str],
-        page: int,
-        page_size: int,
-    ) -> PaginatedConsultationResponseDTO:
-        model = ViaModel
-        base_where = [
-            model.data_version_id == version_id,
-            model.deleted_date.is_(None),
-        ]
-
-        filter_cond = self._build_filter(model, field, value, [model.name, model.road_type, model.reference])
-        if filter_cond is not None:
-            base_where.append(filter_cond)
-
-        count_stmt = select(func.count(model.id)).where(*base_where)
-        total = self.session.exec(count_stmt).one() or 0
-
-        total_pages = math.ceil(total / page_size) if total > 0 else 1
-        offset = (page - 1) * page_size
-
-        if not settings.is_sqlite:
-            try:
-                from geoalchemy2.functions import ST_Centroid, ST_X, ST_Y
-                from geoalchemy2.types import Geography
-                length_expr = func.round(cast(func.ST_Length(cast(model.geometry, Geography)), Numeric), 1)
-                centroid = ST_Centroid(model.geometry)
-                lat_expr = ST_Y(centroid)
-                lon_expr = ST_X(centroid)
-            except Exception:
-                length_expr = cast(0.0, Numeric)
-                lat_expr = cast(0.0, Numeric)
-                lon_expr = cast(0.0, Numeric)
-        else:
-            length_expr = cast(0.0, Numeric)
-            lat_expr = cast(0.0, Numeric)
-            lon_expr = cast(0.0, Numeric)
-
-        stmt = (
-            select(
-                model.id,
-                model.name,
-                model.road_type,
-                length_expr.label("length"),
-                lat_expr.label("lat"),
-                lon_expr.label("lon"),
-            )
-            .where(*base_where)
-            .order_by(model.name.asc().nulls_last(), model.id)
+            .order_by(ViaModel.name.asc().nulls_last(), ViaModel.id)
             .offset(offset)
             .limit(page_size)
         )
 
         rows = self.session.exec(stmt).all()
-        items: List[ConsultationRecordDTO] = []
-        for r in rows:
-            name_val = r.name or f"Vía-{str(r.id)[:8]}"
-            road_type = r.road_type or "Calle"
-            length_val = f"{float(r.length):.0f} m" if r.length and float(r.length) > 0 else "-"
-            items.append(
-                ConsultationRecordDTO(
-                    id=r.id,
-                    layer_kind=layer.kind,
-                    code=name_val,
-                    manzana=road_type,
-                    surface=length_val,
-                    status="Registrado",
-                    status_color="emerald",
-                    latitude=float(r.lat) if r.lat and float(r.lat) != 0 else None,
-                    longitude=float(r.lon) if r.lon and float(r.lon) != 0 else None,
-                    attributes={"road_type": road_type},
-                )
+        items = [
+            ViaConsultationDTO(
+                id=r.id,
+                name=r.name,
+                reference=r.reference,
+                road_type=r.road_type,
             )
+            for r in rows
+        ]
 
-        return PaginatedConsultationResponseDTO(
+        return PaginatedViasConsultationDTO(
             items=items,
             total=total,
             page=page,
             page_size=page_size,
             total_pages=total_pages,
-            layer_name=layer.name,
         )

@@ -12,13 +12,14 @@ from app.modules.layers.domain.repositories.data_version_repository import (
     DataVersionRepository,
 )
 from app.modules.layers.domain.repositories.layer_repository import LayerRepository
-from app.shared.infrastructure.unit_of_work import SqlModelUnitOfWork
+from app.shared.application.ports import UnitOfWork
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ActivateDataVersionCommand:
     layer_id: uuid.UUID
     version_id: uuid.UUID
+    user_id: str | None = None
 
 
 class ActivateDataVersionUseCase:
@@ -35,7 +36,7 @@ class ActivateDataVersionUseCase:
         self,
         layer_repository: LayerRepository,
         version_repository: DataVersionRepository,
-        uow: SqlModelUnitOfWork,
+        uow: UnitOfWork,
     ) -> None:
         self.layer_repository = layer_repository
         self.version_repository = version_repository
@@ -60,8 +61,20 @@ class ActivateDataVersionUseCase:
                 f"Solo se puede asignar como activa una versión en estado READY (estado actual: '{version.status.value}')."
             )
 
-        layer.set_active_data_version(version.id)
-        self.layer_repository.save(layer)
+        self.version_repository.set_active_version(layer.id, version.id)
+        version.activate()
+
+        if hasattr(self.uow, "publish") and command.user_id:
+            from app.modules.layers.domain.events import DataVersionActivatedEvent
+
+            self.uow.publish(
+                DataVersionActivatedEvent(
+                    user_id=command.user_id,
+                    layer_name=layer.name,
+                    version_number=version.version_number,
+                )
+            )
+
         self.uow.commit()
 
         return version

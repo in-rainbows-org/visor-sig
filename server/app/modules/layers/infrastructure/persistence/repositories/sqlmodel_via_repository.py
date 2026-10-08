@@ -1,8 +1,8 @@
 import uuid
-from sqlalchemy import func
-from sqlmodel import Session, select
 
 from app.modules.layers.infrastructure.persistence.models.via_model import ViaModel
+from sqlalchemy import func
+from sqlmodel import Session, select
 
 
 class SqlModelViaRepository:

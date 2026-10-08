@@ -82,6 +82,10 @@ class AuthUser:
     email: str
     role: Role | str | None = None
 
+    @property
+    def id(self) -> str:
+        return self.user_id
+
     def has_role(self, *roles: Role | str) -> bool:
         """True si el usuario tiene alguno de los roles dados."""
         if self.role is None:

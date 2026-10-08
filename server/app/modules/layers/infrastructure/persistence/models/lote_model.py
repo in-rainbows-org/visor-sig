@@ -1,12 +1,11 @@
 import uuid
-from typing import Optional
-
-from geoalchemy2 import Geometry
-from sqlalchemy import Column, ForeignKey, Index, Integer, String
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlmodel import Field
 
 from app.shared.infrastructure.db.base_model import BaseModel
+from geoalchemy2 import Geometry
+from sqlalchemy import Column, ForeignKey, Index, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlmodel import Field
 
 
 class LoteModel(BaseModel, table=True):
@@ -19,6 +18,7 @@ class LoteModel(BaseModel, table=True):
         Index("idx_lotes_data_version_id", "data_version_id"),
         Index("idx_lotes_geometry", "geometry", postgresql_using="gist"),
         Index("idx_lotes_version_lot_number", "data_version_id", "lot_number"),
+        Index("idx_lotes_manzana_id", "manzana_id"),
     )
 
     data_version_id: uuid.UUID = Field(
@@ -28,15 +28,24 @@ class LoteModel(BaseModel, table=True):
             nullable=False,
         ),
     )
-    source_feature_id: Optional[str] = Field(
+    manzana_id: uuid.UUID | None = Field(
+        default=None,
+        sa_column=Column(
+            PG_UUID(as_uuid=True),
+            ForeignKey("manzanas.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
+    source_feature_id: str | None = Field(
         default=None,
         sa_column=Column(String(120), nullable=True),
     )
-    source_id: Optional[int] = Field(
+    source_id: int | None = Field(
         default=None,
         sa_column=Column(Integer, nullable=True),
     )
-    lot_number: Optional[str] = Field(
+    lot_number: str | None = Field(
         default=None,
         sa_column=Column(String(15), nullable=True),
     )
@@ -45,4 +54,8 @@ class LoteModel(BaseModel, table=True):
             Geometry(geometry_type="MULTIPOLYGON", srid=4326, spatial_index=False),
             nullable=False,
         ),
+    )
+    properties: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB, nullable=False, server_default="{}"),
     )

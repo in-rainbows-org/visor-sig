@@ -1,14 +1,23 @@
 import re
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.dependencies import CurrentUser, DBSession
-from app.modules.map.application.queries.get_active_map_features import GetActiveMapFeaturesQuery
-from app.modules.map.infrastructure.api.schemas.map_schemas import MapFeaturesResponseSchema
+from app.modules.layers.domain.enums import LayerKind
+from app.modules.map.application.queries.get_active_macro_layers import (
+    GetActiveMacroLayersQuery,
+    GetActiveMacroLayersQueryHandler,
+)
+from app.modules.map.application.queries.get_active_map_features import (
+    GetActiveMapFeaturesQuery,
+    GetActiveMapFeaturesQueryHandler,
+)
+from app.modules.map.infrastructure.api.schemas.map_schemas import (
+    MapFeaturesRead,
+    MapMacroLayersRead,
+)
 from app.modules.map.infrastructure.persistence.readers.sqlmodel_active_map_features_reader import (
     SqlModelActiveMapFeaturesReader,
 )
-from app.modules.layers.domain.enums import LayerKind
+from fastapi import APIRouter, HTTPException, Query, status
 
 router = APIRouter(prefix="/map", tags=["Map"])
 
@@ -17,18 +26,18 @@ BBOX_REGEX = re.compile(r"^-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,-?\d+
 
 @router.get(
     "/features",
-    response_model=MapFeaturesResponseSchema,
+    response_model=MapFeaturesRead,
     status_code=status.HTTP_200_OK,
     summary="Obtener features activos de capas geográficas por viewport",
 )
 def get_active_map_features(
     db: DBSession,
     current_user: CurrentUser,
-    layer_kinds: List[LayerKind] = Query(..., description="Capas a consultar"),
+    layer_kinds: list[LayerKind] = Query(..., description="Capas a consultar"),
     bbox: str = Query(..., description="Bounding box en formato west,south,east,north en EPSG:4326"),
     zoom: int = Query(..., ge=1, le=20, description="Nivel de zoom del mapa (1-20)"),
-    fixed_code_statuses: Optional[List[int]] = Query(None, description="Estados de códigos fijos (1-5)"),
-) -> MapFeaturesResponseSchema:
+    fixed_code_statuses: list[int] | None = Query(None, description="Estados de códigos fijos (1-5)"),
+) -> MapFeaturesRead:
     if not BBOX_REGEX.match(bbox):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -57,16 +66,34 @@ def get_active_map_features(
         )
 
     reader = SqlModelActiveMapFeaturesReader(db)
-    query = GetActiveMapFeaturesQuery(reader)
+    handler = GetActiveMapFeaturesQueryHandler(reader)
 
-    result_dto = query.execute(
-        layer_kinds=layer_kinds,
-        west=west,
-        south=south,
-        east=east,
-        north=north,
-        zoom=zoom,
-        fixed_code_statuses=fixed_code_statuses,
+    result_dto = handler.execute(
+        GetActiveMapFeaturesQuery(
+            layer_kinds=layer_kinds,
+            west=west,
+            south=south,
+            east=east,
+            north=north,
+            zoom=zoom,
+            fixed_code_statuses=fixed_code_statuses,
+        )
     )
 
-    return MapFeaturesResponseSchema.model_validate(result_dto.model_dump())
+    return MapFeaturesRead.model_validate(result_dto)
+
+
+@router.get(
+    "/macro-layers",
+    response_model=MapMacroLayersRead,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener capas macro activas completas (Manzanas y Vías)",
+)
+def get_active_macro_layers(
+    db: DBSession,
+    current_user: CurrentUser,
+) -> MapMacroLayersRead:
+    reader = SqlModelActiveMapFeaturesReader(db)
+    handler = GetActiveMacroLayersQueryHandler(reader)
+    result_dto = handler.execute(GetActiveMacroLayersQuery())
+    return MapMacroLayersRead.model_validate(result_dto)

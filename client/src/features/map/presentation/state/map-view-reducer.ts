@@ -1,17 +1,19 @@
-import type { FixedCodeStatusValue } from "../../domain/models/fixed-code-status.types";
-import { ALL_FIXED_CODE_STATUS_VALUES } from "../../domain/models/fixed-code-status.types";
+import type { FixedCodeStatusValue } from "../../domain/entities/fixed-code-status.entity";
+import { ALL_FIXED_CODE_STATUS_VALUES } from "../../domain/entities/fixed-code-status.entity";
 import type {
   LayerKind,
+  MapGeoJsonFeatureCollection,
+  MapLayerFeatures,
   MapLayerLoadStatus,
   MapViewport,
   MobileSearchFilterType,
   MobileSubHeaderTab,
   ViewSegmentOption,
-} from "../../domain/models/map.types";
+} from "../../domain/entities/map.entity";
 import {
   DEFAULT_MAP_ZOOM,
   DEFAULT_VISIBLE_LAYER_KINDS,
-} from "../../domain/models/map.types";
+} from "../../domain/entities/map.entity";
 
 export type LayerLoadState = {
   loadStatus: MapLayerLoadStatus;
@@ -31,6 +33,9 @@ export type MapViewState = {
   mobileSearchFilter: MobileSearchFilterType;
   layerLoads: Record<LayerKind, LayerLoadState>;
   isLoadingInitial: boolean;
+  macroFeaturesByKind: Partial<Record<"MANZANAS" | "VIAS", MapGeoJsonFeatureCollection>>;
+  macroLayerMetadataByKind: Partial<Record<"MANZANAS" | "VIAS", MapLayerFeatures>>;
+  isLoadingMacroLayers: boolean;
 };
 
 export type MapViewAction =
@@ -55,7 +60,15 @@ export type MapViewAction =
         error?: string | null;
       };
     }
-  | { type: "SET_INITIAL_LOADING"; payload: boolean };
+  | { type: "SET_INITIAL_LOADING"; payload: boolean }
+  | {
+      type: "SET_MACRO_LAYERS";
+      payload: {
+        featuresByKind: Partial<Record<"MANZANAS" | "VIAS", MapGeoJsonFeatureCollection>>;
+        metadataByKind: Partial<Record<"MANZANAS" | "VIAS", MapLayerFeatures>>;
+      };
+    }
+  | { type: "SET_MACRO_LAYERS_LOADING"; payload: boolean };
 
 export const initialMapViewState: MapViewState = {
   viewport: {
@@ -78,6 +91,9 @@ export const initialMapViewState: MapViewState = {
     VIAS: { loadStatus: "READY", featureCount: 0, minZoom: null, activeDataVersionId: null },
   },
   isLoadingInitial: true,
+  macroFeaturesByKind: {},
+  macroLayerMetadataByKind: {},
+  isLoadingMacroLayers: false,
 };
 
 export function mapViewReducer(state: MapViewState, action: MapViewAction): MapViewState {
@@ -214,6 +230,51 @@ export function mapViewReducer(state: MapViewState, action: MapViewAction): MapV
       return {
         ...state,
         isLoadingInitial: action.payload,
+      };
+
+    case "SET_MACRO_LAYERS": {
+      const nextLayerLoads = { ...state.layerLoads };
+      if (action.payload.metadataByKind.MANZANAS) {
+        const meta = action.payload.metadataByKind.MANZANAS;
+        nextLayerLoads.MANZANAS = {
+          loadStatus: meta.loadStatus,
+          featureCount: meta.featureCount,
+          minZoom: meta.minZoom,
+          activeDataVersionId: meta.activeDataVersionId,
+          error: null,
+        };
+      }
+      if (action.payload.metadataByKind.VIAS) {
+        const meta = action.payload.metadataByKind.VIAS;
+        nextLayerLoads.VIAS = {
+          loadStatus: meta.loadStatus,
+          featureCount: meta.featureCount,
+          minZoom: meta.minZoom,
+          activeDataVersionId: meta.activeDataVersionId,
+          error: null,
+        };
+      }
+
+      return {
+        ...state,
+        macroFeaturesByKind: {
+          ...state.macroFeaturesByKind,
+          ...action.payload.featuresByKind,
+        },
+        macroLayerMetadataByKind: {
+          ...state.macroLayerMetadataByKind,
+          ...action.payload.metadataByKind,
+        },
+        layerLoads: nextLayerLoads,
+        isLoadingMacroLayers: false,
+      };
+    }
+
+    case "SET_MACRO_LAYERS_LOADING":
+      if (state.isLoadingMacroLayers === action.payload) return state;
+      return {
+        ...state,
+        isLoadingMacroLayers: action.payload,
       };
 
     default:

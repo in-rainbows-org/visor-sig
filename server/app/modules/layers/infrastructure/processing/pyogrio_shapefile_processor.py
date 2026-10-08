@@ -12,11 +12,10 @@ import pyogrio.raw
 import pyproj
 import shapely
 import shapely.wkb
-
 from app.modules.layers.application.ports.providers.shapefile_processor import (
     ParsedFeature,
-    ShapefileProcessResult,
     ShapefileProcessor,
+    ShapefileProcessResult,
 )
 from app.modules.layers.domain.exceptions import (
     IncompatibleGeometryTypeException,

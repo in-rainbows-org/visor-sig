@@ -123,8 +123,12 @@ from app.modules.map.infrastructure.api.routers.map_router import router as map_
 from app.modules.consultations.infrastructure.api.routers.consultation_router import (
     router as consultation_router,
 )
+from app.modules.audit_logs.infrastructure.api.routers.audit_log_router import (
+    router as audit_log_router,
+)
 
 app.include_router(layers_router, prefix="/api")
 app.include_router(map_router, prefix="/api")
 app.include_router(consultation_router, prefix="/api")
+app.include_router(audit_log_router, prefix="/api")
 

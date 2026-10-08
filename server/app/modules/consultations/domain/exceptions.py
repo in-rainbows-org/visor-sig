@@ -2,24 +2,36 @@ from app.shared.domain.exceptions import NotFoundException, ValidationException
 
 
 class ConsultationLayerNotFoundException(NotFoundException):
-    def __init__(self, layer_kind: str):
+    """La capa solicitada no existe o ha sido dada de baja en el catálogo."""
+
+    code = "CONSULTATION_LAYER_NOT_FOUND"
+
+    def __init__(self, layer_kind: str) -> None:
         super().__init__(
             message=f"La capa '{layer_kind}' no existe o ha sido eliminada.",
-            code="CONSULTATION_LAYER_NOT_FOUND",
+            code=self.code,
         )
 
 
 class LayerHasNoActiveVersionException(ValidationException):
-    def __init__(self, layer_kind: str):
+    """La capa no cuenta con una versión de datos activa para ejecutar consultas."""
+
+    code = "LAYER_HAS_NO_ACTIVE_VERSION"
+
+    def __init__(self, layer_kind: str) -> None:
         super().__init__(
             message=f"La capa '{layer_kind}' no posee una versión de datos activa para consultar.",
-            code="LAYER_HAS_NO_ACTIVE_VERSION",
+            code=self.code,
         )
 
 
-class InvalidConsultationFieldException(ValidationException):
-    def __init__(self, field: str, layer_kind: str):
+class InvalidConsultationPaginationException(ValidationException):
+    """Los parámetros de paginación proporcionados no son válidos."""
+
+    code = "INVALID_CONSULTATION_PAGINATION"
+
+    def __init__(self, message: str = "Parámetros de paginación inválidos.") -> None:
         super().__init__(
-            message=f"El campo '{field}' no es un campo válido para consultar en la capa '{layer_kind}'.",
-            code="INVALID_CONSULTATION_FIELD",
+            message=message,
+            code=self.code,
         )

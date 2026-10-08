@@ -1,18 +1,18 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ParsedFeature:
     """Representa una entidad extraída y normalizada del Shapefile."""
 
     geometry_wkb: bytes
     properties: dict[str, Any]
-    source_feature_id: Optional[str] = None
+    source_feature_id: str | None = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ShapefileProcessResult:
     """Resultado del procesamiento y validación de un paquete ZIP Shapefile."""
 
@@ -38,4 +38,3 @@ class ShapefileProcessor(ABC):
         .shp, .shx, .dbf, .prj con mismo nombre base, verifica CRS EPSG:4326,
         normaliza geometrías a 2D y valida correspondencia con target_geometry_type.
         """
-        pass

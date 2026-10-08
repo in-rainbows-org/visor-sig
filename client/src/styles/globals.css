@@ -78,4 +78,130 @@
   background-color: #f1f5f9;
 }
 
+/* Animaciones de levitación sutil y orgánica para elementos ambientales */
+@keyframes float-gentle-1 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes float-gentle-2 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-11px);
+  }
+}
+
+@keyframes float-gentle-3 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float-1 {
+  animation: float-gentle-1 5.4s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-gentle-2 6.2s ease-in-out infinite;
+}
+
+.animate-float-3 {
+  animation: float-gentle-3 4.8s ease-in-out infinite;
+}
+
+/* ==============================================================================
+ * 🔔 Sileo Toasts: Rediseño Estético Integrado al Tema
+ * ============================================================================== */
+
+/* Viewport con z-index superior a sheets (2000), modales y popovers */
+[data-sileo-viewport] {
+  z-index: 9999 !important;
+  font-family: var(--font-sans), sans-serif;
+}
+
+/* Sombra flotante pulida y ligera para la cápsula del toast */
+[data-sileo-toast] {
+  filter: drop-shadow(0 12px 28px rgba(15, 23, 42, 0.12)) drop-shadow(0 4px 8px rgba(15, 23, 42, 0.05));
+}
+
+/* Título: tipografía limpia, sin auto-capitalizado artificial y color neutro oscuro */
+[data-sileo-title] {
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 0.845rem !important;
+  line-height: 1.2rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em;
+}
+
+/* Badge circular cromático con contraste suave */
+[data-sileo-badge] {
+  border-radius: 9999px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-sileo-badge][data-state="success"] {
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+  border: 1px solid rgba(5, 150, 105, 0.25);
+}
+
+[data-sileo-badge][data-state="error"] {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+[data-sileo-badge][data-state="warning"] {
+  background-color: #fffbeb !important;
+  color: #d97706 !important;
+  border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+[data-sileo-badge][data-state="info"],
+[data-sileo-badge][data-state="action"] {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+[data-sileo-badge][data-state="loading"] {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+/* Descripción expandida con tipografía legible y padding proporcional */
+[data-sileo-description] {
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.35 !important;
+  color: #475569 !important;
+  padding: 0.75rem 1rem 0.875rem 1rem !important;
+  font-weight: 450 !important;
+}
+
+/* Botones de acción */
+[data-sileo-button] {
+  font-family: var(--font-sans), sans-serif !important;
+  font-weight: 600 !important;
+  border-radius: 9999px !important;
+  padding: 0.25rem 0.75rem !important;
+  font-size: 0.75rem !important;
+}
+
 

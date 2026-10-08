@@ -9,6 +9,7 @@ import { appToast } from "@/features/shared/presentation/components/notification
 import { getAuthErrorMessage } from "@/lib/auth-errors";
 import { TextFormField } from "@/features/shared/presentation/components/forms/text-form-field";
 import { SubmitButton } from "@/features/shared/presentation/components/custom-buttons/submit-button";
+import { recordLoginAuditAction } from "@/features/audit-logs/presentation/hooks/use-audit-auth-log";
 import { Mail, Lock, LogIn } from "lucide-react";
 
 export function LoginForm({
@@ -30,7 +31,8 @@ export function LoginForm({
         rememberMe: false,
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
+          await recordLoginAuditAction();
           formRef.current?.reset();
           appToast.success("¡Bienvenido de vuelta!");
           router.push("/home");

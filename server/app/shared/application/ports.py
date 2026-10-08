@@ -16,6 +16,10 @@ class UnitOfWork(Protocol):
         """Revierte los cambios pendientes."""
         ...
 
+    def publish(self, event: object) -> None:
+        """Encola un evento de dominio para ser publicado tras commit exitoso."""
+        ...
+
     def __enter__(self) -> "UnitOfWork":
         ...
 

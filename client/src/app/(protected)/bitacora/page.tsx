@@ -1,31 +1,27 @@
 import React from "react";
-import Link from "next/link";
-import { FileText, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { APP_ROLES, type AppRole } from "@/lib/auth-roles";
+import { AuditLogsView } from "@/features/audit-logs/presentation/components/elements/audit-logs-view";
 
-export default function BitacoraPage() {
-  return (
-    <div className="h-full w-full flex items-center justify-center p-6 pb-24 lg:pb-6 overflow-y-auto bg-slate-100 select-none">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 max-w-md w-full border border-gray-200/80 shadow-md text-center flex flex-col items-center">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 shadow-xs">
-          <FileText className="w-7 h-7" />
-        </div>
-        <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2.5 py-0.5 rounded-full mb-2">
-          Módulo de Auditoría
-        </span>
-        <h1 className="text-xl font-bold text-gray-900 tracking-tight mb-2">
-          Bitácora del Sistema
-        </h1>
-        <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-          Consulta y registro cronológico de eventos de seguridad, cambios de capas y accesos de usuarios al visor geoespacial. Próximamente disponible.
-        </p>
-        <Button asChild className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs">
-          <Link href="/mapa">
-            <ArrowLeft className="w-4 h-4" />
-            Volver al Mapa
-          </Link>
-        </Button>
-      </div>
-    </div>
-  );
+export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "Bitácora del Sistema - VisorSIG",
+  description: "Registro cronológico e inmutable de actividades y eventos operativos del visor geoespacial",
+};
+
+export default async function BitacoraPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const role = session?.user?.role as AppRole | undefined;
+
+  if (role !== APP_ROLES.ADMIN) {
+    redirect("/mapa");
+  }
+
+  return <AuditLogsView />;
 }

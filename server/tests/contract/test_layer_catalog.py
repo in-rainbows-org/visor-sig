@@ -82,8 +82,9 @@ def test_patch_layer_color_success(admin_client):
     assert updated["id"] == layer_id
     assert updated["color"] == "YELLOW"
 
-    # Verificar con GET
-    get_res = admin_client.get(f"/api/layers/{layer_id}")
-    assert get_res.status_code == 200
-    assert get_res.json()["color"] == "YELLOW"
+    # Verificar en el catálogo de capas
+    list_check = admin_client.get("/api/layers")
+    assert list_check.status_code == 200
+    matched = next(item for item in list_check.json()["items"] if item["id"] == layer_id)
+    assert matched["color"] == "YELLOW"
 

@@ -1,46 +1,37 @@
 import { AppRole, APP_ROLES } from "@/lib/auth-roles";
-import {
-  Map,
-  FileText,
-  Layers,
-  BarChart3,
-  Users,
-  Search,
-  type LucideIcon,
-} from "lucide-react";
 
 export type NavigationRoute = {
   key: string;
   label: string;
   shortLabel?: string;
   href: string;
-  icon: LucideIcon;
+  icon: string;
   allowedRoles: AppRole[];
 };
 
 export const APP_ROUTES: NavigationRoute[] = [
   {
+    key: "dashboard",
+    label: "Dashboard",
+    shortLabel: "Dashboard",
+    href: "/dashboard",
+    icon: "/navigation-icons/dashboard.webp",
+    allowedRoles: [APP_ROLES.ADMIN],
+  },
+  {
     key: "mapa",
     label: "Mapa",
     shortLabel: "Mapa",
     href: "/mapa",
-    icon: Map,
+    icon: "/navigation-icons/mapa.webp",
     allowedRoles: [APP_ROLES.ADMIN, APP_ROLES.CONSULTANT],
-  },
-  {
-    key: "capas",
-    label: "Gestión de Capas",
-    shortLabel: "Capas",
-    href: "/capas",
-    icon: Layers,
-    allowedRoles: [APP_ROLES.ADMIN],
   },
   {
     key: "bitacora",
     label: "Bitácora del Sistema",
     shortLabel: "Bitácora",
     href: "/bitacora",
-    icon: FileText,
+    icon: "/navigation-icons/bitacora.webp",
     allowedRoles: [APP_ROLES.ADMIN],
   },
   {
@@ -48,15 +39,15 @@ export const APP_ROUTES: NavigationRoute[] = [
     label: "Historial y Reportes",
     shortLabel: "Reportes",
     href: "/reportes",
-    icon: BarChart3,
+    icon: "/navigation-icons/reportes.webp",
     allowedRoles: [APP_ROLES.CONSULTANT],
   },
   {
-    key: "consultation",
+    key: "consultar",
     label: "Consultas",
     shortLabel: "Consultas",
-    href: "/consultation",
-    icon: Search,
+    href: "/consultar",
+    icon: "/navigation-icons/consultas.webp",
     allowedRoles: [APP_ROLES.ADMIN, APP_ROLES.CONSULTANT],
   },
   {
@@ -64,7 +55,7 @@ export const APP_ROUTES: NavigationRoute[] = [
     label: "Usuarios",
     shortLabel: "Usuarios",
     href: "/usuarios",
-    icon: Users,
+    icon: "/navigation-icons/usuarios.webp",
     allowedRoles: [APP_ROLES.ADMIN],
   },
 ];

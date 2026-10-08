@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Eye, EyeOff, Layers, Route, Hexagon, MapPin } from "lucide-react";
-import type { LayerKind } from "../../../domain/models/map.types";
+import type { LayerKind } from "../../../domain/entities/map.entity";
 import { useMapView } from "../../state/map-view-store";
 
 export type LayerConfigItem = {
@@ -114,6 +114,11 @@ export function MapLayersCard({ className = "" }: MapLayersCardProps) {
                   {isVisible && loadState && loadState.loadStatus === "NO_ACTIVE_VERSION" && (
                     <span className="text-[9px] text-slate-400 font-medium">
                       Sin datos activos
+                    </span>
+                  )}
+                  {isVisible && loadState && loadState.loadStatus === "READY" && loadState.featureCount > 0 && (
+                    <span className="text-[9px] text-slate-400 font-medium">
+                      {loadState.featureCount.toLocaleString()} {layer.kind === "MANZANAS" ? "manzanas" : layer.kind === "VIAS" ? "vías" : "entidades"}
                     </span>
                   )}
                 </div>

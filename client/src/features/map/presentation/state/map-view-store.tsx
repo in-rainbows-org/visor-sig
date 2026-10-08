@@ -8,15 +8,17 @@ import React, {
   useReducer,
   type ReactNode,
 } from "react";
-import type { FixedCodeStatusValue } from "../../domain/models/fixed-code-status.types";
+import type { FixedCodeStatusValue } from "../../domain/entities/fixed-code-status.entity";
 import type {
   LayerKind,
+  MapGeoJsonFeatureCollection,
+  MapLayerFeatures,
   MapLayerLoadStatus,
   MapViewport,
   MobileSearchFilterType,
   MobileSubHeaderTab,
   ViewSegmentOption,
-} from "../../domain/models/map.types";
+} from "../../domain/entities/map.entity";
 import {
   initialMapViewState,
   mapViewReducer,
@@ -44,12 +46,38 @@ export type MapViewContextType = {
     error?: string | null
   ) => void;
   setInitialLoading: (loading: boolean) => void;
+  setMacroLayers: (
+    featuresByKind: Partial<Record<"MANZANAS" | "VIAS", MapGeoJsonFeatureCollection>>,
+    metadataByKind: Partial<Record<"MANZANAS" | "VIAS", MapLayerFeatures>>
+  ) => void;
+  setMacroLayersLoading: (loading: boolean) => void;
+  registerZoomHandlers: (zoomIn: () => void, zoomOut: () => void) => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
 };
 
 const MapViewContext = createContext<MapViewContextType | null>(null);
 
 export function MapViewProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(mapViewReducer, initialMapViewState);
+  const zoomInRef = React.useRef<() => void>(() => {});
+  const zoomOutRef = React.useRef<() => void>(() => {});
+
+  const registerZoomHandlers = useCallback(
+    (zoomInFn: () => void, zoomOutFn: () => void) => {
+      zoomInRef.current = zoomInFn;
+      zoomOutRef.current = zoomOutFn;
+    },
+    []
+  );
+
+  const zoomIn = useCallback(() => {
+    zoomInRef.current();
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    zoomOutRef.current();
+  }, []);
 
   const setViewport = useCallback((viewport: MapViewport) => {
     dispatch({ type: "SET_VIEWPORT", payload: viewport });
@@ -119,6 +147,23 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_INITIAL_LOADING", payload: loading });
   }, []);
 
+  const setMacroLayers = useCallback(
+    (
+      featuresByKind: Partial<Record<"MANZANAS" | "VIAS", MapGeoJsonFeatureCollection>>,
+      metadataByKind: Partial<Record<"MANZANAS" | "VIAS", MapLayerFeatures>>
+    ) => {
+      dispatch({
+        type: "SET_MACRO_LAYERS",
+        payload: { featuresByKind, metadataByKind },
+      });
+    },
+    []
+  );
+
+  const setMacroLayersLoading = useCallback((loading: boolean) => {
+    dispatch({ type: "SET_MACRO_LAYERS_LOADING", payload: loading });
+  }, []);
+
   const contextValue = useMemo(
     () => ({
       state,
@@ -134,6 +179,11 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
       setMobileSearchFilter,
       setLayerLoadStatus,
       setInitialLoading,
+      setMacroLayers,
+      setMacroLayersLoading,
+      registerZoomHandlers,
+      zoomIn,
+      zoomOut,
     }),
     [
       state,
@@ -149,6 +199,11 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
       setMobileSearchFilter,
       setLayerLoadStatus,
       setInitialLoading,
+      setMacroLayers,
+      setMacroLayersLoading,
+      registerZoomHandlers,
+      zoomIn,
+      zoomOut,
     ]
   );
 

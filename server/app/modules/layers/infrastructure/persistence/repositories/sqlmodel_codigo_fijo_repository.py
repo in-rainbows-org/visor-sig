@@ -1,8 +1,10 @@
 import uuid
+
+from app.modules.layers.infrastructure.persistence.models.codigo_fijo_model import (
+    CodigoFijoModel,
+)
 from sqlalchemy import func
 from sqlmodel import Session, select
-
-from app.modules.layers.infrastructure.persistence.models.codigo_fijo_model import CodigoFijoModel
 
 
 class SqlModelCodigoFijoRepository:

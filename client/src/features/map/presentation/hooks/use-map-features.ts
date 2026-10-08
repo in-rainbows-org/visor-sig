@@ -5,11 +5,18 @@ import type {
   LayerKind,
   MapGeoJsonFeatureCollection,
   MapLayerFeatures,
-} from "../../domain/models/map.types";
-import { httpMapRepository } from "../../infrastructure/repositories/http-map.repository";
+} from "../../domain/entities/map.entity";
+import { mapRepositoryImpl } from "../../infrastructure/repositories/map.repository-impl";
 import { useMapView } from "../state/map-view-store";
 
 const DEBOUNCE_MS = 150;
+const DYNAMIC_LAYER_KINDS = ["CODIGOS_FIJOS", "LOTES"] as const;
+type DynamicLayerKind = (typeof DYNAMIC_LAYER_KINDS)[number];
+
+const MIN_ZOOMS: Record<DynamicLayerKind, number> = {
+  CODIGOS_FIJOS: 13,
+  LOTES: 14,
+};
 
 export type UseMapFeaturesReturn = {
   featuresByKind: Partial<Record<LayerKind, MapGeoJsonFeatureCollection>>;
@@ -18,9 +25,9 @@ export type UseMapFeaturesReturn = {
   revision: number;
 };
 
-export function useMapFeatures() {
+export function useMapFeatures(): UseMapFeaturesReturn {
   const { state, setLayerLoadStatus, setInitialLoading } = useMapView();
-  const { viewport, visibleLayerKinds, visibleFixedCodeStatuses } = state;
+  const { viewport, visibleLayerKinds } = state;
 
   const [featuresByKind, setFeaturesByKind] = useState<
     Partial<Record<LayerKind, MapGeoJsonFeatureCollection>>
@@ -32,7 +39,7 @@ export function useMapFeatures() {
   const [isLoading, setIsLoading] = useState(false);
   const [revision, setRevision] = useState(0);
 
-  // Cache en memoria: key -> MapLayerFeatures
+  // Cache en memoria por cuadrante y zoom: key -> MapLayerFeatures
   const cacheRef = useRef<Map<string, MapLayerFeatures>>(new Map());
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,8 +50,18 @@ export function useMapFeatures() {
     }
 
     debounceTimerRef.current = setTimeout(async () => {
-      if (visibleLayerKinds.size === 0) {
-        setFeaturesByKind({});
+      // 1. Filtrar únicamente las capas dinámicas visibles
+      const activeDynamicKinds = DYNAMIC_LAYER_KINDS.filter((k): k is DynamicLayerKind =>
+        visibleLayerKinds.has(k)
+      );
+
+      if (activeDynamicKinds.length === 0) {
+        setFeaturesByKind((prev) => {
+          const next = { ...prev };
+          delete next.CODIGOS_FIJOS;
+          delete next.LOTES;
+          return next;
+        });
         setInitialLoading(false);
         return;
       }
@@ -56,10 +73,6 @@ export function useMapFeatures() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const layerKindsArray = Array.from(visibleLayerKinds);
-      const fixedCodeStatusesArray = Array.from(visibleFixedCodeStatuses);
-
-      // Verificamos si podemos resolver capas desde caché
       const layersToFetch: LayerKind[] = [];
       const nextFeatures: Partial<Record<LayerKind, MapGeoJsonFeatureCollection>> = {};
       const nextMetadata: Partial<Record<LayerKind, MapLayerFeatures>> = {};
@@ -67,11 +80,25 @@ export function useMapFeatures() {
       const roundCoord = (n: number) => Math.round(n * 1000) / 1000;
       const bboxGrid = `${roundCoord(viewport.west)},${roundCoord(viewport.south)},${roundCoord(viewport.east)},${roundCoord(viewport.north)}`;
 
-      for (const kind of layerKindsArray) {
-        const statusesKey = kind === "CODIGOS_FIJOS" ? fixedCodeStatusesArray.sort().join(",") : "";
-        const cacheKey = `${kind}:${viewport.zoom}:${bboxGrid}:${statusesKey}`;
+      // Limpiar capas dinámicas que ya no son visibles
+      for (const kind of DYNAMIC_LAYER_KINDS) {
+        if (!visibleLayerKinds.has(kind)) {
+          nextFeatures[kind] = { type: "FeatureCollection", features: [] };
+        }
+      }
 
+      // 2. Evaluar umbrales de zoom y caché local
+      for (const kind of activeDynamicKinds) {
+        const minRequiredZoom = MIN_ZOOMS[kind];
+        if (viewport.zoom < minRequiredZoom) {
+          setLayerLoadStatus(kind, "ZOOM_REQUIRED", 0, minRequiredZoom, null, null);
+          nextFeatures[kind] = { type: "FeatureCollection", features: [] };
+          continue;
+        }
+
+        const cacheKey = `${kind}:${viewport.zoom}:${bboxGrid}`;
         const cached = cacheRef.current.get(cacheKey);
+
         if (cached) {
           nextFeatures[kind] = cached.features;
           nextMetadata[kind] = cached;
@@ -88,9 +115,10 @@ export function useMapFeatures() {
         }
       }
 
+      // Si no hay capas para consultar en red
       if (layersToFetch.length === 0) {
-        setFeaturesByKind(nextFeatures);
-        setLayerMetadataByKind(nextMetadata);
+        setFeaturesByKind((prev) => ({ ...prev, ...nextFeatures }));
+        setLayerMetadataByKind((prev) => ({ ...prev, ...nextMetadata }));
         setRevision((r) => r + 1);
         setInitialLoading(false);
         return;
@@ -99,10 +127,9 @@ export function useMapFeatures() {
       setIsLoading(true);
 
       try {
-        const result = await httpMapRepository.getActiveMapFeatures({
+        const result = await mapRepositoryImpl.getActiveMapFeatures({
           layerKinds: layersToFetch,
           viewport,
-          fixedCodeStatuses: fixedCodeStatusesArray,
           signal: controller.signal,
         });
 
@@ -114,9 +141,7 @@ export function useMapFeatures() {
             nextFeatures[layer.kind] = layer.features;
             nextMetadata[layer.kind] = layer;
 
-            const statusesKey =
-              layer.kind === "CODIGOS_FIJOS" ? fixedCodeStatusesArray.sort().join(",") : "";
-            const cacheKey = `${layer.kind}:${viewport.zoom}:${bboxGrid}:${statusesKey}`;
+            const cacheKey = `${layer.kind}:${viewport.zoom}:${bboxGrid}`;
             cacheRef.current.set(cacheKey, layer);
 
             setLayerLoadStatus(
@@ -133,13 +158,13 @@ export function useMapFeatures() {
           setLayerMetadataByKind((prev) => ({ ...prev, ...nextMetadata }));
           setRevision((r) => r + 1);
         } else {
-          console.warn("[useMapFeatures] Falló la obtención de capas del visor:", result.errors);
+          console.warn("[useMapFeatures] Falló la obtención de capas dinámicas:", result.errors);
           for (const kind of layersToFetch) {
             setLayerLoadStatus(
               kind,
               "READY",
               0,
-              null,
+              MIN_ZOOMS[kind as "CODIGOS_FIJOS" | "LOTES"] ?? null,
               null,
               result.errors?.[0] ?? "Error al cargar datos"
             );
@@ -162,7 +187,7 @@ export function useMapFeatures() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [viewport, visibleLayerKinds, visibleFixedCodeStatuses, setLayerLoadStatus, setInitialLoading]);
+  }, [viewport, visibleLayerKinds, setLayerLoadStatus, setInitialLoading]);
 
   return {
     featuresByKind,

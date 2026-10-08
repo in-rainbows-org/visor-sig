@@ -1,11 +1,15 @@
 import uuid
-from fastapi import APIRouter, File, UploadFile, status
+from datetime import datetime, timezone
 
 from app.core.dependencies import AdminUser, CurrentUser, DBSession, UoWDep
-from app.modules.layers.application.queries.get_data_version import GetDataVersionQuery
-from app.modules.layers.application.queries.get_layer import GetLayerQuery
-from app.modules.layers.application.queries.list_data_version import ListDataVersionsQuery
-from app.modules.layers.application.queries.list_layers import ListLayersQuery
+from app.modules.layers.application.queries.list_data_version import (
+    ListDataVersionsQuery,
+    ListDataVersionsQueryHandler,
+)
+from app.modules.layers.application.queries.list_layers import (
+    ListLayersQuery,
+    ListLayersQueryHandler,
+)
 from app.modules.layers.application.use_cases.activate_data_version import (
     ActivateDataVersionCommand,
     ActivateDataVersionUseCase,
@@ -18,21 +22,20 @@ from app.modules.layers.application.use_cases.import_geographic_data import (
     ImportGeographicDataCommand,
     ImportGeographicDataUseCase,
 )
-from app.modules.layers.domain.enums import DataVersionStatus
+from app.modules.layers.domain.enums import (
+    DataVersionStatus,
+    GeometryType,
+    LayerColor,
+    LayerKind,
+)
 from app.modules.layers.infrastructure.api.schemas.data_version_schemas import (
-    DataVersionListResponse,
-    DataVersionResponse,
+    DataVersionListRead,
+    DataVersionRead,
 )
 from app.modules.layers.infrastructure.api.schemas.layer_schemas import (
     ChangeLayerColorRequest,
-    LayerListResponse,
-    LayerResponse,
-)
-from app.modules.layers.infrastructure.persistence.mappers.data_version_mapper import (
-    DataVersionMapper,
-)
-from app.modules.layers.infrastructure.persistence.models.data_version_model import (
-    DataVersionModel,
+    LayerListRead,
+    LayerRead,
 )
 from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_data_version_repository import (
     SqlModelDataVersionRepository,
@@ -43,6 +46,10 @@ from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_layer_r
 from app.modules.layers.infrastructure.processing.pyogrio_shapefile_processor import (
     PyogrioShapefileProcessor,
 )
+from app.modules.layers.infrastructure.services.cadastral_spatial_linker import (
+    CadastralSpatialLinker,
+)
+from fastapi import APIRouter, File, UploadFile, status
 
 router = APIRouter(prefix="/layers", tags=["Layers"])
 
@@ -52,58 +59,35 @@ router = APIRouter(prefix="/layers", tags=["Layers"])
 # ==============================================================================
 @router.get(
     "",
-    response_model=LayerListResponse,
+    response_model=LayerListRead,
     status_code=status.HTTP_200_OK,
     summary="Listar capas fijas del catálogo",
 )
 def list_layers(
     db: DBSession,
     current_user: CurrentUser,
-) -> LayerListResponse:
-    query = ListLayersQuery(db)
-    dtos = query.execute()
+) -> LayerListRead:
+    repo = SqlModelLayerRepository(db)
+    handler = ListLayersQueryHandler(repo)
+    result = handler.execute(ListLayersQuery())
     items = [
-        LayerResponse(
+        LayerRead(
             id=d.id,
-            kind=d.kind,  # type: ignore[arg-type]
+            kind=LayerKind(d.kind),
             name=d.name,
-            geometry_type=d.geometry_type,  # type: ignore[arg-type]
-            color=d.color,  # type: ignore[arg-type]
+            geometry_type=GeometryType(d.geometry_type),
+            color=LayerColor(d.color),
             active_data_version_id=d.active_data_version_id,
             updated_at=d.updated_at,
         )
-        for d in dtos
+        for d in result.items
     ]
-    return LayerListResponse(items=items)
-
-
-@router.get(
-    "/{layer_id}",
-    response_model=LayerResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Obtener una capa por ID",
-)
-def get_layer(
-    layer_id: uuid.UUID,
-    db: DBSession,
-    current_user: CurrentUser,
-) -> LayerResponse:
-    query = GetLayerQuery(db)
-    dto = query.execute(layer_id)
-    return LayerResponse(
-        id=dto.id,
-        kind=dto.kind,  # type: ignore[arg-type]
-        name=dto.name,
-        geometry_type=dto.geometry_type,  # type: ignore[arg-type]
-        color=dto.color,  # type: ignore[arg-type]
-        active_data_version_id=dto.active_data_version_id,
-        updated_at=dto.updated_at,
-    )
+    return LayerListRead(items=items)
 
 
 @router.patch(
     "/{layer_id}/color",
-    response_model=LayerResponse,
+    response_model=LayerRead,
     status_code=status.HTTP_200_OK,
     summary="Cambiar exclusivamente el color de una capa",
 )
@@ -113,25 +97,24 @@ def change_layer_color(
     db: DBSession,
     uow: UoWDep,
     current_user: AdminUser,
-) -> LayerResponse:
+) -> LayerRead:
     repo = SqlModelLayerRepository(db)
     use_case = ChangeLayerColorUseCase(repo, uow)
     command = ChangeLayerColorCommand(
         layer_id=layer_id,
         color=payload.color,
+        user_id=current_user.user_id,
     )
-    use_case.execute(command)
+    layer = use_case.execute(command)
 
-    query = GetLayerQuery(db)
-    dto = query.execute(layer_id)
-    return LayerResponse(
-        id=dto.id,
-        kind=dto.kind,  # type: ignore[arg-type]
-        name=dto.name,
-        geometry_type=dto.geometry_type,  # type: ignore[arg-type]
-        color=dto.color,  # type: ignore[arg-type]
-        active_data_version_id=dto.active_data_version_id,
-        updated_at=dto.updated_at,
+    return LayerRead(
+        id=layer.id,
+        kind=layer.kind,
+        name=layer.name,
+        geometry_type=layer.geometry_type,
+        color=layer.color,
+        active_data_version_id=layer.active_data_version_id,
+        updated_at=layer.updated_at,
     )
 
 
@@ -140,7 +123,7 @@ def change_layer_color(
 # ==============================================================================
 @router.get(
     "/{layer_id}/data-versions",
-    response_model=DataVersionListResponse,
+    response_model=DataVersionListRead,
     status_code=status.HTTP_200_OK,
     summary="Listar versiones históricas de una capa",
 )
@@ -148,11 +131,13 @@ def list_data_versions(
     layer_id: uuid.UUID,
     db: DBSession,
     current_user: AdminUser,
-) -> DataVersionListResponse:
-    query = ListDataVersionsQuery(db)
-    dtos = query.execute(layer_id)
+) -> DataVersionListRead:
+    dv_repo = SqlModelDataVersionRepository(db)
+    layer_repo = SqlModelLayerRepository(db)
+    handler = ListDataVersionsQueryHandler(dv_repo, layer_repo)
+    result = handler.execute(ListDataVersionsQuery(layer_id=layer_id))
     items = [
-        DataVersionResponse(
+        DataVersionRead(
             id=d.id,
             layer_id=d.layer_id,
             version_number=d.version_number,
@@ -163,36 +148,38 @@ def list_data_versions(
             is_active=d.is_active,
             created_at=d.created_at,
         )
-        for d in dtos
+        for d in result.items
     ]
-    return DataVersionListResponse(items=items)
+    return DataVersionListRead(items=items)
 
 
 @router.post(
     "/{layer_id}/data-versions",
-    response_model=DataVersionResponse,
+    response_model=DataVersionRead,
     status_code=status.HTTP_201_CREATED,
     summary="Importar un archivo ZIP Shapefile a una capa",
 )
 async def import_data_version(
     layer_id: uuid.UUID,
+    db: DBSession,
+    uow: UoWDep,
+    current_user: AdminUser,
     file: UploadFile = File(...),
-    db: DBSession = None,  # type: ignore
-    uow: UoWDep = None,  # type: ignore
-    current_user: AdminUser = None,  # type: ignore
-) -> DataVersionResponse:
+) -> DataVersionRead:
     contents = await file.read()
     filename = file.filename or "unknown.zip"
 
     layer_repo = SqlModelLayerRepository(db)
     version_repo = SqlModelDataVersionRepository(db)
     processor = PyogrioShapefileProcessor()
+    cadastral_linker = CadastralSpatialLinker(db)
 
     use_case = ImportGeographicDataUseCase(
         layer_repository=layer_repo,
         version_repository=version_repo,
         processor=processor,
         uow=uow,
+        cadastral_linker=cadastral_linker,
     )
 
     command = ImportGeographicDataCommand(
@@ -203,52 +190,22 @@ async def import_data_version(
     )
     version = use_case.execute(command)
 
-    model = db.get(DataVersionModel, version.id)
-    dto = DataVersionMapper.to_dto(model, is_active=True)
-
-    return DataVersionResponse(
-        id=dto.id,
-        layer_id=dto.layer_id,
-        version_number=dto.version_number,
-        status=DataVersionStatus(dto.status),
-        source_filename=dto.source_filename,
-        feature_count=dto.feature_count,
-        error_message=dto.error_message,
-        is_active=dto.is_active,
-        created_at=dto.created_at,
-    )
-
-
-@router.get(
-    "/{layer_id}/data-versions/{version_id}",
-    response_model=DataVersionResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Obtener metadatos de una versión específica",
-)
-def get_data_version(
-    layer_id: uuid.UUID,
-    version_id: uuid.UUID,
-    db: DBSession,
-    current_user: AdminUser,
-) -> DataVersionResponse:
-    query = GetDataVersionQuery(db)
-    dto = query.execute(layer_id, version_id)
-    return DataVersionResponse(
-        id=dto.id,
-        layer_id=dto.layer_id,
-        version_number=dto.version_number,
-        status=DataVersionStatus(dto.status),
-        source_filename=dto.source_filename,
-        feature_count=dto.feature_count,
-        error_message=dto.error_message,
-        is_active=dto.is_active,
-        created_at=dto.created_at,
+    return DataVersionRead(
+        id=version.id,
+        layer_id=version.layer_id,
+        version_number=version.version_number,
+        status=version.status,
+        source_filename=version.source_filename,
+        feature_count=version.feature_count,
+        error_message=version.error_message,
+        is_active=version.is_active,
+        created_at=version.created_at or datetime.now(timezone.utc),
     )
 
 
 @router.post(
     "/{layer_id}/data-versions/{version_id}/activate",
-    response_model=DataVersionResponse,
+    response_model=DataVersionRead,
     status_code=status.HTTP_200_OK,
     summary="Activar una versión histórica (reversión / rollback)",
 )
@@ -258,23 +215,25 @@ def activate_data_version(
     db: DBSession,
     uow: UoWDep,
     current_user: AdminUser,
-) -> DataVersionResponse:
+) -> DataVersionRead:
     layer_repo = SqlModelLayerRepository(db)
     version_repo = SqlModelDataVersionRepository(db)
     use_case = ActivateDataVersionUseCase(layer_repo, version_repo, uow)
-    command = ActivateDataVersionCommand(layer_id=layer_id, version_id=version_id)
+    command = ActivateDataVersionCommand(
+        layer_id=layer_id,
+        version_id=version_id,
+        user_id=current_user.user_id,
+    )
     version = use_case.execute(command)
 
-    model = db.get(DataVersionModel, version.id)
-    dto = DataVersionMapper.to_dto(model, is_active=True)
-    return DataVersionResponse(
-        id=dto.id,
-        layer_id=dto.layer_id,
-        version_number=dto.version_number,
-        status=DataVersionStatus(dto.status),
-        source_filename=dto.source_filename,
-        feature_count=dto.feature_count,
-        error_message=dto.error_message,
-        is_active=dto.is_active,
-        created_at=dto.created_at,
+    return DataVersionRead(
+        id=version.id,
+        layer_id=version.layer_id,
+        version_number=version.version_number,
+        status=version.status,
+        source_filename=version.source_filename,
+        feature_count=version.feature_count,
+        error_message=version.error_message,
+        is_active=version.is_active,
+        created_at=version.created_at or datetime.now(timezone.utc),
     )

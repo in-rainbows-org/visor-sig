@@ -23,7 +23,7 @@ export function AppBottomNav({ className = "" }: AppBottomNavProps) {
     <nav
       aria-label="Navegación Móvil"
       data-purpose="bottom-nav-dock"
-      className={`fixed bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md rounded-full shadow-float border border-slate-200/90 px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2.5 max-w-[calc(100vw-1.5rem)] select-none lg:hidden ${className}`}
+      className={`fixed bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md rounded-full shadow-float border border-slate-200/90 px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2.5 max-w-[calc(100vw-1.5rem)] select-none touch-none overscroll-none lg:hidden ${className}`}
     >
       {navigationRoutes.map((route) => {
         const isActive =

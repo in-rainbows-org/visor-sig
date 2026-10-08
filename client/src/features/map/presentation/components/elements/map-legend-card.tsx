@@ -59,7 +59,7 @@ export function MapLegendCard({ className = "" }: MapLegendControlsProps) {
 
   return (
     <div
-      className={`absolute bottom-24 right-3 sm:right-4 md:right-6 lg:bottom-6 lg:right-4 z-[1000] flex flex-col items-end gap-2 select-none ${className}`}
+      className={`absolute bottom-28 right-3 sm:right-4 md:right-6 lg:bottom-6 lg:right-4 z-[1000] flex flex-col items-end gap-2 select-none touch-none ${className}`}
       data-purpose="gis-map-controls"
     >
       <Popover open={legendOpen} onOpenChange={setLegendOpen}>

@@ -73,7 +73,7 @@ export function ConsultationView() {
   }, [results]);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-6 md:p-8">
+    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-6 md:p-8 overscroll-contain">
       <div className="w-full space-y-7 pb-20 lg:pb-8">
         {/* Encabezado del Módulo (Estilo PageHeading idéntico a /capas) */}
         <PageHeading

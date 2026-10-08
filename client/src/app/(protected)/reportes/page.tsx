@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function ReportesPage() {
   return (
-    <div className="h-full w-full flex items-center justify-center p-6 pb-24 lg:pb-6 overflow-y-auto bg-slate-100 select-none">
+    <div className="h-full w-full flex items-center justify-center p-6 pb-24 lg:pb-6 overflow-y-auto bg-slate-100 select-none overscroll-contain">
       <div className="bg-white/95 backdrop-blur-md rounded-2xl p-8 max-w-md w-full border border-gray-200/80 shadow-md text-center flex flex-col items-center">
         <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 shadow-xs">
           <BarChart3 className="w-7 h-7" />

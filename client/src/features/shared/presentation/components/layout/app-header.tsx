@@ -53,7 +53,7 @@ export function AppHeader({ className }: AppHeaderProps) {
 
   return (
     <header
-      className={`h-14 bg-white border-b border-gray-200/80 px-4 flex items-center justify-between z-30 shadow-xs shrink-0 select-none ${
+      className={`h-14 bg-white border-b border-gray-200/80 px-4 flex items-center justify-between z-30 shadow-xs shrink-0 select-none touch-none overscroll-none ${
         className || ""
       }`}
       data-purpose="top-header"

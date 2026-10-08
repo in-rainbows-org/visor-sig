@@ -9,17 +9,17 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-[#f5f6fa] text-gray-800 font-sans h-screen w-screen overflow-hidden flex flex-col select-none">
+    <div className="bg-[#f5f6fa] text-gray-800 font-sans fixed inset-0 w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none overscroll-none">
       {/* 1. Cabecera fija superior de 56px */}
       <AppHeader />
 
       {/* 2. Cuerpo del Dashboard */}
-      <div className="flex flex-1 relative overflow-hidden">
+      <div className="flex flex-1 relative overflow-hidden min-h-0 w-full">
         {/* Riel de navegación lateral izquierdo (solo en pantallas >= 1024px) */}
         <AppSidebar />
 
         {/* Lienzo o vista hija principal */}
-        <main className="flex-1 relative overflow-hidden bg-slate-100">
+        <main className="flex-1 relative overflow-hidden bg-slate-100 min-h-0 w-full">
           {children}
         </main>
       </div>

@@ -87,7 +87,7 @@ export function MapMobileHeader({
         className={`w-full z-30 select-none flex flex-col ${className}`}
         data-purpose="map-mobile-header"
       >
-        <div className="bg-white/95 backdrop-blur-md shadow-float border-b border-gray-200/80 rounded-b-2xl w-full px-4 pt-2 pb-2 transition-all duration-300 pointer-events-auto">
+        <div className="bg-white/95 backdrop-blur-md shadow-float border-b border-gray-200/80 rounded-b-2xl w-full px-4 pt-2 pb-2 transition-all duration-300 pointer-events-auto touch-none overscroll-none">
           {/* 1. Contenido Colapsable del Panel */}
           <div
             className={`transition-all duration-300 ease-in-out flex flex-col gap-2.5 overflow-hidden ${
@@ -306,7 +306,7 @@ export function MapMobileHeader({
           </div>
 
           {/* Lista de Resultados Desplazable */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 max-h-[55vh]">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 max-h-[55vh] overscroll-contain">
             {results.length === 0 ? (
               <div className="py-10 px-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1.5 font-sans">
                 {isSearching ? (

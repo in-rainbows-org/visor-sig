@@ -85,7 +85,7 @@ export function DashboardView({
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8">
+    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8 overscroll-contain">
       <div className="w-full space-y-8 pb-24 lg:pb-8">
         {/* Encabezado del Dashboard */}
         <PageHeading

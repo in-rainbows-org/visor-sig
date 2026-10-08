@@ -60,7 +60,7 @@ export function MapView() {
   );
 
   return (
-    <div className="relative w-full h-full overflow-hidden select-none">
+    <div className="relative w-full h-full overflow-hidden select-none touch-none overscroll-none">
       {/* 0. Pantalla blanca inicial accesible durante la primera carga */}
       {state.isLoadingInitial && (
         <div className="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center gap-3 animate-in fade-in-0 duration-200">

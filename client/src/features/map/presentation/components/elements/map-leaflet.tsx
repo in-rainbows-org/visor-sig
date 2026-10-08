@@ -63,6 +63,7 @@ export function MapLeaflet({
             : DEFAULT_MAP_ZOOM
         }
         zoomControl={false}
+        attributionControl={false}
         preferCanvas={true}
         className="w-full h-full"
       >

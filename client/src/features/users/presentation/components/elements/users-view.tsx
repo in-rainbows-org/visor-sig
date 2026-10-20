@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { PageHeading } from "@/features/shared/presentation/components/layout/page-heading";
+import { PageHero } from "@/features/shared/presentation/components/layout/page-hero";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,7 +16,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
-  RotateCw,
   AlertCircle,
   Users as UsersIcon,
   FilterX,
@@ -92,25 +91,16 @@ export function UsersView() {
     searchQuery.trim() !== "" || roleFilter !== "ALL" || statusFilter !== "ALL";
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-6 md:p-8 overscroll-contain">
-      <div className="w-full space-y-6 pb-20 lg:pb-8">
-        {/* Encabezado Principal */}
-        <PageHeading
-          title="Gestión de Usuarios"
-          description="Administración de cuentas, roles de acceso y moderación de miembros de la plataforma."
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isLoading}
-              className="gap-2 rounded-xl text-xs font-semibold bg-white border-slate-200 shadow-2xs hover:bg-slate-50"
-            >
-              <RotateCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              <span>Actualizar lista</span>
-            </Button>
-          }
-        />
+    <div className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain">
+      {/* Hero del módulo, apegado a la cabecera primaria */}
+      <PageHero
+        title="Gestión de Usuarios"
+        description="Administración de cuentas, roles de acceso y moderación de miembros"
+        iconSrc="/hero-icons/usuarios-hero.png"
+        iconAlt="Ilustración de Gestión de Usuarios"
+      />
+
+      <div className="w-full space-y-6 p-6 md:p-8 pb-20 lg:pb-8">
 
         {/* Barra de Búsqueda y Filtros */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">

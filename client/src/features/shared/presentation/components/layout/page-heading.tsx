@@ -1,6 +1,11 @@
 import React, { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * @deprecated Replaced by `PageHero` (feature 017-ui-style-cleanup).
+ * The hero banner now provides the title/subtitle heading on content pages.
+ * Kept only for backward compatibility; prefer `PageHero` in new views.
+ */
 export type PageHeadingProps = {
   title: string;
   description: string;

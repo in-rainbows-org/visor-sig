@@ -1,19 +1,17 @@
 import React from "react";
+import { PageHeroSkeleton } from "@/features/shared/presentation/components/layout/page-hero-skeleton";
 
 export default function DashboardLoading() {
   return (
     <div
       aria-label="Cargando dashboard de administración"
       data-purpose="dashboard-loading"
-      className="h-full w-full overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8 select-none"
+      className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain select-none"
     >
-      <div className="w-full space-y-8 pb-24 lg:pb-8">
-        {/* 1. Silueta de Encabezado de Página */}
-        <div className="space-y-1.5">
-          <div className="w-64 sm:w-80 h-8 rounded-xl bg-slate-200 animate-pulse" />
-          <div className="w-96 max-w-full h-4 rounded-lg bg-slate-200/70 animate-pulse mt-2" />
-        </div>
+      {/* 1. Silueta de PageHero conectada */}
+      <PageHeroSkeleton />
 
+      <div className="w-full space-y-8 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
         {/* 2. Sección de Gestión de Capas */}
         <div className="space-y-3">
           <div className="px-0.5 space-y-1">

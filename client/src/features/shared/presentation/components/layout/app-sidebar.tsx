@@ -47,7 +47,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   return (
     <aside
-      className={`w-[75px] bg-white border-r border-gray-200/80 hidden lg:flex flex-col items-center py-4 gap-3.5 z-20 shrink-0 select-none ${
+      className={`w-[75px] bg-white border-0 shadow-none hidden lg:flex flex-col items-center py-4 gap-3.5 z-20 shrink-0 select-none lg:rounded-tr-[32px] overflow-hidden ${
         className || ""
       }`}
       data-purpose="icon-sidebar"
@@ -65,24 +65,21 @@ export function AppSidebar({ className }: AppSidebarProps) {
               href={route.href}
               aria-label={route.label}
               title={route.label}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all relative group ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 relative group ${
                 isActive
-                  ? "bg-blue-50/90 shadow-xs border border-blue-200/70"
-                  : "hover:bg-slate-100/80"
+                  ? "bg-gradient-to-b from-[#1a6de9] to-[#0e4dcb] text-white shadow-[0_4px_14px_rgba(14,77,203,0.32),inset_0_1px_1px_rgba(255,255,255,0.4)]"
+                  : "hover:bg-slate-100/90 active:scale-95"
               }`}
             >
-              {isActive && (
-                <div className="w-1 h-6 bg-blue-600 rounded-r-full absolute left-0 top-1/2 -translate-y-1/2" />
-              )}
               <Image
                 src={route.icon}
                 alt={route.label}
-                width={36}
-                height={36}
-                className={`w-[32px] h-[32px] object-contain transition-transform duration-200 ${
+                width={32}
+                height={32}
+                className={`w-[27px] h-[27px] object-contain transition-all duration-200 ${
                   isActive
-                    ? "scale-105 drop-shadow-[0_2px_6px_rgba(37,99,235,0.22)]"
-                    : "opacity-80 group-hover:opacity-100 group-hover:scale-105"
+                    ? "scale-105 drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
+                    : "opacity-75 group-hover:opacity-100 group-hover:scale-110"
                 }`}
               />
             </Link>
@@ -97,14 +94,14 @@ export function AppSidebar({ className }: AppSidebarProps) {
           onClick={handleSignOut}
           aria-label="Cerrar sesión"
           title="Cerrar sesión"
-          className="w-12 h-12 rounded-xl text-gray-400 hover:bg-red-50/80 flex items-center justify-center transition-all cursor-pointer group"
+          className="w-12 h-12 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors duration-150 cursor-pointer group"
         >
           <Image
             src="/navigation-icons/logout.webp"
             alt="Cerrar sesión"
-            width={36}
-            height={36}
-            className="w-[34px] h-[34px] object-contain opacity-75 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-200"
+            width={32}
+            height={32}
+            className="w-[28px] h-[28px] object-contain opacity-75 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-200"
           />
         </button>
       </div>

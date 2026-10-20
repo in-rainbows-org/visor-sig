@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { PageHeading } from "@/features/shared/presentation/components/layout/page-heading";
+import { PageHero } from "@/features/shared/presentation/components/layout/page-hero";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -13,7 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { RotateCw, AlertCircle, FileText } from "lucide-react";
+import { AlertCircle, FileText } from "lucide-react";
 import { useAuditLogs } from "../../hooks/use-audit-logs";
 import { AuditLogsTable } from "./audit-logs-table";
 import { AuditLogCard } from "./audit-log-card";
@@ -60,25 +60,16 @@ export function AuditLogsView() {
   }, [currentPage, totalPages]);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-6 md:p-8 overscroll-contain">
-      <div className="w-full space-y-6 pb-20 lg:pb-8">
-        {/* Encabezado Principal */}
-        <PageHeading
-          title="Bitácora del Sistema"
-          description="Registro cronológico e inmutable de actividades y eventos operativos ejecutados en la plataforma."
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isLoading}
-              className="gap-2 rounded-xl text-xs font-semibold bg-white border-slate-200 shadow-2xs hover:bg-slate-50"
-            >
-              <RotateCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              <span>Actualizar bitácora</span>
-            </Button>
-          }
-        />
+    <div className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain">
+      {/* Hero del módulo, apegado a la cabecera primaria */}
+      <PageHero
+        title="Bitácora del Sistema"
+        description="Registro cronológico e inmutable de actividades y eventos operativos"
+        iconSrc="/hero-icons/bitacora-hero.png"
+        iconAlt="Ilustración de la Bitácora"
+      />
+
+      <div className="w-full space-y-6 p-6 md:p-8 pb-20 lg:pb-8">
 
         {/* Zona de Contenido */}
         {isLoading ? (

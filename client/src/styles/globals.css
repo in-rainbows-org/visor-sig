@@ -221,4 +221,58 @@
   font-size: 0.75rem !important;
 }
 
+/* Animación Pop de entrada para el PageHero */
+@keyframes hero-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.025) translateY(-3px);
+  }
+  82% {
+    transform: scale(0.995) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-hero-pop {
+  animation: hero-pop 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Gradiente unificado VisorSIG para Header y Hero alineado continuamente */
+@utility bg-hero-gradient-header {
+  background-image: linear-gradient(to right, #0e4dcb 0%, #135ad6 28%, #1c6ee7 68%, #3392f9 100%);
+  background-size: 100vw 100%;
+  background-position: 0 0;
+}
+
+@utility bg-hero-gradient-hero {
+  background-image: linear-gradient(to right, #0e4dcb 0%, #135ad6 28%, #1c6ee7 68%, #3392f9 100%);
+  background-size: 100vw 100%;
+  background-position: 0 0;
+}
+
+.bg-hero-gradient-header {
+  background-image: linear-gradient(to right, #0e4dcb 0%, #135ad6 28%, #1c6ee7 68%, #3392f9 100%) !important;
+  background-size: 100vw 100% !important;
+  background-position: 0 0 !important;
+}
+
+.bg-hero-gradient-hero {
+  background-image: linear-gradient(to right, #0e4dcb 0%, #135ad6 28%, #1c6ee7 68%, #3392f9 100%) !important;
+  background-size: 100vw 100% !important;
+  background-position: 0 0;
+}
+
+@media (min-width: 1024px) {
+  .bg-hero-gradient-hero {
+    background-position: -75px 0 !important;
+  }
+}
+
 

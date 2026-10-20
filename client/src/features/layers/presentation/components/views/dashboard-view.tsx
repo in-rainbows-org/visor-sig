@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeading } from "@/features/shared/presentation/components/layout/page-heading";
+import { PageHero } from "@/features/shared/presentation/components/layout/page-hero";
 import type { Layer, LayerColor } from "../../../domain/entities/layer.entity";
 import { ImportDatasetDialog } from "../dialogs/import-dataset-dialog";
 import { LayerSideSheet } from "../dialogs/layer-side-sheet";
@@ -85,13 +85,16 @@ export function DashboardView({
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-4 sm:p-6 md:p-8 overscroll-contain">
-      <div className="w-full space-y-8 pb-24 lg:pb-8">
-        {/* Encabezado del Dashboard */}
-        <PageHeading
-          title="Dashboard de Administración"
-          description="Gestión integral de capas geográficas del sistema y accesos rápidos a módulos administrativos."
-        />
+    <div className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain">
+      {/* Hero del módulo, apegado a la cabecera primaria */}
+      <PageHero
+        title="Dashboard de Administración"
+        description="Gestión y acceso a capas territoriales"
+        iconSrc="/hero-icons/dashboard-hero.png"
+        iconAlt="Ilustración del Dashboard"
+      />
+
+      <div className="w-full space-y-8 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
 
         {/* Alerta si ocurre algún error de carga */}
         {(hasError || isInvalidCount) && (

@@ -53,35 +53,41 @@ export function AppHeader({ className }: AppHeaderProps) {
 
   return (
     <header
-      className={`h-14 bg-white border-b border-gray-200/80 px-4 flex items-center justify-between z-30 shadow-xs shrink-0 select-none touch-none overscroll-none ${
+      className={`h-20 lg:h-[77px] bg-[#0e4dcb] bg-hero-gradient-header text-white border-0 shadow-none px-5 sm:px-6 lg:px-8 flex items-center justify-between z-30 relative shrink-0 select-none touch-none overscroll-none rounded-b-[40px] sm:rounded-b-[48px] lg:rounded-bl-none lg:rounded-br-[48px] ${
         className || ""
       }`}
+      style={{
+        backgroundImage:
+          "linear-gradient(to right, #0e4dcb 0%, #135ad6 28%, #1c6ee7 68%, #3392f9 100%)",
+        backgroundSize: "100vw 100%",
+        backgroundPosition: "0 0",
+      }}
       data-purpose="top-header"
     >
       {/* Brand Logo Section */}
       <div className="flex items-center gap-3">
-        <BrandLogo size="sm" showText={true} href="/mapa" />
+        <BrandLogo size="header" showText={true} href="/mapa" textColor="white" />
       </div>
 
       {/* User Profile Greeting & Popover Dropdown */}
-      <div className="flex items-center gap-2.5 transition">
+      <div className="flex items-center gap-3 transition">
         {isPending ? (
-          <div className="flex items-center gap-2.5">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="w-8 h-8 rounded-full" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-32 hidden sm:block" />
+            <Skeleton className="w-10 h-10 rounded-full" />
           </div>
         ) : (
           <Popover open={profileOpen} onOpenChange={setProfileOpen}>
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-2.5 transition cursor-pointer hover:opacity-85 focus:outline-hidden py-1 px-1.5 rounded-lg hover:bg-gray-100/60"
+                className="flex items-center gap-3 transition cursor-pointer hover:opacity-90 focus:outline-hidden p-1 sm:py-1.5 sm:px-2.5 rounded-full sm:rounded-xl hover:bg-white/10"
                 aria-label="Menú de perfil de usuario"
               >
-                <span className="text-sm font-medium text-gray-600 truncate max-w-[140px] sm:max-w-xs md:max-w-none">
-                  Hola, <strong className="text-gray-900 font-semibold">{userName}</strong>
+                <span className="text-sm sm:text-base font-medium text-blue-100 truncate max-w-[150px] sm:max-w-xs md:max-w-none hidden sm:inline">
+                  Hola, <strong className="text-white font-semibold">{userName}</strong>
                 </span>
-                <div className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 shadow-2xs">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white/40 text-white flex items-center justify-center bg-white/15 overflow-hidden shrink-0">
                   {userImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -90,7 +96,7 @@ export function AppHeader({ className }: AppHeaderProps) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-4 h-4 text-gray-500" />
+                    <User className="w-5 h-5 text-white" />
                   )}
                 </div>
               </button>

@@ -13,7 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { PageHeading } from "@/features/shared/presentation/components/layout/page-heading";
+import { PageHero } from "@/features/shared/presentation/components/layout/page-hero";
 import { cn } from "@/lib/utils";
 import type {
   CodigoFijoConsultation,
@@ -73,13 +73,16 @@ export function ConsultationView() {
   }, [results]);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 p-6 md:p-8 overscroll-contain">
-      <div className="w-full space-y-7 pb-20 lg:pb-8">
-        {/* Encabezado del Módulo (Estilo PageHeading idéntico a /capas) */}
-        <PageHeading
-          title="Consultas Alfanuméricas"
-          description="Búsqueda e inspección de registros catastrales sobre capas de información geográfica."
-        />
+    <div className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain">
+      {/* Hero del módulo, apegado a la cabecera primaria */}
+      <PageHero
+        title="Consultas Alfanuméricas"
+        description="Búsqueda e inspección de registros catastrales"
+        iconSrc="/hero-icons/consulta-hero.png"
+        iconAlt="Ilustración de Consultas"
+      />
+
+      <div className="w-full space-y-7 p-6 md:p-8 pb-20 lg:pb-8">
 
         {/* Formulario de Búsqueda (2 Selects + 1 Input) */}
         <ConsultationSearchForm

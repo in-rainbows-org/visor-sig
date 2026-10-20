@@ -6,7 +6,9 @@ type BrandLogoProps = {
   className?: string;
   href?: string;
   showText?: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "header" | "md" | "lg";
+  /** Allows rendering the brand title in pure white for primary blue headers */
+  textColor?: "default" | "white";
 };
 
 export function BrandLogo({
@@ -14,15 +16,18 @@ export function BrandLogo({
   href = "/",
   showText = true,
   size = "md",
+  textColor = "default",
 }: BrandLogoProps) {
   const pixelSizes = {
     sm: 30,
+    header: 38,
     md: 60,
     lg: 60,
   };
 
   const textSizes = {
     sm: "text-lg",
+    header: "text-xl sm:text-2xl",
     md: "text-2xl",
     lg: "text-3xl",
   };
@@ -47,11 +52,18 @@ export function BrandLogo({
       {showText && (
         <span
           className={cn(
-            "font-bold tracking-tight text-slate-900 transition-colors",
+            "font-bold tracking-tight transition-colors",
+            textColor === "white" ? "text-white" : "text-slate-900",
             textSizes[size]
           )}
         >
-          Visor<span className="text-blue-600 font-extrabold">SIG</span>
+          {textColor === "white" ? (
+            <span className="font-extrabold text-white">VisorSIG</span>
+          ) : (
+            <>
+              Visor<span className="text-blue-600 font-extrabold">SIG</span>
+            </>
+          )}
         </span>
       )}
     </div>

@@ -76,14 +76,14 @@ export function UserCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-3.5 transition-shadow hover:shadow-sm",
-        isSelf && "border-blue-200 bg-blue-50/20"
+        "rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 border-0 shadow-none space-y-3.5 select-none hover:bg-white/95 transition-all",
+        isSelf && "bg-blue-50/30 hover:bg-blue-50/40"
       )}
     >
       {/* Header: Avatar, Name, Email, Status */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="size-11 rounded-full border border-slate-200 text-slate-600 flex items-center justify-center bg-slate-100 overflow-hidden shrink-0 shadow-2xs font-bold text-sm">
+          <div className="size-11 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center overflow-hidden shrink-0 font-bold text-sm border-0 shadow-none">
             {user.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -97,11 +97,11 @@ export function UserCard({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h3 className="text-sm font-bold text-slate-900 truncate">
+              <h3 className="text-sm font-semibold text-slate-900 truncate">
                 {user.name}
               </h3>
               {isSelf && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200/80">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border-0 shadow-none">
                   (Tú)
                 </span>
               )}
@@ -116,12 +116,12 @@ export function UserCard({
         {/* Estado */}
         <div className="shrink-0">
           {user.banned ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-700 border border-red-200/80">
-              <span className="size-1.5 rounded-full bg-red-600 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border-0 shadow-none">
+              <span className="size-1.5 rounded-full bg-rose-600 animate-pulse" />
               Bloqueado
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border-0 shadow-none">
               <span className="size-1.5 rounded-full bg-emerald-500" />
               Activo
             </span>
@@ -130,29 +130,29 @@ export function UserCard({
       </div>
 
       {user.banned && (
-        <div className="p-2.5 rounded-xl bg-red-50/60 border border-red-200/50 text-[11px] text-red-800 space-y-0.5">
+        <div className="p-3 rounded-2xl bg-rose-50/80 border-0 text-xs text-rose-800 space-y-0.5 font-sans">
           <p className="font-semibold">
             Duración: {formatBanExpiry(user.banExpires)}
           </p>
           {user.banReason && (
-            <p className="text-red-700/90 italic">
+            <p className="text-rose-700/90 italic">
               &quot;{user.banReason}&quot;
             </p>
           )}
         </div>
       )}
 
-      {/* Meta info: Fecha de Registro */}
-      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-        <span className="text-[11px] text-slate-400">Registrado</span>
-        <div className="flex items-center gap-1 text-slate-600 font-medium">
+      {/* Meta info: Fecha de Registro dentro de contenedor gris suave */}
+      <div className="rounded-2xl bg-slate-50/80 p-3 sm:p-3.5 border-0 text-xs text-slate-600 font-sans flex items-center justify-between">
+        <span className="text-slate-500">Registrado:</span>
+        <div className="flex items-center gap-1 text-slate-800 font-medium">
           <Calendar className="size-3 text-slate-400" />
           <span>{formatDate(user.createdAt)}</span>
         </div>
       </div>
 
       {/* Acciones: Selector de Rol y Botón de Bloqueo/Desbloqueo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
         {/* Selector de Rol */}
         <div>
           <Select
@@ -162,7 +162,7 @@ export function UserCard({
           >
             <SelectTrigger
               className={cn(
-                "h-9 w-full text-xs rounded-xl bg-slate-50/80 border-slate-200",
+                "h-9 w-full text-xs rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 shadow-none px-3 transition-colors",
                 user.role === APP_ROLES.ADMIN
                   ? "text-blue-700 font-semibold"
                   : "text-slate-700",
@@ -171,14 +171,14 @@ export function UserCard({
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200 rounded-xl text-xs z-[2000]">
-              <SelectItem value={APP_ROLES.ADMIN} className="text-xs">
+            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl p-1.5 text-xs z-[2000]">
+              <SelectItem value={APP_ROLES.ADMIN} className="text-xs rounded-xl py-2 px-3">
                 <div className="flex items-center gap-2">
                   <Shield className="size-3.5 text-blue-600" />
                   <span>Administrador</span>
                 </div>
               </SelectItem>
-              <SelectItem value={APP_ROLES.CONSULTANT} className="text-xs">
+              <SelectItem value={APP_ROLES.CONSULTANT} className="text-xs rounded-xl py-2 px-3">
                 <div className="flex items-center gap-2">
                   <UserIcon className="size-3.5 text-slate-500" />
                   <span>Consultor</span>
@@ -191,7 +191,7 @@ export function UserCard({
         {/* Botón de Acción */}
         <div>
           {isSelf ? (
-            <div className="h-9 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400 italic">
+            <div className="h-9 rounded-full bg-slate-50 border-0 flex items-center justify-center text-xs text-slate-400 italic">
               Sin acciones
             </div>
           ) : user.banned ? (
@@ -199,7 +199,7 @@ export function UserCard({
               variant="outline"
               onClick={() => onUnban(user.id)}
               disabled={isActionLoading}
-              className="h-9 w-full rounded-xl text-xs gap-1.5 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 border-emerald-200 shadow-2xs font-semibold"
+              className="h-9 w-full rounded-full text-xs gap-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-0 shadow-none font-semibold cursor-pointer"
             >
               {isActionLoading ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -213,7 +213,7 @@ export function UserCard({
               variant="outline"
               onClick={() => onRequestBan(user)}
               disabled={isActionLoading}
-              className="h-9 w-full rounded-xl text-xs gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 shadow-2xs font-semibold"
+              className="h-9 w-full rounded-full text-xs gap-1.5 text-rose-600 bg-rose-50 hover:bg-rose-100 border-0 shadow-none font-semibold cursor-pointer"
             >
               {isActionLoading ? (
                 <Loader2 className="size-3.5 animate-spin" />

@@ -1,33 +1,57 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { PageHero } from "@/features/shared/presentation/components/layout/page-hero";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Search,
-  AlertCircle,
-  Users as UsersIcon,
-  FilterX,
-  Shield,
-  CheckCircle2,
-} from "lucide-react";
-import { useUsers, type RoleFilter, type StatusFilter } from "../../hooks/use-users";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertCircle, Users as UsersIcon, FilterX } from "lucide-react";
+import { useUsers } from "../../hooks/use-users";
+import { UsersSearchForm } from "../forms/users-search-form";
 import { UsersTable } from "./users-table";
 import { UserCard } from "./user-card";
 import { BanUserDialog } from "../dialogs/ban-user-dialog";
 import type { User } from "../../../domain/entities/user.entity";
 import { APP_ROLES } from "@/lib/auth-roles";
+
+function UsersSkeleton() {
+  return (
+    <div className="space-y-4 select-none">
+      <div className="px-0.5">
+        <div className="h-7 w-56 rounded-lg bg-slate-200/70 animate-pulse" />
+      </div>
+
+      {/* Skeleton Desktop: Tabla plana */}
+      <div className="hidden lg:block rounded-2xl sm:rounded-3xl bg-white p-6 space-y-4 border-0 shadow-none animate-pulse">
+        <div className="h-8 w-full rounded-xl bg-slate-100" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+      </div>
+
+      {/* Skeleton Mobile: Tarjetas planas */}
+      <div className="block lg:hidden space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none p-4 sm:p-5 space-y-3 animate-pulse"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-full bg-slate-200" />
+                <div className="h-4 w-28 bg-slate-200 rounded-full" />
+              </div>
+              <div className="h-6 w-20 bg-slate-100 rounded-full" />
+            </div>
+            <div className="h-12 w-full rounded-2xl bg-slate-50/80" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function UsersView() {
   const router = useRouter();
@@ -35,8 +59,6 @@ export function UsersView() {
 
   const {
     filteredUsers,
-    totalCount,
-    filteredCount,
     isLoading,
     error,
     actionLoadingId,
@@ -90,6 +112,64 @@ export function UsersView() {
   const hasActiveFilters =
     searchQuery.trim() !== "" || roleFilter !== "ALL" || statusFilter !== "ALL";
 
+  // Efecto desvanecido dinámico para el contenedor de tarjetas móviles
+  const [scrollFade, setScrollFade] = useState<{
+    canScrollUp: boolean;
+    canScrollDown: boolean;
+  }>({
+    canScrollUp: false,
+    canScrollDown: filteredUsers.length > 3,
+  });
+
+  const handleMobileCardsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const canScrollUp = el.scrollTop > 8;
+    const canScrollDown = el.scrollTop + el.clientHeight < el.scrollHeight - 8;
+    setScrollFade((prev) => {
+      if (prev.canScrollUp === canScrollUp && prev.canScrollDown === canScrollDown) {
+        return prev;
+      }
+      return { canScrollUp, canScrollDown };
+    });
+  };
+
+  useEffect(() => {
+    const canScrollDown = filteredUsers.length > 3;
+    setScrollFade((prev) => {
+      if (prev.canScrollUp === false && prev.canScrollDown === canScrollDown) {
+        return prev;
+      }
+      return { canScrollUp: false, canScrollDown };
+    });
+  }, [filteredUsers.length]);
+
+  const mobileMaskStyle = useMemo<React.CSSProperties>(() => {
+    const { canScrollUp, canScrollDown } = scrollFade;
+    const fade = "28px";
+    if (canScrollUp && canScrollDown) {
+      const gradient = `linear-gradient(to bottom, transparent 0%, black ${fade}, black calc(100% - ${fade}), transparent 100%)`;
+      return {
+        maskImage: gradient,
+        WebkitMaskImage: gradient,
+      };
+    }
+    if (canScrollUp) {
+      const gradient = `linear-gradient(to bottom, transparent 0%, black ${fade}, black 100%)`;
+      return {
+        maskImage: gradient,
+        WebkitMaskImage: gradient,
+      };
+    }
+    if (canScrollDown) {
+      const gradient = `linear-gradient(to bottom, black 0%, black calc(100% - ${fade}), transparent 100%)`;
+      return {
+        maskImage: gradient,
+        WebkitMaskImage: gradient,
+      };
+    }
+    return {};
+  }, [scrollFade]);
+
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain">
       {/* Hero del módulo, apegado a la cabecera primaria */}
@@ -100,99 +180,24 @@ export function UsersView() {
         iconAlt="Ilustración de Gestión de Usuarios"
       />
 
-      <div className="w-full space-y-6 p-6 md:p-8 pb-20 lg:pb-8">
-
-        {/* Barra de Búsqueda y Filtros */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Input de Búsqueda */}
-            <div className="lg:col-span-2 relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nombre o correo..."
-                className="pl-10 h-10 bg-slate-50/80 border-slate-200 rounded-xl text-xs placeholder:text-slate-400 focus-visible:bg-white transition-colors"
-              />
-            </div>
-
-            {/* Filtro de Rol */}
-            <div>
-              <Select
-                value={roleFilter}
-                onValueChange={(val) => setRoleFilter(val as RoleFilter)}
-              >
-                <SelectTrigger className="h-10 bg-slate-50/80 border-slate-200 rounded-xl text-xs">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Shield className="size-3.5 text-slate-400 shrink-0" />
-                    <SelectValue placeholder="Rol: Todos" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-white border-slate-200 rounded-xl text-xs z-[2000]">
-                  <SelectItem value="ALL">Todos los roles</SelectItem>
-                  <SelectItem value={APP_ROLES.ADMIN}>Administradores</SelectItem>
-                  <SelectItem value={APP_ROLES.CONSULTANT}>Consultores</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Filtro de Estado */}
-            <div className="flex items-center gap-2">
-              <div className="w-full">
-                <Select
-                  value={statusFilter}
-                  onValueChange={(val) => setStatusFilter(val as StatusFilter)}
-                >
-                  <SelectTrigger className="h-10 bg-slate-50/80 border-slate-200 rounded-xl text-xs">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <CheckCircle2 className="size-3.5 text-slate-400 shrink-0" />
-                      <SelectValue placeholder="Estado: Todos" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-slate-200 rounded-xl text-xs z-[2000]">
-                    <SelectItem value="ALL">Todos los estados</SelectItem>
-                    <SelectItem value="ACTIVE">Activos</SelectItem>
-                    <SelectItem value="BANNED">Bloqueados</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={resetFilters}
-                  title="Limpiar filtros"
-                  className="rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 shrink-0 size-10"
-                >
-                  <FilterX className="size-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+      <div className="w-full space-y-4 sm:space-y-6 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
+        {/* Formulario de Búsqueda y Filtros en componente independiente */}
+        <UsersSearchForm
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          roleFilter={roleFilter}
+          onRoleFilterChange={setRoleFilter}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          hasActiveFilters={hasActiveFilters}
+          onResetFilters={resetFilters}
+        />
 
         {/* Zona de Contenido */}
         {isLoading ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <Skeleton className="h-5 w-44 rounded-lg" />
-            </div>
-            {/* Skeleton Desktop */}
-            <div className="hidden lg:block rounded-2xl border border-slate-200/80 bg-white p-6 space-y-4">
-              <Skeleton className="h-10 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-            </div>
-            {/* Skeleton Mobile */}
-            <div className="block lg:hidden space-y-3">
-              <Skeleton className="h-32 w-full rounded-2xl" />
-              <Skeleton className="h-32 w-full rounded-2xl" />
-            </div>
-          </div>
+          <UsersSkeleton />
         ) : error ? (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center space-y-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-destructive/20 bg-destructive/5 p-8 text-center space-y-3">
             <AlertCircle className="size-8 text-destructive mx-auto" />
             <h3 className="text-sm font-semibold font-headline text-destructive">
               Error al obtener usuarios
@@ -204,22 +209,22 @@ export function UsersView() {
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="rounded-xl text-xs font-sans mt-2"
+              className="rounded-full text-xs font-sans mt-2 cursor-pointer"
             >
               Reintentar
             </Button>
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-12 text-center space-y-3">
-            <div className="size-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
+          <div className="rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none p-12 text-center space-y-3 select-none">
+            <div className="size-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
               <UsersIcon className="size-6" />
             </div>
-            <h3 className="text-base font-semibold font-headline text-slate-800">
+            <h3 className="text-base font-semibold font-headline text-slate-900">
               {hasActiveFilters
                 ? "No se encontraron usuarios"
                 : "No hay usuarios registrados"}
             </h3>
-            <p className="text-xs font-sans text-slate-500 max-w-md mx-auto">
+            <p className="text-xs font-sans text-slate-500 max-w-md mx-auto leading-relaxed">
               {hasActiveFilters
                 ? "Ningún usuario coincide con los criterios de búsqueda o filtros seleccionados."
                 : "No se encontraron registros de usuarios en el sistema."}
@@ -229,7 +234,7 @@ export function UsersView() {
                 variant="outline"
                 size="sm"
                 onClick={resetFilters}
-                className="rounded-xl text-xs gap-1.5 mt-2"
+                className="rounded-full text-xs gap-1.5 mt-2 border-0 bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
               >
                 <FilterX className="size-3.5" />
                 Limpiar filtros
@@ -238,12 +243,11 @@ export function UsersView() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Contador de Registros */}
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs sm:text-sm font-semibold text-slate-700">
-                Mostrando <span className="font-mono">{filteredCount}</span> de{" "}
-                <span className="font-mono">{totalCount}</span> usuarios
-              </span>
+            {/* Título de Sección */}
+            <div className="px-0.5">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                Usuarios del Sistema
+              </h3>
             </div>
 
             {/* Desktop Table (>= 1024px) */}
@@ -257,20 +261,26 @@ export function UsersView() {
               />
             </div>
 
-            {/* Mobile / Tablet Cards (< 1024px) */}
+            {/* Mobile / Tablet Cards (< 1024px) con ScrollArea y desvanecido en extremos */}
             <div className="block lg:hidden">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {filteredUsers.map((user) => (
-                  <UserCard
-                    key={user.id}
-                    user={user}
-                    isActionLoading={actionLoadingId === user.id}
-                    onRoleChange={handleRoleChange}
-                    onRequestBan={handleOpenBanDialog}
-                    onUnban={handleUnbanUser}
-                  />
-                ))}
-              </div>
+              <ScrollArea
+                className="h-[580px] max-h-[calc(100dvh-12rem)] min-h-[460px] sm:h-[640px] w-full"
+                viewportStyle={mobileMaskStyle}
+                onScroll={handleMobileCardsScroll}
+              >
+                <div className="space-y-3.5 pr-2.5 pt-1.5 pb-3">
+                  {filteredUsers.map((user) => (
+                    <UserCard
+                      key={user.id}
+                      user={user}
+                      isActionLoading={actionLoadingId === user.id}
+                      onRoleChange={handleRoleChange}
+                      onRequestBan={handleOpenBanDialog}
+                      onUnban={handleUnbanUser}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
         )}

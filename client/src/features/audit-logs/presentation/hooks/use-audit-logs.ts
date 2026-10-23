@@ -50,7 +50,7 @@ export function useAuditLogs() {
   }, [fetchAuditLogs, currentPage]);
 
   return {
-    items: auditLogs?.items ?? [],
+    items: auditLogs?.items ?? EMPTY_ITEMS,
     totalCount: auditLogs?.total ?? 0,
     currentPage: auditLogs?.page ?? currentPage,
     pageSize: auditLogs?.pageSize ?? pageSize,

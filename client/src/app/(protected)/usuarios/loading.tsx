@@ -11,33 +11,55 @@ export default function UsuariosLoading() {
       {/* 1. Silueta de PageHero conectada */}
       <PageHeroSkeleton />
 
-      <div className="w-full space-y-6 p-6 md:p-8 pb-20 lg:pb-8">
+      <div className="w-full space-y-4 sm:space-y-6 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
         {/* Barra de Búsqueda y Filtros Skeleton */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs animate-pulse">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="lg:col-span-2 h-10 bg-slate-100 rounded-xl" />
-            <div className="h-10 bg-slate-100 rounded-xl" />
-            <div className="h-10 bg-slate-100 rounded-xl" />
+        <div className="rounded-2xl sm:rounded-3xl border-0 shadow-none bg-white p-5 sm:p-6 space-y-4 animate-pulse">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <div className="w-28 h-3.5 rounded-full bg-slate-200" />
+              <div className="h-12 rounded-full bg-slate-100 border-0" />
+            </div>
+            <div className="space-y-1.5">
+              <div className="w-24 h-3.5 rounded-full bg-slate-200" />
+              <div className="h-12 rounded-full bg-slate-100 border-0" />
+            </div>
+            <div className="space-y-1.5">
+              <div className="w-24 h-3.5 rounded-full bg-slate-200" />
+              <div className="h-12 rounded-full bg-slate-100 border-0" />
+            </div>
           </div>
         </div>
 
         {/* Tabla / Lista de Usuarios Skeleton */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 space-y-4 shadow-xs animate-pulse">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="h-5 w-32 bg-slate-200 rounded-lg" />
-            <div className="h-4 w-20 bg-slate-100 rounded-md" />
+        <div className="space-y-4">
+          <div className="px-0.5">
+            <div className="h-7 w-56 rounded-lg bg-slate-200/70 animate-pulse" />
           </div>
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-14 w-full rounded-xl bg-slate-50 border border-slate-100/80 flex items-center px-4 justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-slate-200" />
-                  <div className="space-y-1.5">
-                    <div className="w-28 h-3.5 bg-slate-200 rounded" />
-                    <div className="w-40 h-2.5 bg-slate-100 rounded" />
+
+          {/* Desktop Skeleton */}
+          <div className="hidden lg:block rounded-2xl sm:rounded-3xl bg-white p-6 space-y-4 border-0 shadow-none animate-pulse">
+            <div className="h-8 w-full rounded-xl bg-slate-100" />
+            <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+            <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+            <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+            <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+          </div>
+
+          {/* Mobile Skeleton */}
+          <div className="block lg:hidden space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none p-4 sm:p-5 space-y-3 animate-pulse"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-9 rounded-full bg-slate-200" />
+                    <div className="h-4 w-28 bg-slate-200 rounded-full" />
                   </div>
+                  <div className="h-6 w-20 bg-slate-100 rounded-full" />
                 </div>
-                <div className="w-16 h-6 rounded-full bg-slate-100 hidden sm:block" />
+                <div className="h-12 w-full rounded-2xl bg-slate-50/80" />
               </div>
             ))}
           </div>

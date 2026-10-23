@@ -81,26 +81,26 @@ export function UsersTable({
   onUnban,
 }: UsersTableProps) {
   return (
-    <div className="w-full rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+    <div className="w-full rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none overflow-hidden select-none">
       <Table containerClassName="overflow-x-auto">
         <TableHeader>
-          <TableRow className="border-b border-slate-200/70 bg-slate-50/70 hover:bg-slate-50/70">
-            <TableHead className="py-3.5 pl-6 pr-4 text-xs font-semibold text-slate-700 tracking-wider">
+          <TableRow className="border-b border-slate-100/80 bg-slate-50/40 hover:bg-slate-50/40">
+            <TableHead className="py-4 pl-6 pr-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Usuario
             </TableHead>
-            <TableHead className="py-3.5 px-4 text-xs font-semibold text-slate-700 tracking-wider">
+            <TableHead className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Correo Electrónico
             </TableHead>
-            <TableHead className="py-3.5 px-4 text-xs font-semibold text-slate-700 tracking-wider">
+            <TableHead className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Rol
             </TableHead>
-            <TableHead className="py-3.5 px-4 text-xs font-semibold text-slate-700 tracking-wider">
+            <TableHead className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Estado
             </TableHead>
-            <TableHead className="py-3.5 px-4 text-xs font-semibold text-slate-700 tracking-wider">
+            <TableHead className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Fecha de Registro
             </TableHead>
-            <TableHead className="py-3.5 pl-4 pr-6 text-right text-xs font-semibold text-slate-700 tracking-wider">
+            <TableHead className="py-4 pl-4 pr-6 text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Acciones
             </TableHead>
           </TableRow>
@@ -115,14 +115,14 @@ export function UsersTable({
               <TableRow
                 key={user.id}
                 className={cn(
-                  "border-b border-slate-100 transition-colors hover:bg-slate-50/60",
-                  isSelf && "bg-blue-50/30 hover:bg-blue-50/50"
+                  "border-b border-slate-100/70 hover:bg-slate-50/50 transition-colors last:border-b-0",
+                  isSelf && "bg-blue-50/30 hover:bg-blue-50/40"
                 )}
               >
                 {/* 1. Usuario (Avatar + Nombre + Tag Tú) */}
-                <TableCell className="py-3 pl-6 pr-4">
+                <TableCell className="py-3.5 pl-6 pr-4">
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-full border border-slate-200 text-slate-600 flex items-center justify-center bg-slate-100 overflow-hidden shrink-0 shadow-2xs font-semibold text-xs">
+                    <div className="size-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center overflow-hidden shrink-0 font-semibold text-xs border-0 shadow-none">
                       {user.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -136,11 +136,11 @@ export function UsersTable({
                     </div>
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-sm font-semibold text-slate-900 truncate">
+                        <span className="text-sm font-medium text-slate-900 truncate">
                           {user.name}
                         </span>
                         {isSelf && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200/80">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border-0 shadow-none">
                             (Tú)
                           </span>
                         )}
@@ -153,14 +153,14 @@ export function UsersTable({
                 </TableCell>
 
                 {/* 2. Correo Electrónico */}
-                <TableCell className="py-3 px-4">
+                <TableCell className="py-3.5 px-4">
                   <span className="text-xs font-sans text-slate-600 select-all">
                     {user.email}
                   </span>
                 </TableCell>
 
-                {/* 3. Rol (Select interactivo) */}
-                <TableCell className="py-3 px-4">
+                {/* 3. Rol (Select interactivo plano y redondeado) */}
+                <TableCell className="py-3.5 px-4">
                   <div className="w-36">
                     <Select
                       value={user.role}
@@ -169,7 +169,7 @@ export function UsersTable({
                     >
                       <SelectTrigger
                         className={cn(
-                          "h-8 text-xs rounded-xl bg-white border-slate-200 shadow-2xs transition-all",
+                          "h-8 text-xs rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 shadow-none px-3 transition-colors",
                           user.role === APP_ROLES.ADMIN
                             ? "text-blue-700 font-semibold"
                             : "text-slate-700",
@@ -183,14 +183,14 @@ export function UsersTable({
                       >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200 rounded-xl text-xs z-[2000]">
-                        <SelectItem value={APP_ROLES.ADMIN} className="text-xs">
+                      <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl p-1.5 text-xs z-[2000]">
+                        <SelectItem value={APP_ROLES.ADMIN} className="text-xs rounded-xl py-2 px-3">
                           <div className="flex items-center gap-2">
                             <Shield className="size-3.5 text-blue-600" />
                             <span>Administrador</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value={APP_ROLES.CONSULTANT} className="text-xs">
+                        <SelectItem value={APP_ROLES.CONSULTANT} className="text-xs rounded-xl py-2 px-3">
                           <div className="flex items-center gap-2">
                             <UserIcon className="size-3.5 text-slate-500" />
                             <span>Consultor</span>
@@ -202,11 +202,11 @@ export function UsersTable({
                 </TableCell>
 
                 {/* 4. Estado de la cuenta */}
-                <TableCell className="py-3 px-4">
+                <TableCell className="py-3.5 px-4">
                   {user.banned ? (
                     <div className="inline-flex flex-col gap-0.5">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200/80">
-                        <span className="size-1.5 rounded-full bg-red-600 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border-0 shadow-none">
+                        <span className="size-1.5 rounded-full bg-rose-600 animate-pulse" />
                         Bloqueado
                       </span>
                       {user.banExpires ? (
@@ -220,7 +220,7 @@ export function UsersTable({
                       )}
                     </div>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border-0 shadow-none">
                       <span className="size-1.5 rounded-full bg-emerald-500" />
                       Activo
                     </span>
@@ -228,7 +228,7 @@ export function UsersTable({
                 </TableCell>
 
                 {/* 5. Fecha de Registro */}
-                <TableCell className="py-3 px-4">
+                <TableCell className="py-3.5 px-4">
                   <div className="flex items-center gap-1.5 text-xs text-slate-600">
                     <Calendar className="size-3.5 text-slate-400 shrink-0" />
                     <span>{formatDate(user.createdAt)}</span>
@@ -236,7 +236,7 @@ export function UsersTable({
                 </TableCell>
 
                 {/* 6. Acciones */}
-                <TableCell className="py-3 pl-4 pr-6 text-right">
+                <TableCell className="py-3.5 pl-4 pr-6 text-right">
                   {isSelf ? (
                     <span
                       className="text-xs text-slate-400 font-sans italic cursor-not-allowed select-none"
@@ -250,7 +250,7 @@ export function UsersTable({
                       size="sm"
                       onClick={() => onUnban(user.id)}
                       disabled={isRowLoading}
-                      className="h-8 rounded-xl text-xs gap-1.5 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 border-emerald-200 shadow-2xs"
+                      className="h-8 rounded-full text-xs font-semibold gap-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-0 shadow-none px-3.5 cursor-pointer"
                     >
                       {isRowLoading ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -265,7 +265,7 @@ export function UsersTable({
                       size="sm"
                       onClick={() => onRequestBan(user)}
                       disabled={isRowLoading}
-                      className="h-8 rounded-xl text-xs gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 shadow-2xs"
+                      className="h-8 rounded-full text-xs font-semibold gap-1.5 text-rose-600 bg-rose-50 hover:bg-rose-100 border-0 shadow-none px-3.5 cursor-pointer"
                     >
                       {isRowLoading ? (
                         <Loader2 className="size-3.5 animate-spin" />

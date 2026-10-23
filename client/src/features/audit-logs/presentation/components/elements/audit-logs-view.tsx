@@ -81,11 +81,14 @@ export function AuditLogsView() {
   };
 
   useEffect(() => {
-    setScrollFade({
-      canScrollUp: false,
-      canScrollDown: items.length > 3,
+    const canScrollDown = items.length > 3;
+    setScrollFade((prev) => {
+      if (prev.canScrollUp === false && prev.canScrollDown === canScrollDown) {
+        return prev;
+      }
+      return { canScrollUp: false, canScrollDown };
     });
-  }, [items, currentPage]);
+  }, [items.length, currentPage]);
 
   const mobileMaskStyle = useMemo<React.CSSProperties>(() => {
     const { canScrollUp, canScrollDown } = scrollFade;

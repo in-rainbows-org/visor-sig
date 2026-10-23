@@ -33,9 +33,12 @@ export function ConsultationMobileResultsScroll({
   };
 
   useEffect(() => {
-    setScrollFade({
-      canScrollUp: false,
-      canScrollDown: itemCount > 3,
+    const canScrollDown = itemCount > 3;
+    setScrollFade((prev) => {
+      if (prev.canScrollUp === false && prev.canScrollDown === canScrollDown) {
+        return prev;
+      }
+      return { canScrollUp: false, canScrollDown };
     });
   }, [itemCount]);
 

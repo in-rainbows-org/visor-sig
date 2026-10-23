@@ -74,19 +74,19 @@ export function ConsultationSearchForm({
   return (
     <form
       onSubmit={onSearch}
-      className="w-full bg-card rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4"
+      className="w-full bg-white rounded-2xl sm:rounded-3xl border-0 shadow-none p-5 sm:p-6 space-y-4 select-none"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
         {/* Select 1: Capa */}
         <div className="space-y-1.5 w-full flex flex-col justify-start">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1 font-label h-5 flex items-center">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1 font-label h-5 flex items-center">
             Capa a consultar
           </label>
           <Select value={layer} onValueChange={handleLayerSelect}>
-            <SelectTrigger className="h-12 w-full rounded-xl bg-background border-slate-200 text-sm font-sans">
+            <SelectTrigger className="h-12 w-full rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 shadow-none focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors cursor-pointer">
               <SelectValue placeholder="Seleccione una capa" />
             </SelectTrigger>
-            <SelectContent className="font-sans">
+            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-2 space-y-1">
               <SelectItem value="codigos-fijos">Códigos Fijos</SelectItem>
               <SelectItem value="lotes">Lotes</SelectItem>
               <SelectItem value="manzanas">Manzanas</SelectItem>
@@ -97,14 +97,14 @@ export function ConsultationSearchForm({
 
         {/* Select 2: Parámetro de búsqueda */}
         <div className="space-y-1.5 w-full flex flex-col justify-start">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1 font-label h-5 flex items-center">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1 font-label h-5 flex items-center">
             Parámetro de búsqueda
           </label>
           <Select value={searchField} onValueChange={onSearchFieldChange}>
-            <SelectTrigger className="h-12 w-full rounded-xl bg-background border-slate-200 text-sm font-sans">
+            <SelectTrigger className="h-12 w-full rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 shadow-none focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors cursor-pointer">
               <SelectValue placeholder="Seleccione un parámetro" />
             </SelectTrigger>
-            <SelectContent className="font-sans">
+            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-2 space-y-1">
               {availableFields.map((field) => (
                 <SelectItem key={field.value} value={field.value}>
                   {field.label}
@@ -114,14 +114,14 @@ export function ConsultationSearchForm({
           </Select>
         </div>
 
-        {/* Input: Valor de búsqueda (usando TextFormField con rounded-xl y label unificado) */}
+        {/* Input: Valor de búsqueda (homogéneo con los selects en color y redondez tipo píldora) */}
         <div className="w-full sm:col-span-2 lg:col-span-1 flex flex-col justify-start">
           <TextFormField
             id="consultation-search-input"
             name="searchValue"
             label="Término a buscar"
-            labelClassName="h-5 flex items-center"
-            inputClassName="rounded-xl"
+            labelClassName="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1 font-label h-5 flex items-center"
+            inputClassName="h-12 rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-slate-100/95 focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors shadow-none"
             placeholder="Ingrese el valor a buscar..."
             type="text"
             required={false}
@@ -133,13 +133,13 @@ export function ConsultationSearchForm({
       </div>
 
       {/* Botones de acción */}
-      <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-2 border-t border-border/60">
+      <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-2 border-t border-slate-100">
         <Button
           type="button"
           variant="outline"
           onClick={onReset}
           disabled={isSearching}
-          className="w-full sm:w-auto rounded-xl text-xs font-medium font-sans px-4 h-10 border-slate-200 text-slate-700 hover:bg-slate-100"
+          className="w-full sm:w-auto rounded-full text-xs font-medium font-sans px-4 h-10 border-0 bg-slate-100/80 text-slate-700 hover:bg-slate-200/80 shadow-none transition-colors cursor-pointer"
         >
           <RotateCcw className="size-3.5 mr-1.5" />
           Limpiar
@@ -148,7 +148,7 @@ export function ConsultationSearchForm({
         <Button
           type="submit"
           disabled={isSearching}
-          className="w-full sm:w-auto rounded-xl text-xs font-semibold font-sans px-5 h-10 bg-app-primary hover:bg-app-primary/90 text-app-primary-foreground shadow-xs"
+          className="w-full sm:w-auto rounded-full text-xs font-semibold font-sans px-5 h-10 bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white hover:opacity-95 active:scale-[0.98] border-0 shadow-none cursor-pointer"
         >
           <Search className="size-3.5 mr-1.5" />
           {isSearching ? "Buscando..." : "Buscar"}

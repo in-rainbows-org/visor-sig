@@ -33,13 +33,13 @@ export function SubmitButton({
       type="submit"
       disabled={disabled || pending}
       className={cn(
-        "w-full h-12 rounded-full font-medium text-sm sm:text-[15px] flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-md shadow-blue-500/20 active:scale-[0.99]",
+        "w-full h-12 rounded-full font-medium text-sm sm:text-[15px] flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-none active:scale-[0.98]",
         className
       )}
     >
       {pending ? (
         <>
-          <Spinner className="size-4.5 text-app-primary-foreground" />
+          <Spinner className="size-4.5 text-white" />
           <span>{pendingText}</span>
         </>
       ) : (

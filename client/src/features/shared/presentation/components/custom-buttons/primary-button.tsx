@@ -13,7 +13,7 @@ export function PrimaryButton({ className, ...props }: PrimaryButtonProps) {
   return (
     <Button
       className={cn(
-        "bg-app-primary text-app-primary-foreground hover:bg-app-primary/90 shadow-sm",
+        "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white hover:opacity-95 active:scale-[0.98] border-0 shadow-none",
         className
       )}
       {...props}

@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import { Search, AlertCircle, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
   PaginationContent,
@@ -48,6 +47,45 @@ function getPaginationPages(currentPage: number, totalPages: number): (number | 
   return pages;
 }
 
+function ConsultationResultsSkeleton() {
+  return (
+    <div className="space-y-4 select-none">
+      {/* Título de Sección Skeleton */}
+      <div className="px-0.5">
+        <div className="h-7 w-56 rounded-lg bg-slate-200/70 animate-pulse" />
+      </div>
+
+      {/* Skeleton Desktop: Tabla plana */}
+      <div className="hidden lg:block rounded-2xl sm:rounded-3xl bg-white p-6 space-y-4 border-0 shadow-none animate-pulse">
+        <div className="h-8 w-full rounded-xl bg-slate-100" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+        <div className="h-12 w-full rounded-xl bg-slate-50/80" />
+      </div>
+
+      {/* Skeleton Mobile: Tarjetas planas */}
+      <div className="block lg:hidden space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none p-4 sm:p-5 space-y-3 animate-pulse"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-2xl bg-slate-100" />
+                <div className="h-4 w-28 bg-slate-100 rounded-full" />
+              </div>
+              <div className="h-5 w-16 bg-slate-100 rounded-full" />
+            </div>
+            <div className="h-12 w-full rounded-2xl bg-slate-50/80" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ConsultationView() {
   const {
     layer,
@@ -82,7 +120,7 @@ export function ConsultationView() {
         iconAlt="Ilustración de Consultas"
       />
 
-      <div className="w-full space-y-7 p-6 md:p-8 pb-20 lg:pb-8">
+      <div className="w-full space-y-4 sm:space-y-6 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
 
         {/* Formulario de Búsqueda (2 Selects + 1 Input) */}
         <ConsultationSearchForm
@@ -99,20 +137,9 @@ export function ConsultationView() {
 
         {/* Zona de Contenido y Resultados */}
         {isSearching ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-6 w-48 rounded-lg" />
-              <Skeleton className="h-6 w-24 rounded-lg" />
-            </div>
-            <div className="rounded-2xl border bg-card p-6 space-y-3">
-              <Skeleton className="h-10 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-12 w-full rounded-xl" />
-            </div>
-          </div>
+          <ConsultationResultsSkeleton />
         ) : error ? (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center space-y-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-destructive/20 bg-destructive/5 p-8 text-center space-y-3">
             <AlertCircle className="size-8 text-destructive mx-auto" />
             <h3 className="text-sm font-semibold font-headline text-destructive">
               Error en la consulta
@@ -122,49 +149,45 @@ export function ConsultationView() {
               variant="outline"
               size="sm"
               onClick={() => handleSearch()}
-              className="rounded-xl text-xs font-sans mt-2"
+              className="rounded-full text-xs font-sans mt-2"
             >
               Reintentar
             </Button>
           </div>
         ) : !hasSearched ? (
           /* Estado inicial sin resultados ni datos precargados */
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-12 text-center space-y-3">
-            <div className="size-12 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+          <div className="rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none p-12 text-center space-y-3 select-none">
+            <div className="size-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-500">
               <Database className="size-6" />
             </div>
-            <h3 className="text-base font-semibold font-headline text-foreground">
+            <h3 className="text-base font-semibold font-headline text-slate-900">
               Listo para realizar consultas
             </h3>
-            <p className="text-xs font-sans text-muted-foreground max-w-md mx-auto">
+            <p className="text-xs font-sans text-slate-500 max-w-md mx-auto leading-relaxed">
               Seleccione una capa cartográfica, elija el parámetro correspondiente e ingrese un valor de búsqueda para obtener resultados alfanuméricos.
             </p>
           </div>
         ) : results && results.items.length === 0 ? (
           /* Sin resultados encontrados */
-          <div className="rounded-2xl border border-slate-200 bg-card p-12 text-center space-y-2 shadow-xs">
-            <div className="size-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+          <div className="rounded-2xl sm:rounded-3xl bg-white border-0 shadow-none p-12 text-center space-y-3 select-none">
+            <div className="size-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto">
               <Search className="size-6" />
             </div>
-            <h3 className="text-base font-semibold font-headline text-foreground">
+            <h3 className="text-base font-semibold font-headline text-slate-900">
               No se encontraron registros
             </h3>
-            <p className="text-xs font-sans text-muted-foreground max-w-md mx-auto">
+            <p className="text-xs font-sans text-slate-500 max-w-md mx-auto leading-relaxed">
               No existen registros que coincidan con el término ingresado para la capa seleccionada. Verifique los filtros aplicados.
             </p>
           </div>
         ) : results ? (
           /* Lista de resultados renderizada por la capa de la consulta activa */
           <div className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs sm:text-sm font-semibold font-sans text-foreground">
-                Mostrando <span className="font-mono">{results.items.length}</span> de{" "}
-                <span className="font-mono">{results.total}</span> registros
-              </span>
-              <span className="text-xs font-sans text-muted-foreground">
-                Página <span className="font-mono">{results.page}</span> de{" "}
-                <span className="font-mono">{results.totalPages}</span>
-              </span>
+            {/* Título de Sección */}
+            <div className="px-0.5">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                Resultados de la Consulta
+              </h3>
             </div>
 
             {/* Vista especializada por capa (Desktop Table + Mobile/Tablet Cards) según consulta activa */}
@@ -188,14 +211,16 @@ export function ConsultationView() {
 
             {/* Barra de Paginación Unificada con Shadcn UI Pagination */}
             {results.totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border/70">
-                <span className="text-xs font-medium font-sans text-muted-foreground order-2 sm:order-1">
-                  Página <span className="font-mono font-semibold text-foreground">{results.page}</span> de{" "}
-                  <span className="font-mono font-semibold text-foreground">{results.totalPages}</span>
-                </span>
+              <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 select-none">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-xs font-medium text-slate-500 border-0 shadow-none order-2 sm:order-1">
+                  <span>Página</span>
+                  <span className="font-semibold text-slate-900 font-mono">{results.page}</span>
+                  <span>de</span>
+                  <span className="font-semibold text-slate-900 font-mono">{results.totalPages}</span>
+                </div>
 
                 <Pagination className="mx-0 w-auto justify-center sm:justify-end order-1 sm:order-2">
-                  <PaginationContent className="font-sans gap-1">
+                  <PaginationContent className="bg-white rounded-full p-1 gap-1 border-0 shadow-none">
                     <PaginationItem>
                       <PaginationPrevious
                         text="Anterior"
@@ -207,16 +232,19 @@ export function ConsultationView() {
                           }
                         }}
                         className={cn(
-                          "cursor-pointer rounded-xl text-xs font-sans",
-                          (currentPage <= 1 || isSearching) && "pointer-events-none opacity-40"
+                          "cursor-pointer rounded-full h-8 px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-0 shadow-none transition-all",
+                          (currentPage <= 1 || isSearching) &&
+                            "pointer-events-none opacity-30"
                         )}
                       />
                     </PaginationItem>
 
                     {paginationPages.map((p, idx) => (
-                      <PaginationItem key={typeof p === "number" ? p : `ellipsis-${idx}`}>
+                      <PaginationItem
+                        key={typeof p === "number" ? p : `ellipsis-${idx}`}
+                      >
                         {p === "ellipsis" ? (
-                          <PaginationEllipsis className="font-sans text-xs size-8" />
+                          <PaginationEllipsis className="font-sans text-xs size-8 text-slate-400" />
                         ) : (
                           <PaginationLink
                             href="#"
@@ -228,9 +256,10 @@ export function ConsultationView() {
                               }
                             }}
                             className={cn(
-                              "cursor-pointer rounded-xl font-mono text-xs size-8 sm:size-9",
-                              results.page === p &&
-                                "bg-app-primary text-app-primary-foreground font-semibold hover:bg-app-primary hover:text-app-primary-foreground border-transparent"
+                              "cursor-pointer rounded-full size-8 p-0 font-mono text-xs transition-all border-0 shadow-none",
+                              results.page === p
+                                ? "bg-app-primary text-app-primary-foreground font-semibold hover:bg-app-primary hover:text-app-primary-foreground"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                             )}
                           >
                             {p}
@@ -250,8 +279,9 @@ export function ConsultationView() {
                           }
                         }}
                         className={cn(
-                          "cursor-pointer rounded-xl text-xs font-sans",
-                          (currentPage >= results.totalPages || isSearching) && "pointer-events-none opacity-40"
+                          "cursor-pointer rounded-full h-8 px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-0 shadow-none transition-all",
+                          (currentPage >= results.totalPages || isSearching) &&
+                            "pointer-events-none opacity-30"
                         )}
                       />
                     </PaginationItem>

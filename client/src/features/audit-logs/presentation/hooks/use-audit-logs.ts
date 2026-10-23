@@ -7,6 +7,8 @@ import type {
 } from "../../domain/entities/audit-log.entity";
 import { auditLogRepositoryImpl } from "../../infrastructure/repositories/audit-log.repository-impl";
 
+const EMPTY_ITEMS: AuditLogItem[] = [];
+
 export function useAuditLogs() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;

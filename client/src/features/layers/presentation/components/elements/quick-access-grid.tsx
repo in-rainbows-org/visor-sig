@@ -43,13 +43,10 @@ export function QuickAccessGrid({
 }: QuickAccessGridProps) {
   return (
     <div className="space-y-4 pt-2">
-      <div>
-        <h3 className="text-base font-bold text-slate-900 tracking-tight">
+      <div className="px-0.5">
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
           Accesos Rápidos
         </h3>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Atajos directos para navegación entre los módulos principales de la plataforma.
-        </p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">

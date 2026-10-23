@@ -1,78 +1,79 @@
-import type { GeometryType, LayerColor, LayerKind } from "../../../domain/entities/layer.entity";
+import type { GeometryType, LayerColor } from "../../../domain/entities/layer.entity";
 
 export type LayerColorConfig = {
   hex: string;
   label: string;
   bgGradient: string;
-  cardBg: string;
+  cardBadge: string;
   badge: string;
   dot: string;
   glow: string;
+  cardBg?: string;
 };
 
 export const LAYER_COLOR_MAP: Record<LayerColor, LayerColorConfig> = {
   BLUE: {
-    hex: "#2563eb",
+    hex: "#1b64ea",
     label: "Azul",
-    bgGradient: "from-blue-50/90 via-blue-50/40 to-white",
-    cardBg: "hover:border-blue-300/80 hover:shadow-blue-500/5",
+    bgGradient: "from-[#2879f7] via-[#1b64ea] to-[#0d4ec8]",
+    cardBadge: "bg-white/95 text-[#0d4ec8]",
     badge: "bg-blue-50 text-blue-700 border-blue-200/80",
     dot: "bg-blue-600",
-    glow: "shadow-[0_0_24px_rgba(37,99,235,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(27,100,234,0.3)]",
   },
   ORANGE: {
-    hex: "#ea580c",
+    hex: "#f97316",
     label: "Naranja",
-    bgGradient: "from-orange-50/90 via-orange-50/40 to-white",
-    cardBg: "hover:border-orange-300/80 hover:shadow-orange-500/5",
+    bgGradient: "from-[#fb923c] via-[#f97316] to-[#c2410c]",
+    cardBadge: "bg-white/95 text-[#c2410c]",
     badge: "bg-orange-50 text-orange-700 border-orange-200/80",
     dot: "bg-orange-600",
-    glow: "shadow-[0_0_24px_rgba(234,88,12,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(249,115,22,0.3)]",
   },
   GREEN: {
-    hex: "#059669",
+    hex: "#0ea868",
     label: "Verde",
-    bgGradient: "from-emerald-50/90 via-emerald-50/40 to-white",
-    cardBg: "hover:border-emerald-300/80 hover:shadow-emerald-500/5",
+    bgGradient: "from-[#16c784] via-[#0ea868] to-[#087f4c]",
+    cardBadge: "bg-white/95 text-[#087f4c]",
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
     dot: "bg-emerald-600",
-    glow: "shadow-[0_0_24px_rgba(5,150,105,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(14,168,104,0.3)]",
   },
   VIOLET: {
-    hex: "#7c3aed",
+    hex: "#853cf2",
     label: "Violeta",
-    bgGradient: "from-purple-50/90 via-purple-50/40 to-white",
-    cardBg: "hover:border-purple-300/80 hover:shadow-purple-500/5",
+    bgGradient: "from-[#9f5bff] via-[#853cf2] to-[#671fcf]",
+    cardBadge: "bg-white/95 text-[#671fcf]",
     badge: "bg-purple-50 text-purple-700 border-purple-200/80",
     dot: "bg-purple-600",
-    glow: "shadow-[0_0_24px_rgba(124,58,237,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(133,60,242,0.3)]",
   },
   RED: {
-    hex: "#dc2626",
+    hex: "#ef4444",
     label: "Rojo",
-    bgGradient: "from-rose-50/90 via-rose-50/40 to-white",
-    cardBg: "hover:border-rose-300/80 hover:shadow-rose-500/5",
+    bgGradient: "from-[#f87171] via-[#ef4444] to-[#b91c1c]",
+    cardBadge: "bg-white/95 text-[#b91c1c]",
     badge: "bg-rose-50 text-rose-700 border-rose-200/80",
     dot: "bg-rose-600",
-    glow: "shadow-[0_0_24px_rgba(220,38,38,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(239,68,68,0.3)]",
   },
   LIGHT_BLUE: {
-    hex: "#0284c7",
+    hex: "#029fe3",
     label: "Celeste",
-    bgGradient: "from-cyan-50/90 via-cyan-50/40 to-white",
-    cardBg: "hover:border-cyan-300/80 hover:shadow-cyan-500/5",
+    bgGradient: "from-[#00c0f8] via-[#029fe3] to-[#0177cb]",
+    cardBadge: "bg-white/95 text-[#0177cb]",
     badge: "bg-cyan-50 text-cyan-700 border-cyan-200/80",
     dot: "bg-cyan-600",
-    glow: "shadow-[0_0_24px_rgba(2,132,199,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(2,159,227,0.3)]",
   },
   YELLOW: {
-    hex: "#d97706",
+    hex: "#f59e0b",
     label: "Amarillo",
-    bgGradient: "from-amber-50/90 via-amber-50/40 to-white",
-    cardBg: "hover:border-amber-300/80 hover:shadow-amber-500/5",
+    bgGradient: "from-[#fbbf24] via-[#f59e0b] to-[#b45309]",
+    cardBadge: "bg-white/95 text-[#b45309]",
     badge: "bg-amber-50 text-amber-700 border-amber-200/80",
     dot: "bg-amber-600",
-    glow: "shadow-[0_0_24px_rgba(217,119,6,0.15)]",
+    glow: "shadow-[0_0_24px_rgba(245,158,11,0.3)]",
   },
 };
 

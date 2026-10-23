@@ -47,16 +47,16 @@ export function LayerSideSheet({
       hideHeader={true}
       className="sm:max-w-md w-full p-0 flex flex-col bg-white border-l border-slate-200 shadow-2xl"
     >
-      {/* Botón de cierre superior derecho */}
+      {/* Botón de cierre superior derecho: círculo gris con X */}
       <div className="absolute top-4 right-4 z-20">
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
           onClick={() => onOpenChange(false)}
-          className="rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+          className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors border-0 shadow-none cursor-pointer"
           aria-label="Cerrar panel lateral"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4 stroke-[2.5]" />
         </Button>
       </div>
 
@@ -73,52 +73,46 @@ export function LayerSideSheet({
             />
           </div>
 
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
             {layer.name}
           </h2>
 
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <span
-              className={cn(
-                "text-xs font-semibold px-3 py-0.5 rounded-full border shadow-2xs",
-                colorConfig.badge
-              )}
-            >
+          <div className="mt-2 flex items-center justify-center">
+            <span className="text-xs font-semibold px-3.5 py-1 rounded-full bg-blue-50 text-blue-600 border-0 shadow-none">
               {geometryLabel}
             </span>
           </div>
         </div>
 
-        {/* Acciones principales: Selector de color centrado y Botón de Importar */}
+        {/* Acciones principales: Selector de color en card gris y Botón de Importar */}
         <div className="space-y-4 pt-1">
-          {/* Selector de Simbología Cromática Centrado */}
-          <div className="flex flex-col items-center gap-2 text-center">
-            <span className="text-xs font-medium text-slate-500">
+          {/* Card gris contenedor redondeado para el selector de color */}
+          <div className="bg-slate-100/75 rounded-2xl sm:rounded-3xl p-4 flex flex-col items-center gap-2.5 text-center border-0 shadow-none">
+            <span className="text-xs sm:text-sm font-medium text-slate-700">
               Color de renderizado en el mapa
             </span>
             <LayerColorPopover
               layer={layer}
               onColorChanged={(newColor) => onColorChanged?.(layer.id, newColor)}
+              className="w-full"
             />
           </div>
 
-          {/* Botón de Importación */}
+          {/* Botón de Importación con degradado por defecto de Shadcn */}
           <Button
             onClick={() => onOpenImport?.(layer)}
-            className="w-full gap-2 rounded-2xl h-11 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+            className="w-full h-12 rounded-full text-sm font-semibold flex items-center justify-center gap-2 shadow-none cursor-pointer"
           >
-            <Upload className="w-4 h-4" />
-            Importar ZIP Shapefile
+            <Upload className="w-4 h-4 text-white shrink-0" />
+            <span>Importar ZIP Shapefile</span>
           </Button>
         </div>
 
         {/* Historial de Versiones */}
-        <div className="space-y-3 pt-2 border-t border-slate-100">
-          <div className="flex items-center justify-between px-1">
-            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Historial de Versiones
-            </h4>
-          </div>
+        <div className="space-y-3 pt-2">
+          <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+            Historial de versiones
+          </h3>
 
           <div className="space-y-2.5">{historyContent}</div>
         </div>

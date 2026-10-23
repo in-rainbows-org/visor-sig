@@ -26,19 +26,18 @@ export function LayerCard({ layer, onSelect, isSelected = false }: LayerCardProp
     <div
       onClick={() => onSelect(layer)}
       className={cn(
-        "cursor-pointer rounded-3xl border border-slate-200/70 bg-white p-4 sm:p-5 lg:p-6 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col justify-between group relative select-none bg-gradient-to-b min-h-[220px] sm:min-h-[240px] lg:min-h-[260px]",
+        "cursor-pointer rounded-[28px] sm:rounded-[32px] p-5 sm:p-6 transition-all duration-200 overflow-hidden flex flex-col justify-between group relative select-none bg-gradient-to-br min-h-[220px] sm:min-h-[240px] lg:min-h-[260px] border-0 shadow-none hover:scale-[1.02] active:scale-[0.98]",
         colorConfig.bgGradient,
-        colorConfig.cardBg,
-        isSelected && "ring-2 ring-blue-500 shadow-md"
+        isSelected && "ring-4 ring-white/90 ring-offset-2 ring-offset-blue-600"
       )}
       data-layer-id={layer.id}
     >
-      {/* Esquina superior derecha: Badge de Geometría */}
+      {/* Esquina superior derecha: Badge de Geometría estilo degree */}
       <div className="w-full flex justify-end">
         <span
           className={cn(
-            "text-[11px] font-semibold px-2.5 py-0.5 rounded-full border shadow-2xs transition-colors",
-            colorConfig.badge
+            "text-[11px] font-bold px-3 py-1 rounded-full shadow-2xs backdrop-blur-xs transition-colors",
+            colorConfig.cardBadge
           )}
         >
           {geometryLabel}
@@ -46,28 +45,26 @@ export function LayerCard({ layer, onSelect, isSelected = false }: LayerCardProp
       </div>
 
       {/* Imagen centrada de la capa */}
-      <div className="my-3 flex items-center justify-center">
+      <div className="my-2 sm:my-3 flex items-center justify-center">
         <div className="relative w-24 h-24 sm:w-28 sm:h-28 transition-transform duration-300 group-hover:scale-105">
           <Image
             src={imageSrc}
             alt={layer.name}
             fill
             sizes="(max-width: 640px) 96px, 112px"
-            className="object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+            className="object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.14)]"
           />
         </div>
       </div>
 
-      {/* Información de la capa (Nombre y Fecha de actualización) */}
+      {/* Información de la capa (Nombre y Fecha de actualización en blanco) */}
       <div className="w-full text-center space-y-1">
-        <h3 className="font-bold text-slate-900 text-sm sm:text-base tracking-tight truncate group-hover:text-blue-600 transition-colors">
+        <h3 className="font-bold text-white text-base sm:text-lg lg:text-xl tracking-tight truncate">
           {layer.name}
         </h3>
-        <div className="text-xs text-slate-500 font-sans flex flex-col lg:flex-row items-center justify-center lg:gap-1">
-          <span>
-            Actualizado<span className="hidden lg:inline">:</span>
-          </span>
-          <span className="font-medium text-slate-700">
+        <div className="text-xs text-white/80 font-sans flex flex-col items-center justify-center leading-tight">
+          <span>Actualizado</span>
+          <span className="font-semibold text-white/95 mt-0.5">
             {formatUpdatedDate(layer.updatedAt)}
           </span>
         </div>

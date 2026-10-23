@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export type QuickAccessItem = {
   key: string;
   title: string;
-  description: string;
+  description?: string;
   href: string;
   iconSrc: string;
 };
@@ -18,21 +18,12 @@ export type QuickAccessCardProps = {
   className?: string;
 };
 
-function truncateWords(text: string, count: number = 3): string {
-  if (!text) return "";
-  const words = text.trim().split(/\s+/);
-  if (words.length <= count) return text;
-  return `${words.slice(0, count).join(" ").replace(/[,;.:]+$/, "")}...`;
-}
-
 export function QuickAccessCard({ item, className }: QuickAccessCardProps) {
-  const shortDescription = truncateWords(item.description, 3);
-
   return (
     <Link
       href={item.href}
       className={cn(
-        "rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-blue-200 transition-all duration-200 flex flex-col items-center justify-between text-center group cursor-pointer select-none h-full min-h-[135px] sm:min-h-[145px] lg:min-h-[160px]",
+        "rounded-[24px] sm:rounded-[28px] border-0 shadow-none bg-white p-4 sm:p-5 flex flex-col items-center justify-center text-center group cursor-pointer select-none h-full min-h-[125px] sm:min-h-[140px] hover:bg-white/90 hover:scale-[1.02] active:scale-[0.97] transition-all duration-200",
         className
       )}
     >
@@ -46,15 +37,9 @@ export function QuickAccessCard({ item, className }: QuickAccessCardProps) {
         />
       </div>
 
-      <div className="w-full space-y-0.5 mt-2">
-        <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">
-          {item.title}
-        </h4>
-
-        <p className="text-xs text-slate-500 font-sans leading-relaxed">
-          {shortDescription}
-        </p>
-      </div>
+      <h4 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight mt-2.5 sm:mt-3">
+        {item.title}
+      </h4>
     </Link>
   );
 }

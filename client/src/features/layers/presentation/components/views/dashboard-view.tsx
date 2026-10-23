@@ -124,14 +124,11 @@ export function DashboardView({
         )}
 
         {/* Sección 1: Catálogo de Capas */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="px-0.5">
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               Gestión de Capas
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Administra la simbología cromática, importación y versiones de las capas territoriales.
-            </p>
           </div>
 
           <LayerGrid

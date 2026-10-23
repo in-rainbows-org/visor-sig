@@ -33,24 +33,25 @@ function getUserInitials(name: string | null): string {
 
 export function AuditLogCard({ item }: AuditLogCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 border-0 shadow-none space-y-3 select-none hover:bg-white/95 transition-all">
       {/* Cabecera: Avatar + Nombre + Badge de Acción */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="size-9 rounded-full border border-slate-200 text-slate-600 flex items-center justify-center bg-slate-100 overflow-hidden shrink-0 shadow-2xs font-semibold text-xs">
+          <div className="relative size-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 border-0 shadow-none">
             {item.userImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={item.userImage}
                 alt={item.userName ?? item.userId}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-full"
               />
             ) : (
               getUserInitials(item.userName)
             )}
+            <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
           </div>
           <div className="min-w-0">
-            <span className="text-sm font-semibold text-slate-900 truncate block">
+            <span className="text-sm font-medium text-slate-900 truncate block">
               {item.userName || "Usuario del Sistema"}
             </span>
           </div>
@@ -59,14 +60,14 @@ export function AuditLogCard({ item }: AuditLogCardProps) {
         <ActionBadge action={item.action} />
       </div>
 
-      {/* Descripción */}
-      <div className="rounded-xl bg-slate-50/70 p-3 border border-slate-100 text-xs text-slate-700 leading-relaxed font-sans">
+      {/* Descripción en caja gris redondeada suave sin contornos */}
+      <div className="rounded-2xl bg-slate-50/80 p-3 sm:p-3.5 border-0 text-xs text-slate-600 leading-relaxed font-sans">
         {item.description}
       </div>
 
       {/* Footer con Timestamp */}
-      <div className="flex items-center justify-end text-[11px] font-mono text-slate-400 gap-1.5 pt-1 border-t border-slate-100">
-        <Calendar className="size-3 text-slate-400" />
+      <div className="flex items-center justify-end text-xs text-slate-400 gap-1.5 pt-0.5">
+        <Calendar className="size-3.5 text-slate-400 stroke-[1.75]" />
         <span>{formatDate(item.createdDate)}</span>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   ALL_FIXED_CODE_STATUS_VALUES,
   FIXED_CODE_STATUSES,
@@ -21,7 +22,10 @@ export function MapStatusCard({ className = "" }: MapStatusCardProps) {
 
   return (
     <div
-      className={`bg-white/95 backdrop-blur-md w-64 max-w-[calc(100vw-5rem)] rounded-2xl p-4 shadow-float border border-gray-100 select-none ${className}`}
+      className={cn(
+        "bg-white w-64 max-w-[calc(100vw-5rem)] rounded-2xl sm:rounded-3xl p-4 shadow-xl shadow-slate-900/10 border-0 select-none",
+        className
+      )}
       data-purpose="map-status-card"
     >
       <div className="flex items-center justify-between mb-3 border-b border-gray-100/80 pb-2">

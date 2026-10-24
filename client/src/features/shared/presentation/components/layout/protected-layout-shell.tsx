@@ -36,8 +36,9 @@ export function ProtectedLayoutShell({
         <main
           className={cn(
             "flex-1 relative overflow-hidden bg-slate-100 min-h-0 w-full",
-            !isMapPage &&
-              "-mt-11 lg:-mt-9 lg:overflow-visible h-[calc(100%+2.75rem)] lg:h-[calc(100%+2.25rem)] z-10"
+            !isMapPage
+              ? "-mt-11 lg:-mt-9 lg:overflow-visible h-[calc(100%+2.75rem)] lg:h-[calc(100%+2.25rem)] z-10"
+              : "-mt-20 lg:-mt-[77px] h-[calc(100%+5rem)] lg:h-[calc(100%+77px)] lg:-ml-[75px] lg:w-[calc(100%+75px)] z-10"
           )}
         >
           {children}

@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMapView } from "../../state/map-view-store";
+import { cn } from "@/lib/utils";
 import { MapLayersCard } from "./map-layers-card";
 import { MapStatusCard } from "./map-status-card";
 
@@ -24,26 +25,31 @@ export function MapViewSegmentToggle({ className = "" }: MapViewSegmentTogglePro
 
   return (
     <div
-      className={`bg-gray-100/90 backdrop-blur-md p-1 rounded-xl shadow-xs hidden lg:inline-flex w-fit border border-white/60 select-none gap-1 ${className}`}
+      className={cn(
+        "hidden lg:inline-flex items-center bg-white rounded-full p-2 shadow-md shadow-slate-900/5 border-0 select-none",
+        className
+      )}
       data-purpose="view-segment-toggle"
     >
-      {/* 1. Dropdown: Capas del Mapa */}
+      {/* 1. Botón: Capas del Mapa */}
       <Popover open={layersOpen} onOpenChange={setLayersOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5 cursor-pointer ${
+            className={cn(
+              "h-11 px-5 text-xs font-semibold rounded-full transition-all duration-200 inline-flex items-center gap-2 cursor-pointer border-0 active:scale-[0.98]",
               layersOpen
-                ? "text-blue-600 bg-white shadow-xs"
-                : "text-gray-700 hover:text-gray-900 hover:bg-white/50"
-            }`}
+                ? "text-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20"
+                : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"
+            )}
           >
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <Layers className="w-4 h-4 text-blue-600" />
             <span>Capas ({visibleLayerKinds.size})</span>
             <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                layersOpen ? "rotate-180 text-blue-600" : "text-gray-400"
-              }`}
+              className={cn(
+                "w-3.5 h-3.5 transition-transform duration-200",
+                layersOpen ? "rotate-180 text-blue-600" : "text-slate-400"
+              )}
             />
           </button>
         </PopoverTrigger>
@@ -56,23 +62,28 @@ export function MapViewSegmentToggle({ className = "" }: MapViewSegmentTogglePro
         </PopoverContent>
       </Popover>
 
-      {/* 2. Dropdown: Estado del Código Fijo */}
+      {/* Separador vertical sutil */}
+      <div className="h-5 w-px bg-slate-200/80 mx-1 shrink-0" />
+
+      {/* 2. Botón: Estado del Código Fijo */}
       <Popover open={statusOpen} onOpenChange={setStatusOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5 cursor-pointer ${
+            className={cn(
+              "h-11 px-5 text-xs font-semibold rounded-full transition-all duration-200 inline-flex items-center gap-2 cursor-pointer border-0 active:scale-[0.98]",
               statusOpen
-                ? "text-blue-600 bg-white shadow-xs"
-                : "text-gray-700 hover:text-gray-900 hover:bg-white/50"
-            }`}
+                ? "text-purple-600 bg-purple-50/80 ring-2 ring-purple-500/20"
+                : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"
+            )}
           >
-            <MapPin className="w-3.5 h-3.5 text-purple-600" />
+            <MapPin className="w-4 h-4 text-purple-600" />
             <span>Estado Código Fijo</span>
             <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                statusOpen ? "rotate-180 text-blue-600" : "text-gray-400"
-              }`}
+              className={cn(
+                "w-3.5 h-3.5 transition-transform duration-200",
+                statusOpen ? "rotate-180 text-purple-600" : "text-slate-400"
+              )}
             />
           </button>
         </PopoverTrigger>

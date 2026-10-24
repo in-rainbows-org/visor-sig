@@ -80,7 +80,7 @@ export function MapView() {
         />
 
         {/* 2. Controles Superiores Izquierdos (Desktop >= 1024px) */}
-        <div className="hidden lg:flex absolute top-4 left-4 z-[1000] flex-col gap-3 pointer-events-auto">
+        <div className="hidden lg:flex absolute lg:top-[93px] lg:left-[91px] z-[1000] flex-col gap-3 pointer-events-auto">
           <MapViewSegmentToggle />
         </div>
 

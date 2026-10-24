@@ -6,7 +6,7 @@ export default function UsuariosLoading() {
     <div
       aria-label="Cargando gestión de usuarios"
       data-purpose="users-loading"
-      className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain select-none"
+      className="h-full w-full lg:-ml-[32px] lg:pl-[32px] lg:w-[calc(100%+32px)] overflow-y-auto bg-slate-50/70 overscroll-contain select-none"
     >
       {/* 1. Silueta de PageHero conectada */}
       <PageHeroSkeleton />

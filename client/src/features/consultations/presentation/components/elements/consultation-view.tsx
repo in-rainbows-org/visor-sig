@@ -111,7 +111,7 @@ export function ConsultationView() {
   }, [results]);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50/70 overscroll-contain">
+    <div className="h-full w-full lg:-ml-[32px] lg:pl-[32px] lg:w-[calc(100%+32px)] overflow-y-auto bg-slate-50/70 overscroll-contain">
       {/* Hero del módulo, apegado a la cabecera primaria */}
       <PageHero
         title="Consultas Alfanuméricas"

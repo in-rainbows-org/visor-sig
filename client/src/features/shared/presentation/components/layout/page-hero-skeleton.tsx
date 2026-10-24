@@ -24,7 +24,28 @@ export function PageHeroSkeleton({ className }: PageHeroSkeletonProps) {
         backgroundSize: "100vw 100%",
       }}
     >
-      <div className="w-full flex items-center justify-between gap-6 sm:gap-10 lg:gap-14 animate-pulse">
+      {/* Pieza de encaje lateral con curva invertida (desktop) en skeleton */}
+      <div
+        data-purpose="sidebar-hero-skeleton-tab"
+        className="hidden lg:block absolute -left-[32px] top-0 w-[32px] pointer-events-none z-0"
+        style={{ height: "128px" }}
+      >
+        <svg
+          width="32"
+          height="128"
+          viewBox="0 0 32 128"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full"
+        >
+          <path
+            d="M 0 0 L 0 96 A 32 32 0 0 1 32 128 L 32 0 Z"
+            fill="#0e4dcb"
+          />
+        </svg>
+      </div>
+
+      <div className="w-full flex items-center justify-between gap-6 sm:gap-10 lg:gap-14 animate-pulse relative z-10">
         <div className="min-w-0 flex-1 max-w-2xl lg:max-w-3xl xl:max-w-4xl space-y-3">
           {/* Skeleton del título */}
           <div className="h-8 sm:h-10 lg:h-11 w-56 sm:w-80 lg:w-96 rounded-xl bg-white/25" />

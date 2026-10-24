@@ -46,8 +46,6 @@ export function PageHero({
 
     const handleScroll = () => {
       const y = scrollContainer.scrollTop;
-      // Sincroniza la posición vertical con la variable CSS del bloque de esquina
-      document.documentElement.style.setProperty("--hero-scroll-y", `${y}px`);
 
       // 1. Desvanecido general más tardado (recorrido extendido a 220px de scroll)
       const opacity = Math.max(0, Math.min(1, 1 - y / 220));
@@ -90,7 +88,6 @@ export function PageHero({
     return () => {
       scrollContainer.removeEventListener("scroll", handleScroll);
       setIsHeroMounted(false);
-      document.documentElement.style.setProperty("--hero-scroll-y", "0px");
       document.documentElement.style.setProperty("--hero-content-opacity", "1");
       if (contentEl) {
         contentEl.style.opacity = "1";
@@ -114,10 +111,33 @@ export function PageHero({
         backgroundSize: "100vw 100%",
       }}
     >
+      {/* Pieza de encaje lateral con curva invertida (desktop):
+          Ubicada a la izquierda del PageHero, por detrás del sidebar, a media altura,
+          con una curva invertida que encaja con el borde redondeado del sidebar al scrollear. */}
+      <div
+        data-purpose="sidebar-hero-tab"
+        className="hidden lg:block absolute -left-[32px] top-0 w-[32px] pointer-events-none z-0"
+        style={{ height: "128px" }}
+      >
+        <svg
+          width="32"
+          height="128"
+          viewBox="0 0 32 128"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full"
+        >
+          <path
+            d="M 0 0 L 0 96 A 32 32 0 0 1 32 128 L 32 0 Z"
+            fill="#0e4dcb"
+          />
+        </svg>
+      </div>
+
       <div
         ref={contentRef}
         data-purpose="page-hero-content"
-        className="w-full"
+        className="w-full relative z-10"
         style={{ willChange: "opacity, mask-image" }}
       >
         <div className="w-full flex items-center justify-between gap-6 sm:gap-10 lg:gap-14 animate-hero-pop">

@@ -19,7 +19,7 @@ export type MapSearchBarProps = {
   highlightedEntity?: HighlightedMapEntity | null;
 };
 
-export function MapSearchBar({
+function MapSearchBarComponent({
   onSearch,
   onSelectResult,
   onSelectEntity,
@@ -170,5 +170,6 @@ export function MapSearchBar({
   );
 }
 
+export const MapSearchBar = React.memo(MapSearchBarComponent);
 export default MapSearchBar;
 

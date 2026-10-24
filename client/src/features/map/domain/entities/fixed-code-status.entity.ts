@@ -66,3 +66,28 @@ export const FIXED_CODE_STATUSES: Record<FixedCodeStatusValue, FixedCodeStatusDe
 };
 
 export const ALL_FIXED_CODE_STATUS_VALUES: FixedCodeStatusValue[] = [1, 2, 3, 4, 5];
+
+export type FixedCodePinConfig = {
+  status: FixedCodeStatusValue;
+  imagePath: string;
+  label: string;
+  iconSize: [number, number];
+  iconAnchor: [number, number];
+  tooltipAnchor: [number, number];
+};
+
+export const FIXED_CODE_PIN_DEFAULT_SIZE: [number, number] = [42, 47];
+export const FIXED_CODE_PIN_DEFAULT_ANCHOR: [number, number] = [21, 47];
+export const FIXED_CODE_PIN_DEFAULT_TOOLTIP_ANCHOR: [number, number] = [0, -47];
+export const FIXED_CODE_PIN_DEFAULT_POPUP_ANCHOR: [number, number] = [0, -47];
+
+export const FIXED_CODE_PIN_CONFIGS: Record<
+  FixedCodeStatusValue,
+  { imagePath: string; label: string }
+> = {
+  1: { imagePath: "/map-pins/normal.webp", label: "Normal" },
+  2: { imagePath: "/map-pins/para-corte.webp", label: "Para corte" },
+  3: { imagePath: "/map-pins/cortado.webp", label: "Cortado" },
+  4: { imagePath: "/map-pins/baja-parcial.webp", label: "Baja parcial" },
+  5: { imagePath: "/map-pins/baja-total.webp", label: "Baja total" },
+};

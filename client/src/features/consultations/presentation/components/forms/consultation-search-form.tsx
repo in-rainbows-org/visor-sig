@@ -95,7 +95,7 @@ export function ConsultationSearchForm({
               <SelectValue placeholder="Seleccione una capa" />
             </SelectTrigger>
             <SelectContent
-              position="item-aligned"
+              position="popper"
               className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-1.5"
             >
               <SelectGroup>
@@ -119,7 +119,7 @@ export function ConsultationSearchForm({
               <SelectValue placeholder="Seleccione un parámetro" />
             </SelectTrigger>
             <SelectContent
-              position="item-aligned"
+              position="popper"
               className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-1.5"
             >
               <SelectGroup>

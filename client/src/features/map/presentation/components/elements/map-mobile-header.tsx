@@ -145,7 +145,7 @@ export function MapMobileHeader({
                         <SelectValue placeholder="Parámetro" />
                       </SelectTrigger>
                       <SelectContent
-                        position="item-aligned"
+                        position="popper"
                         className="z-[2000] font-sans text-xs rounded-2xl border-0 shadow-2xl shadow-slate-900/10 bg-white p-1.5"
                       >
                         <SelectItem value="codigo" className="rounded-xl cursor-pointer">Código Fijo</SelectItem>

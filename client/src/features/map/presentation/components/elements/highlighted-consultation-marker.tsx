@@ -8,6 +8,7 @@ import {
   FIXED_CODE_STATUSES,
   type FixedCodeStatusValue,
 } from "@/features/map/domain/entities/fixed-code-status.entity";
+import { getCachedFixedCodeIcon } from "./fixed-code-marker";
 
 export interface HighlightedConsultationMarkerProps {
   entity: HighlightedMapEntity;
@@ -23,54 +24,36 @@ function getStatusStyling(statusVal: number) {
       return {
         dotClass: "bg-emerald-500",
         badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        pinBg: "bg-emerald-500",
-        pingBg: "bg-emerald-400",
-        ringClass: "ring-emerald-400",
         label: config.label,
       };
     case 2: // Para corte
       return {
         dotClass: "bg-amber-500",
         badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
-        pinBg: "bg-amber-500",
-        pingBg: "bg-amber-400",
-        ringClass: "ring-amber-400",
         label: config.label,
       };
     case 3: // Cortado
       return {
         dotClass: "bg-rose-500",
         badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
-        pinBg: "bg-rose-500",
-        pingBg: "bg-rose-400",
-        ringClass: "ring-rose-400",
         label: config.label,
       };
     case 4: // Baja parcial
       return {
         dotClass: "bg-yellow-600",
         badgeClass: "bg-yellow-50 text-yellow-800 border-yellow-200",
-        pinBg: "bg-yellow-600",
-        pingBg: "bg-yellow-400",
-        ringClass: "ring-yellow-400",
         label: config.label,
       };
     case 5: // Baja total
       return {
         dotClass: "bg-slate-600",
         badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
-        pinBg: "bg-slate-600",
-        pingBg: "bg-slate-400",
-        ringClass: "ring-slate-400",
         label: config.label,
       };
     default:
       return {
         dotClass: "bg-emerald-500",
         badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        pinBg: "bg-emerald-500",
-        pingBg: "bg-emerald-400",
-        ringClass: "ring-emerald-400",
         label: "Normal",
       };
   }
@@ -85,25 +68,10 @@ export function HighlightedConsultationMarker({
 
   const styling = useMemo(() => getStatusStyling(entity.statusVal), [entity.statusVal]);
 
-  // Crear icono visual resaltado de punto con animación de pulso y color del estado
-  const customIcon = useMemo(() => {
-    const html = `
-      <div class="relative flex items-center justify-center w-8 h-8 pointer-events-auto cursor-pointer">
-        <span class="animate-ping absolute inline-flex h-7 w-7 rounded-full ${styling.pingBg} opacity-60"></span>
-        <div class="relative w-7 h-7 rounded-full ${styling.pinBg} border-2 border-white shadow-lg flex items-center justify-center ring-2 ${styling.ringClass}/40">
-          <div class="w-2.5 h-2.5 rounded-full bg-white shadow-xs"></div>
-        </div>
-      </div>
-    `;
-
-    return L.divIcon({
-      html,
-      className: "highlighted-consultation-pin",
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -18],
-    });
-  }, [styling]);
+  // Usar el pin WebP 3D correspondiente al estado del código fijo seleccionado
+  const icon = useMemo(() => {
+    return getCachedFixedCodeIcon((entity.statusVal ?? 1) as FixedCodeStatusValue);
+  }, [entity.statusVal]);
 
   // Centrado hacia el punto y apertura automática del globo de información
   useEffect(() => {
@@ -146,7 +114,7 @@ export function HighlightedConsultationMarker({
     <Marker
       ref={markerRef}
       position={[entity.lat, entity.lng]}
-      icon={customIcon}
+      icon={icon}
       eventHandlers={{
         popupclose: () => {
           onClose?.();
@@ -158,6 +126,7 @@ export function HighlightedConsultationMarker({
         closeOnClick={false}
         autoPan={true}
         autoPanPadding={[24, 24]}
+        offset={[0, -2]}
         className="consultation-speech-bubble-popup"
       >
         <div className="w-56 p-1 text-slate-800 font-sans select-none">

@@ -146,21 +146,23 @@ export function ProgressiveFixedCodesLayer({
     // 2. Ordenar secuencialmente de adentro hacia afuera (menor distancia a mayor)
     withDistance.sort((a, b) => a.distSq - b.distSq);
 
-    // 3. Aplicar Nivel de Detalle (LoD) dependiente del zoom
-    let maxCount = Infinity;
-    if (zoom === 16) maxCount = 2000;
-    else if (zoom === 15) maxCount = 1000;
-    else if (zoom === 14) maxCount = 500;
-    else if (zoom <= 13) maxCount = 250;
+    // 3. Aplicar Nivel de Detalle (LoD) binario según especificación:
+    // - En zoom máximo: 100% de los códigos activos del encuadre
+    // - En zoom < máximo: exactamente el 5% de los códigos activos del encuadre
+    const maxZoom = map.getMaxZoom() || 18;
+    const isMaxZoom = zoom >= maxZoom;
 
     let targetItems = withDistance;
-    if (withDistance.length > maxCount && maxCount !== Infinity) {
-      const step = withDistance.length / maxCount;
-      targetItems = [];
-      for (let i = 0; i < maxCount; i++) {
-        const index = Math.floor(i * step);
-        if (withDistance[index]) {
-          targetItems.push(withDistance[index]);
+    if (!isMaxZoom && withDistance.length > 0) {
+      const targetCount = Math.max(1, Math.round(withDistance.length * 0.05));
+      if (withDistance.length > targetCount) {
+        const step = withDistance.length / targetCount;
+        targetItems = [];
+        for (let i = 0; i < targetCount; i++) {
+          const index = Math.floor(i * step);
+          if (withDistance[index]) {
+            targetItems.push(withDistance[index]);
+          }
         }
       }
     }
@@ -181,19 +183,6 @@ export function ProgressiveFixedCodesLayer({
         const statusVal = (feature.properties.status ?? 1) as FixedCodeStatusValue;
         const icon = getCachedFixedCodeIcon(statusVal);
         const marker = L.marker([lat, lng], { icon });
-
-        const displayText =
-          feature.properties.label ||
-          (feature.properties.fixedCode !== undefined
-            ? `Código ${feature.properties.fixedCode}`
-            : undefined);
-
-        if (displayText) {
-          marker.bindTooltip(displayText, {
-            direction: "top",
-            offset: [0, -10],
-          });
-        }
 
         marker.on("click", (e) => {
           L.DomEvent.stopPropagation(e);

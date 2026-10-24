@@ -5,6 +5,7 @@ import { Search, RotateCcw } from "lucide-react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -17,6 +18,13 @@ export type SearchFieldOption = {
   value: string;
   label: string;
 };
+
+export const LAYER_OPTIONS: { value: ConsultationLayerKind; label: string }[] = [
+  { value: "codigos-fijos", label: "Códigos Fijos" },
+  { value: "lotes", label: "Lotes" },
+  { value: "manzanas", label: "Manzanas" },
+  { value: "vias", label: "Vías" },
+];
 
 export const LAYER_SEARCH_FIELDS: Record<ConsultationLayerKind, SearchFieldOption[]> = {
   "codigos-fijos": [
@@ -86,11 +94,17 @@ export function ConsultationSearchForm({
             <SelectTrigger className="h-12 w-full rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 shadow-none focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors cursor-pointer">
               <SelectValue placeholder="Seleccione una capa" />
             </SelectTrigger>
-            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-2 space-y-1">
-              <SelectItem value="codigos-fijos">Códigos Fijos</SelectItem>
-              <SelectItem value="lotes">Lotes</SelectItem>
-              <SelectItem value="manzanas">Manzanas</SelectItem>
-              <SelectItem value="vias">Vías</SelectItem>
+            <SelectContent
+              position="item-aligned"
+              className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-1.5"
+            >
+              <SelectGroup>
+                {LAYER_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>
@@ -104,12 +118,17 @@ export function ConsultationSearchForm({
             <SelectTrigger className="h-12 w-full rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 shadow-none focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors cursor-pointer">
               <SelectValue placeholder="Seleccione un parámetro" />
             </SelectTrigger>
-            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-2 space-y-1">
-              {availableFields.map((field) => (
-                <SelectItem key={field.value} value={field.value}>
-                  {field.label}
-                </SelectItem>
-              ))}
+            <SelectContent
+              position="item-aligned"
+              className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-1.5"
+            >
+              <SelectGroup>
+                {availableFields.map((field) => (
+                  <SelectItem key={field.value} value={field.value}>
+                    {field.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>

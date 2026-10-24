@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -12,6 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Search, RotateCcw, Shield, CheckCircle2 } from "lucide-react";
 import { APP_ROLES } from "@/lib/auth-roles";
 import type { RoleFilter, StatusFilter } from "../../hooks/use-users";
+
+const ROLE_OPTIONS = [
+  { value: "ALL", label: "Todos los roles" },
+  { value: APP_ROLES.ADMIN, label: "Administradores" },
+  { value: APP_ROLES.CONSULTANT, label: "Consultores" },
+] as const;
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "Todos los estados" },
+  { value: "ACTIVE", label: "Activos" },
+  { value: "BANNED", label: "Bloqueados" },
+] as const;
 
 export interface UsersSearchFormProps {
   searchQuery: string;
@@ -64,15 +76,29 @@ export function UsersSearchForm({
             onValueChange={(val) => onRoleFilterChange(val as RoleFilter)}
           >
             <SelectTrigger className="h-12 w-full rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 shadow-none focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors cursor-pointer">
-              <div className="flex items-center gap-2 truncate">
-                <Shield className="size-3.5 text-slate-400 shrink-0" />
-                <SelectValue placeholder="Rol: Todos" />
-              </div>
+              <SelectValue
+                placeholder={
+                  <span className="flex items-center gap-2">
+                    <Shield className="size-3.5 text-slate-400 shrink-0" />
+                    <span>Rol: Todos</span>
+                  </span>
+                }
+              />
             </SelectTrigger>
-            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-2 space-y-1">
-              <SelectItem value="ALL">Todos los roles</SelectItem>
-              <SelectItem value={APP_ROLES.ADMIN}>Administradores</SelectItem>
-              <SelectItem value={APP_ROLES.CONSULTANT}>Consultores</SelectItem>
+            <SelectContent
+              position="item-aligned"
+              className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-1.5"
+            >
+              <SelectGroup>
+                {ROLE_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    <span className="flex items-center gap-2">
+                      <Shield className="size-3.5 text-slate-400 shrink-0" />
+                      <span>{item.label}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>
@@ -87,15 +113,29 @@ export function UsersSearchForm({
             onValueChange={(val) => onStatusFilterChange(val as StatusFilter)}
           >
             <SelectTrigger className="h-12 w-full rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 text-sm font-medium text-slate-800 shadow-none focus:ring-2 focus:ring-blue-500/20 px-5 transition-colors cursor-pointer">
-              <div className="flex items-center gap-2 truncate">
-                <CheckCircle2 className="size-3.5 text-slate-400 shrink-0" />
-                <SelectValue placeholder="Estado: Todos" />
-              </div>
+              <SelectValue
+                placeholder={
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="size-3.5 text-slate-400 shrink-0" />
+                    <span>Estado: Todos</span>
+                  </span>
+                }
+              />
             </SelectTrigger>
-            <SelectContent className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-2 space-y-1">
-              <SelectItem value="ALL">Todos los estados</SelectItem>
-              <SelectItem value="ACTIVE">Activos</SelectItem>
-              <SelectItem value="BANNED">Bloqueados</SelectItem>
+            <SelectContent
+              position="item-aligned"
+              className="font-sans border-0 shadow-2xl shadow-slate-900/10 bg-white rounded-2xl sm:rounded-3xl p-1.5"
+            >
+              <SelectGroup>
+                {STATUS_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="size-3.5 text-slate-400 shrink-0" />
+                      <span>{item.label}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>

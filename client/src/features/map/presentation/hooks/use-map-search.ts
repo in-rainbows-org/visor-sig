@@ -29,14 +29,14 @@ export function useMapSearch({
 
   // Consulta a la API de consultas de entidades geográficas
   const executeSearch = useCallback(
-    async (searchQuery?: string, type?: "codigo" | "nombre") => {
+    async (searchQuery?: string, type?: "codigo" | "nombre"): Promise<SearchResultItem[]> => {
       const activeQuery = (searchQuery !== undefined ? searchQuery : query).trim();
       const activeType = type || filterType;
 
       if (!activeQuery) {
         setResults([]);
         setIsSearching(false);
-        return;
+        return [];
       }
 
       setIsSearching(true);
@@ -103,11 +103,14 @@ export function useMapSearch({
           });
 
           setResults(mappedItems);
+          return mappedItems;
         } else {
           setResults([]);
+          return [];
         }
       } catch {
         setResults([]);
+        return [];
       } finally {
         setIsSearching(false);
       }

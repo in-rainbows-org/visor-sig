@@ -11,8 +11,8 @@ import {
 import {
   ALL_FIXED_CODE_STATUS_VALUES,
   FIXED_CODE_STATUSES,
+  FIXED_CODE_PIN_CONFIGS,
 } from "../../../domain/entities/fixed-code-status.entity";
-import { FIXED_CODE_THEME_MAP } from "./fixed-code-theme-helper";
 import { useMapView } from "../../state/map-view-store";
 
 import { cn } from "@/lib/utils";
@@ -38,16 +38,18 @@ export function MapLegendCard({ className = "" }: MapLegendControlsProps) {
       <div className="space-y-2 text-xs font-medium text-slate-700">
         {ALL_FIXED_CODE_STATUS_VALUES.map((statusVal) => {
           const item = FIXED_CODE_STATUSES[statusVal];
-          const theme = FIXED_CODE_THEME_MAP[statusVal];
+          const pinConfig = FIXED_CODE_PIN_CONFIGS[statusVal];
           return (
             <div
               key={item.value}
               className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-slate-50 transition"
             >
-              <div
-                className={`w-4 h-4 rounded-full ${theme.pinBgClass} border border-white shadow-2xs flex items-center justify-center shrink-0`}
-              >
-                <span className="w-1 h-1 rounded-full bg-white" />
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <img
+                  src={pinConfig.imagePath}
+                  alt={item.label}
+                  className="w-5 h-5 object-contain"
+                />
               </div>
               <span className="text-xs font-medium text-slate-700">
                 {item.label}

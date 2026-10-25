@@ -23,37 +23,37 @@ function getStatusStyling(statusVal: number) {
     case 1: // Normal
       return {
         dotClass: "bg-emerald-500",
-        badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        badgeClass: "bg-emerald-50 text-emerald-700",
         label: config.label,
       };
     case 2: // Para corte
       return {
         dotClass: "bg-amber-500",
-        badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+        badgeClass: "bg-amber-50 text-amber-700",
         label: config.label,
       };
     case 3: // Cortado
       return {
         dotClass: "bg-rose-500",
-        badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+        badgeClass: "bg-rose-50 text-rose-700",
         label: config.label,
       };
     case 4: // Baja parcial
       return {
         dotClass: "bg-yellow-600",
-        badgeClass: "bg-yellow-50 text-yellow-800 border-yellow-200",
+        badgeClass: "bg-yellow-50 text-yellow-800",
         label: config.label,
       };
     case 5: // Baja total
       return {
         dotClass: "bg-slate-600",
-        badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
+        badgeClass: "bg-slate-100 text-slate-700",
         label: config.label,
       };
     default:
       return {
         dotClass: "bg-emerald-500",
-        badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        badgeClass: "bg-emerald-50 text-emerald-700",
         label: "Normal",
       };
   }
@@ -129,51 +129,49 @@ export function HighlightedConsultationMarker({
         offset={[0, -2]}
         className="consultation-speech-bubble-popup"
       >
-        <div className="w-56 p-1 text-slate-800 font-sans select-none">
-          {/* 1. Header: Código Fijo marcado en Color Azul con punto inmediatamente pegado */}
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 tracking-wider uppercase">
+        <div className="w-56 p-1 text-slate-800 font-sans select-none flex flex-col items-center text-center">
+          {/* 1. Header: Código Fijo en azul con punto indicador centrado */}
+          <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-blue-600 tracking-wider uppercase">
             <span>Código Fijo</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse inline-block shrink-0"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse inline-block shrink-0" />
           </div>
 
-          {/* 2. Número del Código Fijo en tamaño resaltado */}
-          <div className="text-xl font-extrabold text-slate-900 leading-tight mt-0.5 tracking-tight">
+          {/* 2. Número del Código Fijo en tamaño resaltado y centrado */}
+          <div className="text-2xl font-black text-slate-900 leading-tight mt-0.5 tracking-tight">
             {displayCode}
           </div>
 
-          {/* 3. Nombre del titular/predio con apartado 'Nombre:' en tamaño reducido */}
-          <div className="mt-1 pt-1 border-t border-slate-100 flex items-start gap-1">
-            <span className="text-[10px] font-semibold text-slate-400 shrink-0">Nombre:</span>
-            <span className="text-[11px] font-medium text-slate-600 leading-tight break-words">
-              {displayName}
-            </span>
+          {/* 3. Nombre del titular o predio centrado */}
+          <div className="mt-0.5 text-[11px] font-medium text-slate-500 leading-tight truncate max-w-[210px] px-1">
+            {displayName}
           </div>
 
-          {/* 4. UV - MZA - LOTE alineados en una sola fila con separación exacta */}
-          <div className="flex items-center justify-between bg-slate-50/90 border border-slate-200/80 rounded-lg px-2.5 py-1.5 mt-2 text-[11px] font-semibold text-slate-700 shadow-2xs">
-            <span className="flex items-center gap-1">
-              <span className="text-slate-400 font-normal text-[10px]">UV:</span>
-              <span className="text-slate-900">{entity.uv || "-"}</span>
-            </span>
-            <span className="text-slate-300 font-light">•</span>
-            <span className="flex items-center gap-1">
-              <span className="text-slate-400 font-normal text-[10px]">MZA:</span>
-              <span className="text-slate-900">{entity.mz || "-"}</span>
-            </span>
-            <span className="text-slate-300 font-light">•</span>
-            <span className="flex items-center gap-1">
-              <span className="text-slate-400 font-normal text-[10px]">LOTE:</span>
-              <span className="text-slate-900">{entity.lote || "-"}</span>
-            </span>
+          {/* 4. UV - MZA - LOTE: card plana de color gris, sin contorno ni sombra */}
+          <div className="w-full flex items-center justify-around bg-slate-100/90 rounded-xl px-2.5 py-2 mt-2.5 text-[11px] font-semibold text-slate-700 shadow-none border-0">
+            <div className="flex flex-col items-center">
+              <span className="text-slate-400 font-normal text-[9px] uppercase tracking-wider">UV</span>
+              <span className="text-slate-900 font-bold">{entity.uv || "-"}</span>
+            </div>
+            <div className="h-4 w-px bg-slate-200/80" />
+            <div className="flex flex-col items-center">
+              <span className="text-slate-400 font-normal text-[9px] uppercase tracking-wider">MZA</span>
+              <span className="text-slate-900 font-bold">{entity.mz || "-"}</span>
+            </div>
+            <div className="h-4 w-px bg-slate-200/80" />
+            <div className="flex flex-col items-center">
+              <span className="text-slate-400 font-normal text-[9px] uppercase tracking-wider">LOTE</span>
+              <span className="text-slate-900 font-bold">{entity.lote || "-"}</span>
+            </div>
           </div>
 
-          {/* 5. Estado alineado a un ladito con el punto al lado derecho */}
-          <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-slate-100 text-[11px]">
-            <span className="text-slate-400 font-medium">Estado:</span>
-            <span className="font-bold text-slate-800">
-              {displayStatus}
+          {/* 5. Estado: badge plano centrado sin contorno ni sombra */}
+          <div className="mt-2.5 flex justify-center">
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold shadow-none border-0 ${styling.badgeClass}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${styling.dotClass}`} />
+              <span>{displayStatus}</span>
             </span>
-            <span className={`w-2 h-2 rounded-full inline-block shrink-0 ${styling.dotClass}`} />
           </div>
         </div>
       </Popup>

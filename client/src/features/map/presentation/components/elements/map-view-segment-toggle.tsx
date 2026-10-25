@@ -26,7 +26,7 @@ export function MapViewSegmentToggle({ className = "" }: MapViewSegmentTogglePro
   return (
     <div
       className={cn(
-        "hidden lg:inline-flex items-center bg-white rounded-full p-2 shadow-md shadow-slate-900/5 border-0 select-none",
+        "hidden lg:inline-flex items-center bg-white rounded-full p-1.5 shadow-md shadow-slate-900/5 border-0 select-none",
         className
       )}
       data-purpose="view-segment-toggle"
@@ -37,7 +37,7 @@ export function MapViewSegmentToggle({ className = "" }: MapViewSegmentTogglePro
           <button
             type="button"
             className={cn(
-              "h-11 px-5 text-xs font-semibold rounded-full transition-all duration-200 inline-flex items-center gap-2 cursor-pointer border-0 active:scale-[0.98]",
+              "h-[38px] px-4 text-xs font-semibold rounded-full transition-all duration-200 inline-flex items-center gap-2 cursor-pointer border-0 active:scale-[0.98]",
               layersOpen
                 ? "text-blue-600 bg-blue-50/80 ring-2 ring-blue-500/20"
                 : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"
@@ -63,7 +63,7 @@ export function MapViewSegmentToggle({ className = "" }: MapViewSegmentTogglePro
       </Popover>
 
       {/* Separador vertical sutil */}
-      <div className="h-5 w-px bg-slate-200/80 mx-1 shrink-0" />
+      <div className="h-4 w-px bg-slate-200/80 mx-1 shrink-0" />
 
       {/* 2. Botón: Estado del Código Fijo */}
       <Popover open={statusOpen} onOpenChange={setStatusOpen}>
@@ -71,7 +71,7 @@ export function MapViewSegmentToggle({ className = "" }: MapViewSegmentTogglePro
           <button
             type="button"
             className={cn(
-              "h-11 px-5 text-xs font-semibold rounded-full transition-all duration-200 inline-flex items-center gap-2 cursor-pointer border-0 active:scale-[0.98]",
+              "h-[38px] px-4 text-xs font-semibold rounded-full transition-all duration-200 inline-flex items-center gap-2 cursor-pointer border-0 active:scale-[0.98]",
               statusOpen
                 ? "text-purple-600 bg-purple-50/80 ring-2 ring-purple-500/20"
                 : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"

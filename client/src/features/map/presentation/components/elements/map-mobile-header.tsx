@@ -78,10 +78,25 @@ export function MapMobileHeader({
     onClear,
   });
 
-  const handleSearchSubmit = (e?: React.FormEvent) => {
+  const prevEntityIdRef = React.useRef<string | null>(null);
+
+  // Al seleccionar un código fijo en el mapa (o llegar por URL con parámetro),
+  // se oculta automáticamente el panel superior la primera vez
+  React.useEffect(() => {
+    const currentId = highlightedEntity?.id || null;
+    if (currentId && currentId !== prevEntityIdRef.current) {
+      setIsPanelCollapsed(true);
+    }
+    prevEntityIdRef.current = currentId;
+  }, [highlightedEntity?.id]);
+
+  const handleSearchSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    executeSearch(query, filterType);
-    setIsBottomSheetOpen(true);
+    const searchResults = await executeSearch(query, filterType);
+    if (searchResults && searchResults.length > 0) {
+      setIsBottomSheetOpen(true);
+      setIsPanelCollapsed(true);
+    }
   };
 
   return (

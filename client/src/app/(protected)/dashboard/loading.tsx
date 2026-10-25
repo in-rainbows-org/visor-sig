@@ -11,68 +11,57 @@ export default function DashboardLoading() {
       {/* 1. Silueta de PageHero conectada */}
       <PageHeroSkeleton />
 
-      <div className="w-full space-y-8 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
-        {/* 2. Sección de Gestión de Capas */}
-        <div className="space-y-3">
+      <div className="w-full space-y-6 sm:space-y-8 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
+        {/* 2. Sección de Gestión de Capas (Skeletons planos estilo Bitácora) */}
+        <div className="space-y-4">
           <div className="px-0.5 space-y-1">
-            <div className="w-40 h-5 rounded-lg bg-slate-200 animate-pulse" />
-            <div className="w-80 max-w-full h-3.5 rounded-md bg-slate-200/60 animate-pulse" />
+            <div className="h-6 w-44 rounded-lg bg-slate-200/70 animate-pulse" />
+            <div className="h-3.5 w-72 max-w-full rounded-md bg-slate-100 animate-pulse" />
           </div>
 
-          {/* Cuadrícula de 4 Tarjetas de Capas */}
+          {/* Cuadrícula de 4 Tarjetas de Capas Planas */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {[1, 2, 3, 4].map((index) => (
               <div
                 key={index}
-                className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden flex flex-col min-h-[260px] sm:min-h-[290px] animate-pulse"
+                className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 space-y-4 border-0 shadow-none flex flex-col justify-between min-h-[240px] sm:min-h-[270px] animate-pulse"
               >
-                {/* Cabecera cromática e icono */}
-                <div className="relative h-44 sm:h-48 bg-slate-100/90 flex items-center justify-center p-6 border-b border-slate-100">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-200/80" />
-                  <div className="absolute top-4 right-4 w-14 h-5 rounded-full bg-slate-200/80" />
+                {/* Cabecera plana de icono */}
+                <div className="w-full h-36 sm:h-40 rounded-2xl bg-slate-100/90 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-200/70" />
                 </div>
 
-                {/* Metadatos y pie de tarjeta */}
-                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                    <div className="w-24 h-4 rounded-md bg-slate-200" />
-                  </div>
-
-                  <div className="pt-2.5 sm:pt-3 border-t border-slate-100 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="w-16 h-3 rounded bg-slate-100" />
-                    <div className="w-20 h-3 rounded bg-slate-100" />
-                  </div>
+                {/* Metadatos y pie plano */}
+                <div className="space-y-2 pt-1">
+                  <div className="h-4 w-28 bg-slate-200/70 rounded-md" />
+                  <div className="h-3 w-16 bg-slate-100 rounded-md" />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* 3. Sección de Accesos Rápidos */}
+        {/* 3. Sección de Accesos Rápidos (Skeletons planos) */}
         <div className="space-y-4 pt-2">
-          <div className="space-y-1">
-            <div className="w-36 h-5 rounded-lg bg-slate-200 animate-pulse" />
-            <div className="w-72 max-w-full h-3.5 rounded-md bg-slate-200/60 animate-pulse" />
+          <div className="px-0.5 space-y-1">
+            <div className="h-6 w-36 rounded-lg bg-slate-200/70 animate-pulse" />
+            <div className="h-3.5 w-60 max-w-full rounded-md bg-slate-100 animate-pulse" />
           </div>
 
-          {/* Cuadrícula de 4 Tarjetas de Acceso Rápido */}
+          {/* Cuadrícula de 4 Tarjetas de Acceso Rápido Planas */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {[1, 2, 3, 4].map((index) => (
               <div
                 key={index}
-                className="rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs flex flex-col items-center justify-between text-center min-h-[135px] sm:min-h-[145px] lg:min-h-[160px] animate-pulse"
+                className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 border-0 shadow-none flex flex-col items-center justify-center text-center min-h-[135px] sm:min-h-[145px] space-y-3 animate-pulse"
               >
                 {/* Icono de acceso rápido */}
-                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-slate-200/80" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-200/70" />
                 </div>
 
-                {/* Título y descripción corta */}
-                <div className="w-full space-y-1.5 mt-2 flex flex-col items-center">
-                  <div className="w-20 h-4 rounded-md bg-slate-200" />
-                  <div className="w-28 h-3 rounded bg-slate-100" />
-                </div>
+                {/* Título */}
+                <div className="h-3.5 w-20 bg-slate-200/70 rounded-md" />
               </div>
             ))}
           </div>

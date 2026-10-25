@@ -47,7 +47,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
 
   return (
     <aside
-      className={`w-[75px] bg-white border-0 shadow-none hidden lg:flex flex-col items-center py-4 gap-3.5 z-20 shrink-0 select-none lg:rounded-tr-[32px] overflow-hidden ${
+      className={`w-[75px] bg-white border-0 shadow-none hidden lg:flex flex-col items-center py-4 gap-3.5 z-30 shrink-0 select-none lg:rounded-tr-[32px] overflow-visible ${
         className || ""
       }`}
       data-purpose="icon-sidebar"
@@ -64,7 +64,6 @@ export function AppSidebar({ className }: AppSidebarProps) {
               key={route.key}
               href={route.href}
               aria-label={route.label}
-              title={route.label}
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 relative group ${
                 isActive
                   ? "bg-gradient-to-b from-[#1a6de9] to-[#0e4dcb] text-white shadow-[0_4px_14px_rgba(14,77,203,0.32),inset_0_1px_1px_rgba(255,255,255,0.4)]"
@@ -82,6 +81,17 @@ export function AppSidebar({ className }: AppSidebarProps) {
                     : "opacity-75 group-hover:opacity-100 group-hover:scale-110"
                 }`}
               />
+
+              {/* Popover estilo speech-bubble con flecha a la izquierda en hover */}
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute left-[calc(100%+20px)] top-1/2 -translate-y-1/2 z-50 hidden lg:flex items-center opacity-0 -translate-x-1.5 scale-95 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-x-0 transition-all duration-150 ease-out drop-shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
+              >
+                <div className="relative bg-white text-slate-800 text-xs font-semibold px-3.5 py-1.5 rounded-xl border-0 whitespace-nowrap select-none">
+                  <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45 rounded-xs" />
+                  <span className="relative z-10">{route.label}</span>
+                </div>
+              </div>
             </Link>
           );
         })}
@@ -93,8 +103,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           type="button"
           onClick={handleSignOut}
           aria-label="Cerrar sesión"
-          title="Cerrar sesión"
-          className="w-12 h-12 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors duration-150 cursor-pointer group"
+          className="w-12 h-12 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors duration-150 cursor-pointer relative group"
         >
           <Image
             src="/navigation-icons/logout.webp"
@@ -103,6 +112,17 @@ export function AppSidebar({ className }: AppSidebarProps) {
             height={32}
             className="w-[28px] h-[28px] object-contain opacity-75 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-200"
           />
+
+          {/* Popover estilo speech-bubble con flecha a la izquierda en hover */}
+          <div
+            role="tooltip"
+            className="pointer-events-none absolute left-[calc(100%+20px)] top-1/2 -translate-y-1/2 z-50 hidden lg:flex items-center opacity-0 -translate-x-1.5 scale-95 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-x-0 transition-all duration-150 ease-out drop-shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
+          >
+            <div className="relative bg-white text-slate-800 text-xs font-semibold px-3.5 py-1.5 rounded-xl border-0 whitespace-nowrap select-none">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45 rounded-xs" />
+              <span className="relative z-10">Cerrar sesión</span>
+            </div>
+          </div>
         </button>
       </div>
     </aside>

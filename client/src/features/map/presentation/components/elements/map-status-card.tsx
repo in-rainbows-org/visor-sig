@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   ALL_FIXED_CODE_STATUS_VALUES,
   FIXED_CODE_STATUSES,
+  FIXED_CODE_PIN_CONFIGS,
 } from "../../../domain/entities/fixed-code-status.entity";
-import { FIXED_CODE_THEME_MAP } from "./fixed-code-theme-helper";
 import { useMapView } from "../../state/map-view-store";
 
 export type MapStatusCardProps = {
@@ -44,7 +44,7 @@ export function MapStatusCard({ className = "" }: MapStatusCardProps) {
       <div className="space-y-1">
         {ALL_FIXED_CODE_STATUS_VALUES.map((statusVal) => {
           const item = FIXED_CODE_STATUSES[statusVal];
-          const theme = FIXED_CODE_THEME_MAP[statusVal];
+          const pinConfig = FIXED_CODE_PIN_CONFIGS[statusVal];
           const isVisible = visibleFixedCodeStatuses.has(statusVal);
 
           return (
@@ -69,18 +69,24 @@ export function MapStatusCard({ className = "" }: MapStatusCardProps) {
                 )}
               </button>
 
-              <div
-                className={`w-5 h-5 rounded-full ${theme.pinBgClass} border border-white shadow-2xs flex items-center justify-center shrink-0`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <img
+                  src={pinConfig.imagePath}
+                  alt={item.label}
+                  className={cn(
+                    "w-5 h-5 object-contain transition-all duration-150",
+                    !isVisible && "opacity-30 grayscale"
+                  )}
+                />
               </div>
 
               <span
-                className={`text-xs font-medium transition ${
+                className={cn(
+                  "text-xs font-medium transition",
                   isVisible
-                    ? "text-gray-700 group-hover:text-gray-900"
-                    : "text-gray-400 line-through"
-                }`}
+                    ? "text-slate-700 group-hover:text-slate-900"
+                    : "text-slate-400 line-through"
+                )}
               >
                 {item.label}
               </span>

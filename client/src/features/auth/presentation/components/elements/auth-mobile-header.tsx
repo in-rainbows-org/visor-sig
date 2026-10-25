@@ -15,20 +15,20 @@ export function AuthMobileHeader({
   return (
     <div
       className={cn(
-        "lg:hidden w-full pt-8 pb-5 px-6 sm:pt-10 sm:pb-7 sm:px-10 max-w-md sm:max-w-lg mx-auto flex flex-col justify-center select-none z-10",
+        "lg:hidden w-full pt-5 pb-1.5 px-6 sm:pt-7 sm:pb-3 sm:px-10 max-w-md sm:max-w-lg mx-auto flex flex-col justify-center select-none z-10",
         className
       )}
       data-purpose="auth-mobile-header"
     >
       {/* Logotipo de la Aplicación */}
       <div className="flex items-center gap-2.5">
-        <BrandLogo size="md" />
+        <BrandLogo size="md" textColor="white" />
       </div>
 
       {/* Eslogan / Título Llamativo */}
-      <h1 className="mt-3.5 text-2xl sm:text-[28px] font-semibold tracking-tight text-slate-900 leading-snug">
+      <h1 className="mt-2 text-2xl sm:text-[28px] font-semibold tracking-tight text-white leading-snug">
         <span>{titlePrimary}</span>{" "}
-        <span className="text-blue-600 font-bold">{titleHighlight}</span>
+        <span className="text-sky-300 font-bold">{titleHighlight}</span>
       </h1>
     </div>
   );

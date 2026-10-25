@@ -37,22 +37,22 @@ export function AuthBrandHero({
       <div className="relative z-10 w-full max-w-2xl pt-2 pb-4 flex flex-col justify-start shrink-0">
         {/* Nombre de la Aplicación y Logo */}
         <div className="flex items-center gap-2.5">
-          <BrandLogo size="md" />
+          <BrandLogo size="md" textColor="white" />
         </div>
 
         {/* Slogan */}
-        <p className="mt-5 text-[14.5px] font-medium text-blue-600 tracking-normal">
+        <p className="mt-5 text-[14.5px] font-medium text-sky-200 tracking-normal">
           {tagline}
         </p>
 
         {/* Título en Dos Tonos extendido a todo el ancho */}
-        <h1 className="mt-3 text-4xl sm:text-5xl lg:text-[44px] xl:text-[50px] font-semibold tracking-tight text-slate-900 leading-[1.14]">
-          <span className="text-slate-900 block xl:inline">{titlePrimary}</span>{" "}
-          <span className="text-blue-600 block xl:inline font-bold">{titleHighlight}</span>
+        <h1 className="mt-3 text-4xl sm:text-5xl lg:text-[44px] xl:text-[50px] font-semibold tracking-tight text-white leading-[1.14]">
+          <span className="text-white block xl:inline">{titlePrimary}</span>{" "}
+          <span className="text-sky-300 block xl:inline font-bold">{titleHighlight}</span>
         </h1>
 
         {/* Descripción completa que ocupa el ancho de la sección sin sobreponerse */}
-        <p className="mt-4 text-slate-500 text-base lg:text-[16.5px] font-light leading-relaxed max-w-xl xl:max-w-2xl">
+        <p className="mt-4 text-blue-100/90 text-base lg:text-[16.5px] font-light leading-relaxed max-w-xl xl:max-w-2xl">
           {description}
         </p>
       </div>
@@ -70,7 +70,7 @@ export function AuthBrandHero({
           className={cn(
             "relative pointer-events-none select-none flex items-end",
             imagePosition === "bottom-left"
-              ? "-mb-5 sm:-mb-8 lg:-mb-11 xl:-mb-14 w-[305px] sm:w-[345px] lg:w-[390px] xl:w-[430px] 2xl:w-[475px]"
+              ? "-mb-5 sm:-mb-7 lg:-mb-9 xl:-mb-10 2xl:-mb-11 w-[380px] sm:w-[430px] lg:w-[488px] xl:w-[538px] 2xl:w-[595px]"
               : "mb-0 sm:mb-2 lg:mb-4 xl:mb-6 w-[495px] sm:w-[560px] lg:w-[630px] xl:w-[700px] 2xl:w-[760px]",
             imageClassName
           )}

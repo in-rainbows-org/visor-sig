@@ -6,7 +6,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-full h-[100dvh] w-full relative overflow-x-hidden overflow-y-auto select-none bg-[#eaf2fd] overscroll-contain">
+    <div className="h-full h-[100dvh] w-full relative overflow-x-hidden overflow-y-auto select-none bg-[#0e4dcb] overscroll-contain">
       {/* Fondo con Ondas, Geometrías y Degradados Globales */}
       <AuthBackground />
 

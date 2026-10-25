@@ -20,7 +20,7 @@ export function AuthCard({
     return (
       <div
         className={cn(
-          "w-full max-w-[480px] bg-white rounded-[44px] sm:rounded-[56px] shadow-2xl z-20 p-8 sm:p-10 lg:p-12 flex flex-col justify-center my-auto",
+          "w-full max-w-[480px] bg-white rounded-[44px] sm:rounded-[56px] shadow-none border-0 z-20 p-8 sm:p-10 lg:p-12 flex flex-col justify-center my-auto",
           className
         )}
       >
@@ -42,14 +42,14 @@ export function AuthCard({
   return (
     <section
       className={cn(
-        "relative w-full lg:w-[50%] xl:w-[48%] bg-white flex flex-col justify-center shadow-2xl z-20 flex-1 lg:min-h-screen p-6 sm:p-10 lg:p-14 xl:px-20 xl:py-12",
+        "relative w-full lg:w-[50%] xl:w-[48%] bg-white flex flex-col justify-start lg:justify-center shadow-none border-0 z-20 flex-1 lg:min-h-screen pt-11 sm:pt-14 px-6 pb-8 sm:px-10 lg:p-14 xl:px-20 xl:py-12",
         roundedClasses,
         className
       )}
       data-purpose={variant === "side-right" ? "auth-login-card" : "auth-signup-card"}
     >
       {/* Contenedor central del formulario */}
-      <div className="w-full max-w-[430px] mx-auto py-3 sm:py-6 lg:py-8">
+      <div className="w-full max-w-[430px] mx-auto pt-3 pb-3 sm:py-6 lg:py-8">
         {showLogo && (
           <div className="hidden lg:flex items-center gap-3 mb-8 sm:mb-10">
             <BrandLogo size="md" />

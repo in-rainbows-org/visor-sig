@@ -3,15 +3,15 @@ import Image from "next/image";
 export function AuthBackground() {
   return (
     <div
-      className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden select-none z-0 bg-[#eaf2fd] bg-gradient-to-br from-[#ebf4ff] via-[#dbeafe] to-[#eff6ff]"
+      className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden select-none z-0 bg-[#0e4dcb] bg-gradient-to-br from-[#0e4dcb] via-[#1660dc] to-[#2d83f3]"
       aria-hidden="true"
     >
-      {/* ── Resplandores Radiales Suaves Difuminados ─────────────────────────── */}
-      <div className="absolute -top-24 -left-24 w-[520px] h-[520px] rounded-full bg-blue-300/35 blur-3xl" />
-      <div className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full bg-indigo-200/25 blur-3xl" />
-      <div className="absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full bg-sky-300/35 blur-3xl" />
-      <div className="absolute -bottom-24 left-1/4 w-[560px] h-[560px] rounded-full bg-blue-300/30 blur-3xl" />
-      <div className="absolute -bottom-24 -right-24 w-[520px] h-[520px] rounded-full bg-sky-200/35 blur-3xl" />
+      {/* ── Resplandores Radiales con Acentos de la Cabecera ─────────────────── */}
+      <div className="absolute -top-24 -left-24 w-[520px] h-[520px] rounded-full bg-[#1c6ee7]/30 blur-3xl" />
+      <div className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full bg-[#3392f9]/25 blur-3xl" />
+      <div className="absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full bg-[#2563eb]/30 blur-3xl" />
+      <div className="absolute -bottom-24 left-1/4 w-[560px] h-[560px] rounded-full bg-[#0e4dcb]/35 blur-3xl" />
+      <div className="absolute -bottom-24 -right-24 w-[520px] h-[520px] rounded-full bg-[#3895f9]/25 blur-3xl" />
 
       {/* ── Ondas y Líneas Orgánicas SVG que cruzan todo el ancho ─────────────── */}
       <svg
@@ -35,26 +35,26 @@ export function AuthBackground() {
           stroke="#93c5fd"
           strokeWidth="1.5"
           strokeDasharray="6 6"
-          opacity="0.7"
+          opacity="0.4"
         />
         <path
           d="M -50 460 C 300 380, 650 490, 1050 370 C 1350 280, 1500 390, 1680 430"
           stroke="#60a5fa"
           strokeWidth="1.25"
           strokeDasharray="4 4"
-          opacity="0.5"
+          opacity="0.3"
         />
 
         <defs>
           <linearGradient id="globalWaveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#bfdbfe" stopOpacity="0.85" />
-            <stop offset="50%" stopColor="#dbeafe" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.3" />
+            <stop offset="0%" stopColor="#3895f9" stopOpacity="0.35" />
+            <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#93c5fd" stopOpacity="0.1" />
           </linearGradient>
           <linearGradient id="globalWaveGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.75" />
-            <stop offset="60%" stopColor="#bfdbfe" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#dbeafe" stopOpacity="0.25" />
+            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.45" />
+            <stop offset="60%" stopColor="#3895f9" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.1" />
           </linearGradient>
         </defs>
       </svg>

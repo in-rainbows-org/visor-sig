@@ -1,5 +1,6 @@
 import React from "react";
 import { PageHeroSkeleton } from "@/features/shared/presentation/components/layout/page-hero-skeleton";
+import { StatsSkeleton } from "@/features/layers/presentation/components/elements/stats/stats-skeleton";
 
 export default function DashboardLoading() {
   return (
@@ -12,6 +13,9 @@ export default function DashboardLoading() {
       <PageHeroSkeleton />
 
       <div className="w-full space-y-6 sm:space-y-8 p-4 sm:p-6 md:p-8 pb-24 lg:pb-8">
+        {/* Resumen Estadístico (Skeleton plano) */}
+        <StatsSkeleton />
+
         {/* 2. Sección de Gestión de Capas (Skeletons planos estilo Bitácora) */}
         <div className="space-y-4">
           <div className="px-0.5 space-y-1">

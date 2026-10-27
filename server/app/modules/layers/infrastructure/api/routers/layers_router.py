@@ -2,6 +2,10 @@ import uuid
 from datetime import datetime, timezone
 
 from app.core.dependencies import AdminUser, CurrentUser, DBSession, UoWDep
+from app.modules.layers.application.queries.get_codigo_fijo_statistics import (
+    GetCodigoFijoStatisticsQuery,
+    GetCodigoFijoStatisticsQueryHandler,
+)
 from app.modules.layers.application.queries.list_data_version import (
     ListDataVersionsQuery,
     ListDataVersionsQueryHandler,
@@ -28,6 +32,9 @@ from app.modules.layers.domain.enums import (
     LayerColor,
     LayerKind,
 )
+from app.modules.layers.infrastructure.api.schemas.codigo_fijo_schemas import (
+    CodigoFijoStatisticsRead,
+)
 from app.modules.layers.infrastructure.api.schemas.data_version_schemas import (
     DataVersionListRead,
     DataVersionRead,
@@ -36,6 +43,9 @@ from app.modules.layers.infrastructure.api.schemas.layer_schemas import (
     ChangeLayerColorRequest,
     LayerListRead,
     LayerRead,
+)
+from app.modules.layers.infrastructure.persistence.readers.sqlmodel_codigo_fijo_statistics_reader import (
+    SqlModelCodigoFijoStatisticsReader,
 )
 from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_data_version_repository import (
     SqlModelDataVersionRepository,
@@ -83,6 +93,25 @@ def list_layers(
         for d in result.items
     ]
     return LayerListRead(items=items)
+
+
+# ==============================================================================
+# ESTADÍSTICAS CUANTITATIVAS DE CÓDIGOS FIJOS
+# ==============================================================================
+@router.get(
+    "/codigos-fijos/statistics",
+    response_model=CodigoFijoStatisticsRead,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener estadísticas cuantitativas agregadas de códigos fijos",
+)
+def get_codigo_fijo_statistics(
+    db: DBSession,
+    current_user: AdminUser,
+) -> CodigoFijoStatisticsRead:
+    reader = SqlModelCodigoFijoStatisticsReader(db)
+    handler = GetCodigoFijoStatisticsQueryHandler(reader)
+    dto = handler.execute(GetCodigoFijoStatisticsQuery())
+    return CodigoFijoStatisticsRead.model_validate(dto)
 
 
 @router.patch(

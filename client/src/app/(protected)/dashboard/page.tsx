@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { APP_ROLES, type AppRole } from "@/lib/auth-roles";
 import { listLayersQuery } from "@/features/layers/presentation/queries/layer.query";
+import { getCodigoFijoStatisticsQuery } from "@/features/layers/presentation/queries/codigo-fijo-statistics.query";
 import { DashboardView } from "@/features/layers/presentation/components/views/dashboard-view";
 
 export const dynamic = "force-dynamic";
@@ -25,14 +26,22 @@ export default async function DashboardPage() {
     redirect("/mapa");
   }
 
-  const result = await listLayersQuery();
-  const layers = result.ok ? result.data : [];
+  const [layersResult, statsResult] = await Promise.all([
+    listLayersQuery(),
+    getCodigoFijoStatisticsQuery(),
+  ]);
+
+  const layers = layersResult.ok ? layersResult.data : [];
+  const stats = statsResult.ok ? statsResult.data : null;
+  const statsError = !statsResult.ok ? statsResult.errors?.[0] : undefined;
 
   return (
     <DashboardView
       initialLayers={layers}
-      hasError={!result.ok}
-      errorMessage={!result.ok ? result.errors?.[0] : undefined}
+      hasError={!layersResult.ok}
+      errorMessage={!layersResult.ok ? layersResult.errors?.[0] : undefined}
+      initialStats={stats}
+      statsError={statsError}
     />
   );
 }

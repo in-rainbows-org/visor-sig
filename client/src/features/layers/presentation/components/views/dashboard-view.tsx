@@ -13,17 +13,23 @@ import { LayerVersionList } from "../elements/layer-version-list";
 import { QuickAccessGrid } from "../elements/quick-access-grid";
 
 import { layerCache } from "../../cache/layer-cache";
+import type { CodigoFijoStatistics } from "../../../domain/entities/codigo-fijo-statistics.entity";
+import { StatsSummarySection } from "../elements/stats/stats-summary-section";
 
 export type DashboardViewProps = {
   initialLayers: Layer[];
   hasError?: boolean;
   errorMessage?: string;
+  initialStats?: CodigoFijoStatistics | null;
+  statsError?: string;
 };
 
 export function DashboardView({
   initialLayers,
   hasError = false,
   errorMessage,
+  initialStats,
+  statsError,
 }: DashboardViewProps) {
   const router = useRouter();
 
@@ -122,6 +128,13 @@ export function DashboardView({
             </Button>
           </div>
         )}
+
+        {/* Sección: Resumen Estadístico */}
+        <StatsSummarySection
+          initialStats={initialStats ?? null}
+          hasError={Boolean(statsError)}
+          errorMessage={statsError}
+        />
 
         {/* Sección 1: Catálogo de Capas */}
         <div className="space-y-4">

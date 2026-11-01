@@ -2,23 +2,37 @@
 
 import React from "react";
 import { TileLayer } from "react-leaflet";
-import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/features/shared/config/api.config";
+import {
+  BASEMAP_PROVIDERS,
+  type BasemapProviderId,
+} from "../../../domain/entities/basemap.entity";
 
 export type MapBasemapProps = {
-  isVisible: boolean;
+  providerId?: BasemapProviderId;
+  isVisible?: boolean;
 };
 
-export function MapBasemap({ isVisible }: MapBasemapProps) {
-  if (!isVisible) {
+export function MapBasemap({
+  providerId = "osm",
+  isVisible = true,
+}: MapBasemapProps) {
+  if (!isVisible || providerId === "none") {
+    return null;
+  }
+
+  const config = BASEMAP_PROVIDERS[providerId];
+  if (!config || !config.url) {
     return null;
   }
 
   return (
     <TileLayer
-      url={MAP_TILE_URL}
-      attribution={MAP_TILE_ATTRIBUTION}
-      maxZoom={19}
-      maxNativeZoom={17}
+      key={config.id}
+      url={config.url}
+      attribution={config.attribution ?? ""}
+      maxZoom={config.maxZoom}
+      maxNativeZoom={config.maxNativeZoom}
+      subdomains={config.subdomains ?? ["a", "b", "c"]}
     />
   );
 }

@@ -1,3 +1,5 @@
+import type { BasemapProviderId } from "../../domain/entities/basemap.entity";
+import { DEFAULT_BASEMAP_ID } from "../../domain/entities/basemap.entity";
 import type { FixedCodeStatusValue } from "../../domain/entities/fixed-code-status.entity";
 import { ALL_FIXED_CODE_STATUS_VALUES } from "../../domain/entities/fixed-code-status.entity";
 import type {
@@ -27,6 +29,7 @@ export type MapViewState = {
   viewport: MapViewport;
   visibleLayerKinds: Set<LayerKind>;
   visibleFixedCodeStatuses: Set<FixedCodeStatusValue>;
+  activeBasemapId: BasemapProviderId;
   isBasemapVisible: boolean;
   activeTab: ViewSegmentOption;
   mobileSubHeaderTab: MobileSubHeaderTab;
@@ -44,6 +47,7 @@ export type MapViewAction =
   | { type: "SET_LAYER_VISIBILITY"; payload: { kind: LayerKind; visible: boolean } }
   | { type: "TOGGLE_FIXED_CODE_STATUS"; payload: FixedCodeStatusValue }
   | { type: "SET_ALL_FIXED_CODE_STATUSES"; payload: boolean }
+  | { type: "SET_BASEMAP_PROVIDER"; payload: BasemapProviderId }
   | { type: "TOGGLE_BASEMAP" }
   | { type: "SET_BASEMAP_VISIBLE"; payload: boolean }
   | { type: "SET_ACTIVE_TAB"; payload: ViewSegmentOption }
@@ -80,6 +84,7 @@ export const initialMapViewState: MapViewState = {
   },
   visibleLayerKinds: new Set<LayerKind>(DEFAULT_VISIBLE_LAYER_KINDS),
   visibleFixedCodeStatuses: new Set<FixedCodeStatusValue>(ALL_FIXED_CODE_STATUS_VALUES),
+  activeBasemapId: DEFAULT_BASEMAP_ID,
   isBasemapVisible: true,
   activeTab: "layers",
   mobileSubHeaderTab: null,
@@ -169,18 +174,40 @@ export function mapViewReducer(state: MapViewState, action: MapViewAction): MapV
       };
     }
 
-    case "TOGGLE_BASEMAP":
+    case "SET_BASEMAP_PROVIDER": {
+      const isVisible = action.payload !== "none";
       return {
         ...state,
-        isBasemapVisible: !state.isBasemapVisible,
+        activeBasemapId: action.payload,
+        isBasemapVisible: isVisible,
       };
+    }
 
-    case "SET_BASEMAP_VISIBLE":
+    case "TOGGLE_BASEMAP": {
+      const willBeVisible = !state.isBasemapVisible;
+      return {
+        ...state,
+        isBasemapVisible: willBeVisible,
+        activeBasemapId: willBeVisible
+          ? state.activeBasemapId === "none"
+            ? DEFAULT_BASEMAP_ID
+            : state.activeBasemapId
+          : "none",
+      };
+    }
+
+    case "SET_BASEMAP_VISIBLE": {
       if (state.isBasemapVisible === action.payload) return state;
       return {
         ...state,
         isBasemapVisible: action.payload,
+        activeBasemapId: action.payload
+          ? state.activeBasemapId === "none"
+            ? DEFAULT_BASEMAP_ID
+            : state.activeBasemapId
+          : "none",
       };
+    }
 
     case "SET_ACTIVE_TAB":
       if (state.activeTab === action.payload) return state;

@@ -8,6 +8,7 @@ import React, {
   useReducer,
   type ReactNode,
 } from "react";
+import type { BasemapProviderId } from "../../domain/entities/basemap.entity";
 import type { FixedCodeStatusValue } from "../../domain/entities/fixed-code-status.entity";
 import type {
   LayerKind,
@@ -32,6 +33,7 @@ export type MapViewContextType = {
   setLayerVisibility: (kind: LayerKind, visible: boolean) => void;
   toggleFixedCodeStatus: (status: FixedCodeStatusValue) => void;
   setAllFixedCodeStatuses: (visible: boolean) => void;
+  setBasemapProvider: (providerId: BasemapProviderId) => void;
   toggleBasemap: () => void;
   setBasemapVisible: (visible: boolean) => void;
   setActiveTab: (tab: ViewSegmentOption) => void;
@@ -97,6 +99,10 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
 
   const setAllFixedCodeStatuses = useCallback((visible: boolean) => {
     dispatch({ type: "SET_ALL_FIXED_CODE_STATUSES", payload: visible });
+  }, []);
+
+  const setBasemapProvider = useCallback((providerId: BasemapProviderId) => {
+    dispatch({ type: "SET_BASEMAP_PROVIDER", payload: providerId });
   }, []);
 
   const toggleBasemap = useCallback(() => {
@@ -172,6 +178,7 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
       setLayerVisibility,
       toggleFixedCodeStatus,
       setAllFixedCodeStatuses,
+      setBasemapProvider,
       toggleBasemap,
       setBasemapVisible,
       setActiveTab,
@@ -192,6 +199,7 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
       setLayerVisibility,
       toggleFixedCodeStatus,
       setAllFixedCodeStatuses,
+      setBasemapProvider,
       toggleBasemap,
       setBasemapVisible,
       setActiveTab,

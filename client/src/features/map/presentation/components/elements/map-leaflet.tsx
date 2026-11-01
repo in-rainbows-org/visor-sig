@@ -30,6 +30,7 @@ export function MapLeaflet({
   const { state, setViewport } = useMapView();
   const {
     visibleLayerKinds,
+    activeBasemapId,
     isBasemapVisible,
     visibleFixedCodeStatuses,
     macroFeaturesByKind,
@@ -67,7 +68,7 @@ export function MapLeaflet({
         preferCanvas={true}
         className="w-full h-full"
       >
-        <MapBasemap isVisible={isBasemapVisible} />
+        <MapBasemap providerId={activeBasemapId} isVisible={isBasemapVisible} />
         <MapViewportListener onViewportChange={handleViewportChange} />
         <MapLayerOverlays
           featuresByKind={featuresByKind}

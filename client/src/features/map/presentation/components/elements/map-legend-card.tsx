@@ -14,6 +14,7 @@ import {
   FIXED_CODE_PIN_CONFIGS,
 } from "../../../domain/entities/fixed-code-status.entity";
 import { useMapView } from "../../state/map-view-store";
+import { MapBasemapCard } from "./map-basemap-card";
 
 import { cn } from "@/lib/utils";
 
@@ -22,9 +23,10 @@ export type MapLegendControlsProps = {
 };
 
 export function MapLegendCard({ className = "" }: MapLegendControlsProps) {
-  const { state, toggleBasemap, zoomIn, zoomOut } = useMapView();
+  const { state, zoomIn, zoomOut } = useMapView();
   const { isBasemapVisible } = state;
 
+  const [basemapOpen, setBasemapOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
 
   const legendCardContent = (
@@ -70,25 +72,38 @@ export function MapLegendCard({ className = "" }: MapLegendControlsProps) {
       data-purpose="gis-map-controls"
     >
       {/* 1. Isla Superior: Herramientas del Mapa (Fondo Cartográfico y Leyenda) */}
-      <Popover open={legendOpen} onOpenChange={setLegendOpen}>
-        <div className="bg-white rounded-2xl shadow-md shadow-slate-900/5 border-0 flex flex-col items-center overflow-hidden w-10 divide-y divide-slate-100">
-          {/* Botón Alternar Fondo Cartográfico */}
-          <button
-            type="button"
-            onClick={toggleBasemap}
-            aria-label={isBasemapVisible ? "Ocultar fondo cartográfico" : "Mostrar fondo cartográfico"}
-            title={isBasemapVisible ? "Ocultar fondo cartográfico" : "Mostrar fondo cartográfico"}
-            className={cn(
-              "w-10 h-10 flex items-center justify-center transition cursor-pointer active:scale-95",
-              isBasemapVisible
-                ? "text-blue-600 bg-blue-50/80 hover:bg-blue-100/80"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-            )}
-          >
-            <MapIcon className="w-4 h-4" />
-          </button>
+      <div className="bg-white rounded-2xl shadow-md shadow-slate-900/5 border-0 flex flex-col items-center overflow-hidden w-10 divide-y divide-slate-100">
+        {/* Popover Selector de Fondo Cartográfico */}
+        <Popover open={basemapOpen} onOpenChange={setBasemapOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Seleccionar fondo cartográfico"
+              title="Fondo cartográfico"
+              className={cn(
+                "w-10 h-10 flex items-center justify-center transition cursor-pointer active:scale-95",
+                basemapOpen || isBasemapVisible
+                  ? "text-blue-600 bg-blue-50/80 hover:bg-blue-100/80"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              )}
+            >
+              <MapIcon className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
 
-          {/* Botón Dropdown Leyendas con PopoverTrigger */}
+          <PopoverContent
+            side="left"
+            align="end"
+            sideOffset={12}
+            alignOffset={-90}
+            className="p-0 border-0 bg-transparent shadow-none w-auto"
+          >
+            <MapBasemapCard onSelectOption={() => setBasemapOpen(false)} />
+          </PopoverContent>
+        </Popover>
+
+        {/* Popover Dropdown Leyendas de Códigos Fijos */}
+        <Popover open={legendOpen} onOpenChange={setLegendOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
@@ -104,17 +119,18 @@ export function MapLegendCard({ className = "" }: MapLegendControlsProps) {
               <Info className="w-4 h-4" />
             </button>
           </PopoverTrigger>
-        </div>
 
-        <PopoverContent
-          side="left"
-          align="center"
-          sideOffset={12}
-          className="p-0 border-0 bg-transparent shadow-none w-auto"
-        >
-          {legendCardContent}
-        </PopoverContent>
-      </Popover>
+          <PopoverContent
+            side="left"
+            align="end"
+            sideOffset={12}
+            alignOffset={-90}
+            className="p-0 border-0 bg-transparent shadow-none w-auto"
+          >
+            {legendCardContent}
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {/* 2. Isla Inferior: Controles de Zoom (+ y -) */}
       <div className="bg-white rounded-2xl shadow-md shadow-slate-900/5 border-0 flex flex-col items-center overflow-hidden w-10 divide-y divide-slate-100">
@@ -143,4 +159,3 @@ export function MapLegendCard({ className = "" }: MapLegendControlsProps) {
 }
 
 export default MapLegendCard;
-

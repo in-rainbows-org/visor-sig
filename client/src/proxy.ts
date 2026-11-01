@@ -76,7 +76,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/usuarios" ||
     pathname.startsWith("/usuarios/") ||
     pathname === "/consultar" ||
-    pathname.startsWith("/consultar/");
+    pathname.startsWith("/consultar/") ||
+    pathname === "/asignacion-rutas" ||
+    pathname.startsWith("/asignacion-rutas/");
 
   if (isProtectedRoute) {
     if (!isAuthenticated) {
@@ -116,5 +118,7 @@ export const config = {
     "/usuarios/:path*",
     "/consultar",
     "/consultar/:path*",
+    "/asignacion-rutas",
+    "/asignacion-rutas/:path*",
   ],
 };

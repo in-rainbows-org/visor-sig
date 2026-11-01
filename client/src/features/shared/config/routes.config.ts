@@ -51,6 +51,14 @@ export const APP_ROUTES: NavigationRoute[] = [
     allowedRoles: [APP_ROLES.ADMIN, APP_ROLES.CONSULTANT],
   },
   {
+    key: "asignacion-rutas",
+    label: "Asignación de Rutas",
+    shortLabel: "Asignación",
+    href: "/asignacion-rutas",
+    icon: "/navigation-icons/asignacion-rutas.webp",
+    allowedRoles: [APP_ROLES.ADMIN],
+  },
+  {
     key: "usuarios",
     label: "Usuarios",
     shortLabel: "Usuarios",

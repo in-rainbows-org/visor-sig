@@ -1,0 +1,133 @@
+/* ══ Stacked bars (Bencho Implementation for Route Assignments) ═══ */
+.stb-card {
+  --fill-slab: #ffffff;
+  --fill-on: #0f172a;
+  --stb-c1: #4ba1fe;
+  --stb-c2: #fdd94f;
+  --stb-alert: #ef4444;
+  --stb-soft: #475569;
+  --stb-mute: #94a3b8;
+  --stb-faint: #cbd5e1;
+  --stb-w6: rgba(15, 23, 42, 0.06);
+  --stb-w12: rgba(15, 23, 42, 0.12);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  background: var(--fill-slab, #ffffff);
+  color: var(--fill-on, #0f172a);
+  font-family: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stb-card[data-colour="on"] {
+  --stb-c1: #4ba1fe;
+  --stb-c2: #fdd94f;
+  --stb-alert: #ef4444;
+}
+
+/* the figure */
+.stb-digit { display: inline-block; }
+.stb-digit[data-pop] {
+  animation: stb-pop 500ms cubic-bezier(0.34, 1.45, 0.64, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stb-digit[data-pop] { animation: none; }
+}
+
+/* the plot: absolutely placed columns, each segment its own rounded box */
+.stb-plot { position: relative; width: 100%; touch-action: none; cursor: crosshair; }
+
+.stb-base {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--stb-w12);
+}
+
+.stb-col { position: absolute; top: 0; bottom: 0; }
+
+.stb-bar,
+.stb-esc {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: var(--stb-r, 2.5px);
+  transition:
+    height 600ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 14ms),
+    bottom 600ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 14ms),
+    background-color 160ms ease;
+}
+
+.stb-bar { background-color: var(--c); }
+.stb-esc { background-color: var(--stb-alert); }
+
+/* scrubbing: the others step back by mixing toward the slab */
+.stb-card[data-scrub] .stb-col:not([data-on]) .stb-bar {
+  background-color: color-mix(in srgb, var(--c) 38%, var(--fill-slab, #ffffff));
+}
+
+.stb-card[data-scrub] .stb-col:not([data-on]) .stb-esc {
+  background-color: color-mix(in srgb, var(--stb-alert) 38%, var(--fill-slab, #ffffff));
+}
+
+.stb-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  border: 1.5px solid var(--stb-mute);
+  border-radius: var(--stb-rr, 5.5px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  z-index: 10;
+}
+
+.stb-card[data-scrub] .stb-ring { opacity: 1; }
+
+/* the tooltip: beside the column, gliding on a spring */
+.stb-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--fill-slab, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--fill-on, #0f172a) 10%, var(--fill-slab, #ffffff));
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.12), 0 2px 6px -1px rgba(15, 23, 42, 0.05);
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  z-index: 20;
+}
+
+.stb-card[data-scrub] .stb-tip { opacity: 1; }
+
+/* footer */
+.stb-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 14px;
+  color: #475569;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes stb-pop {
+  from { transform: translateY(0.18em); opacity: 0; filter: blur(2px); }
+  to { transform: none; opacity: 1; filter: blur(0); }
+}

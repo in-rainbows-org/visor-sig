@@ -4,14 +4,52 @@ import {
   StackedBarsSummary,
   WorkerOption,
 } from "../../domain/entities/route-assignment-stats.entity";
+import type { RouteTechnician } from "../../domain/entities/route-wizard.entity";
 
-export const MOCK_WORKERS: WorkerOption[] = [
-  { id: "w-01", name: "Carlos Mendoza", email: "carlos.mendoza@gisvisor.com" },
-  { id: "w-02", name: "Elena Rojas", email: "elena.rojas@gisvisor.com" },
-  { id: "w-03", name: "Andrés Silva", email: "andres.silva@gisvisor.com" },
-  { id: "w-04", name: "Mariana Valenzuela", email: "mariana.valenzuela@gisvisor.com" },
-  { id: "w-05", name: "Rodrigo Peña", email: "rodrigo.pena@gisvisor.com" },
+export const MOCK_ROUTE_TECHNICIANS: RouteTechnician[] = [
+  {
+    id: "w-01",
+    name: "Carlos Mendoza",
+    email: "carlos.mendoza@gisvisor.com",
+    role: "Técnico Especialista en Catastro",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "w-02",
+    name: "Elena Rojas",
+    email: "elena.rojas@gisvisor.com",
+    role: "Inspectora de Vías y Lotes",
+    avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "w-03",
+    name: "Andrés Silva",
+    email: "andres.silva@gisvisor.com",
+    role: "Técnico de Campo GIS",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "w-04",
+    name: "Mariana Valenzuela",
+    email: "mariana.valenzuela@gisvisor.com",
+    role: "Supervisora Territorial",
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    id: "w-05",
+    name: "Rodrigo Peña",
+    email: "rodrigo.pena@gisvisor.com",
+    role: "Técnico Operativo de Rutas",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+  },
 ];
+
+export const MOCK_WORKERS: WorkerOption[] = MOCK_ROUTE_TECHNICIANS.map((w) => ({
+  id: w.id,
+  name: w.name,
+  email: w.email,
+  avatar: w.avatarUrl,
+}));
 
 /**
  * Conjunto de 20 asignaciones de ruta representativas para el visor territorial
@@ -452,3 +490,54 @@ export function getStackedBarsSummary(
     bars,
   };
 }
+
+export const MOCK_FIXED_CODE_CANDIDATES = [
+  {
+    id: "cf-cand-01",
+    fixedCode: 1024,
+    name: "Carlos Mendoza Quispe",
+    status: 1,
+    latitude: -17.7833,
+    longitude: -63.1821,
+  },
+  {
+    id: "cf-cand-02",
+    fixedCode: 1025,
+    name: "Mariana Valenzuela",
+    status: 2,
+    latitude: -17.7845,
+    longitude: -63.1835,
+  },
+  {
+    id: "cf-cand-03",
+    fixedCode: 1028,
+    name: "Jorge Gutierrez",
+    status: 1,
+    latitude: -17.7820,
+    longitude: -63.1805,
+  },
+  {
+    id: "cf-cand-04",
+    fixedCode: 1030,
+    name: "Ana Fernandez Rojas",
+    status: 3,
+    latitude: -17.7852,
+    longitude: -63.1850,
+  },
+  {
+    id: "cf-cand-05",
+    fixedCode: 1042,
+    name: "Roberto Duran",
+    status: 1,
+    latitude: -17.7811,
+    longitude: -63.1790,
+  },
+  {
+    id: "cf-cand-06",
+    fixedCode: 1055,
+    name: "Elena Rojas Perez",
+    status: 1,
+    latitude: -17.7865,
+    longitude: -63.1870,
+  },
+];

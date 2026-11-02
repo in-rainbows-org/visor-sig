@@ -16,6 +16,9 @@ from app.modules.consultations.application.queries.get_manzanas_consultation imp
 from app.modules.consultations.application.queries.get_vias_consultation import (
     PaginatedViasConsultationDTO,
 )
+from app.modules.consultations.application.queries.search_codigos_fijos_for_assignment import (
+    CodigoFijoAssignmentCandidateDTO,
+)
 
 
 class ConsultationReader(ABC):
@@ -39,6 +42,14 @@ class ConsultationReader(ABC):
         id: uuid.UUID,
     ) -> CodigoFijoDetailDTO | None:
         """Obtiene el detalle georreferenciado completo de un código fijo por ID con lote y manzana."""
+
+    @abstractmethod
+    def search_codigos_fijos_for_assignment(
+        self,
+        fixed_code: int,
+        limit: int,
+    ) -> list[CodigoFijoAssignmentCandidateDTO]:
+        """Búsqueda especializada de códigos fijos con coordenadas y titular para asignación de rutas."""
 
 
     @abstractmethod

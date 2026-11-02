@@ -39,7 +39,7 @@ export function MapSearchResultCard({
     <div
       onClick={onClick}
       className={cn(
-        "p-3.5 rounded-2xl bg-slate-50/90 hover:bg-slate-100/90 active:bg-slate-100 cursor-pointer transition-all border-0 shadow-none flex flex-col gap-2.5 group select-none",
+        "p-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 border border-slate-200/80 cursor-pointer transition-all shadow-none flex flex-col gap-2.5 group select-none",
         className
       )}
     >

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { Plus, Inbox, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RouteAssignment } from "../../../../domain/entities/route-assignment.entity";
@@ -118,13 +119,13 @@ export function RouteHistorySection({
           </h3>
         </div>
 
-        <Button
-          type="button"
-          className="w-full sm:w-auto h-11 rounded-full bg-blue-600 hover:bg-blue-600 text-white font-semibold text-xs sm:text-sm px-5 gap-2 shadow-none cursor-default shrink-0 select-none flex items-center justify-center"
+        <Link
+          href="/asignacion-rutas/nueva-asignacion"
+          className="w-full sm:w-auto h-11 rounded-full bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white hover:opacity-95 active:scale-[0.98] border-0 shadow-none font-semibold text-xs sm:text-sm px-5 gap-2 shrink-0 select-none flex items-center justify-center transition-all cursor-pointer"
         >
           <Plus className="size-4 stroke-[2.5]" />
           <span>Nueva asignación</span>
-        </Button>
+        </Link>
       </div>
 
       {/* Formulario / Tarjeta de Filtros con input de RUT y botón Buscar */}

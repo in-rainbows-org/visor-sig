@@ -24,6 +24,9 @@ from app.modules.consultations.application.queries.get_vias_consultation import 
     PaginatedViasConsultationDTO,
     ViaConsultationDTO,
 )
+from app.modules.consultations.application.queries.search_codigos_fijos_for_assignment import (
+    CodigoFijoAssignmentCandidateDTO,
+)
 from app.modules.layers.domain.enums import LayerKind
 from app.modules.layers.infrastructure.persistence.models.codigo_fijo_model import CodigoFijoModel
 from app.modules.layers.infrastructure.persistence.models.data_version_model import DataVersionModel
@@ -188,6 +191,47 @@ class SqlModelConsultationReader(ConsultationReader):
             block_number=row.block_number,
             uv_block_code=row.uv_block_code,
         )
+
+    def search_codigos_fijos_for_assignment(
+        self,
+        fixed_code: int,
+        limit: int,
+    ) -> list[CodigoFijoAssignmentCandidateDTO]:
+        """Búsqueda especializada de códigos fijos con coordenadas y titular para asignación de rutas."""
+        version_id = self._get_active_version_id(LayerKind.CODIGOS_FIJOS.value)
+        if not version_id:
+            return []
+
+        stmt = (
+            select(
+                CodigoFijoModel.id,
+                CodigoFijoModel.fixed_code,
+                CodigoFijoModel.name,
+                CodigoFijoModel.status,
+                CodigoFijoModel.latitude,
+                CodigoFijoModel.longitude,
+            )
+            .where(
+                CodigoFijoModel.data_version_id == version_id,
+                CodigoFijoModel.deleted_date.is_(None),
+                cast(CodigoFijoModel.fixed_code, String).like(f"{fixed_code}%"),
+            )
+            .order_by(CodigoFijoModel.fixed_code.asc().nulls_last(), CodigoFijoModel.id)
+            .limit(limit)
+        )
+
+        rows = self.session.exec(stmt).all()
+        return [
+            CodigoFijoAssignmentCandidateDTO(
+                id=r.id,
+                fixed_code=r.fixed_code,
+                name=r.name,
+                status=r.status,
+                latitude=r.latitude,
+                longitude=r.longitude,
+            )
+            for r in rows
+        ]
 
     def search_lotes(
         self,

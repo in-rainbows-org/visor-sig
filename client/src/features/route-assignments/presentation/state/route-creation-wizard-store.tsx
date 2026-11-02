@@ -1,0 +1,231 @@
+"use client";
+
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useReducer,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
+import { appToast } from "@/features/shared/presentation/components/notifications/toast";
+import type { FixedCodeCandidate } from "../../domain/entities/fixed-code-candidate.entity";
+import {
+  RouteCalculationState,
+  RouteCartStop,
+  RouteCreationWizardState,
+  RouteStartingPoint,
+  RouteTechnician,
+  RouteWizardStep,
+} from "../../domain/entities/route-wizard.entity";
+import {
+  initialWizardState,
+  routeCreationWizardReducer,
+} from "./route-creation-wizard-reducer";
+
+export type RouteCreationWizardContextType = {
+  state: RouteCreationWizardState;
+  isStarted: boolean;
+  currentStep: RouteWizardStep;
+  selectedTechnician: RouteTechnician | null;
+  startingPoint: RouteStartingPoint | null;
+  cartStops: RouteCartStop[];
+  calculationState: RouteCalculationState;
+  isSearchVisible: boolean;
+  canAdvance: boolean;
+
+  startWizard: () => void;
+  selectTechnician: (technician: RouteTechnician) => void;
+  setStartingPoint: (point: RouteStartingPoint) => void;
+  addStop: (candidate: FixedCodeCandidate) => void;
+  removeStop: (id: string) => void;
+  reorderStops: (stops: RouteCartStop[]) => void;
+  calculateRoutes: () => Promise<void>;
+  saveAssignment: () => void;
+  nextStep: () => void;
+  prevStep: () => void;
+  cancel: () => void;
+  resetWizard: () => void;
+  goToStep: (step: RouteWizardStep) => void;
+};
+
+const RouteCreationWizardContext = createContext<RouteCreationWizardContextType | null>(null);
+
+export function RouteCreationWizardProvider({ children }: { children: ReactNode }) {
+  const [state, dispatch] = useReducer(routeCreationWizardReducer, initialWizardState);
+  const router = useRouter();
+
+  const startWizard = useCallback(() => {
+    dispatch({ type: "START_WIZARD" });
+  }, []);
+
+  const selectTechnician = useCallback((technician: RouteTechnician) => {
+    dispatch({ type: "SELECT_TECHNICIAN", payload: technician });
+  }, []);
+
+  const setStartingPoint = useCallback((point: RouteStartingPoint) => {
+    dispatch({ type: "SET_STARTING_POINT", payload: point });
+  }, []);
+
+  const addStop = useCallback((candidate: FixedCodeCandidate) => {
+    dispatch({ type: "ADD_STOP", payload: candidate });
+  }, []);
+
+  const removeStop = useCallback((id: string) => {
+    dispatch({ type: "REMOVE_STOP", payload: { id } });
+  }, []);
+
+  const reorderStops = useCallback((stops: RouteCartStop[]) => {
+    dispatch({ type: "REORDER_STOPS", payload: stops });
+  }, []);
+
+  const calculateRoutes = useCallback(async () => {
+    dispatch({ type: "START_CALCULATION" });
+    // Simulación de optimización rápida demostrativa (1.2 segundos)
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    dispatch({ type: "FINISH_CALCULATION" });
+  }, []);
+
+  const saveAssignment = useCallback(() => {
+    if (state.cartStops.length === 0) {
+      appToast.warning("Debes agregar al menos una parada a la asignación");
+      return;
+    }
+    if (!state.selectedTechnician) {
+      appToast.warning("Debes seleccionar un técnico responsable");
+      return;
+    }
+    if (!state.startingPoint) {
+      appToast.warning("Debes definir un punto de partida en el mapa");
+      return;
+    }
+
+    // Éxito con Sileo Toast según la especificación
+    appToast.success("Nueva asignación creada con éxito");
+    router.push("/asignacion-rutas");
+  }, [state.cartStops.length, state.selectedTechnician, state.startingPoint, router]);
+
+  const canAdvance = useMemo(() => {
+    switch (state.currentStep) {
+      case RouteWizardStep.WELCOME:
+        return true;
+      case RouteWizardStep.TECHNICIAN:
+        return state.selectedTechnician !== null;
+      case RouteWizardStep.STARTING_POINT:
+        return state.startingPoint !== null;
+      case RouteWizardStep.STOPS_CART:
+        return state.cartStops.length > 0 && state.calculationState === "calculated";
+      case RouteWizardStep.SUMMARY:
+        return true;
+      default:
+        return false;
+    }
+  }, [
+    state.currentStep,
+    state.selectedTechnician,
+    state.startingPoint,
+    state.cartStops.length,
+    state.calculationState,
+  ]);
+
+  const nextStep = useCallback(() => {
+    if (!canAdvance) return;
+    if (state.currentStep === RouteWizardStep.WELCOME) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.TECHNICIAN });
+    } else if (state.currentStep === RouteWizardStep.TECHNICIAN) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STARTING_POINT });
+    } else if (state.currentStep === RouteWizardStep.STARTING_POINT) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STOPS_CART });
+    } else if (state.currentStep === RouteWizardStep.STOPS_CART) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.SUMMARY });
+    }
+  }, [canAdvance, state.currentStep]);
+
+  const prevStep = useCallback(() => {
+    if (state.currentStep === RouteWizardStep.SUMMARY) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STOPS_CART });
+    } else if (state.currentStep === RouteWizardStep.STOPS_CART) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STARTING_POINT });
+    } else if (state.currentStep === RouteWizardStep.STARTING_POINT) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.TECHNICIAN });
+    } else if (state.currentStep === RouteWizardStep.TECHNICIAN) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.WELCOME });
+    }
+  }, [state.currentStep]);
+
+  const cancel = useCallback(() => {
+    router.push("/asignacion-rutas");
+  }, [router]);
+
+  const resetWizard = useCallback(() => {
+    dispatch({ type: "RESET_WIZARD" });
+  }, []);
+
+  const goToStep = useCallback((step: RouteWizardStep) => {
+    dispatch({ type: "GO_TO_STEP", payload: step });
+  }, []);
+
+  const isSearchVisible = state.currentStep === RouteWizardStep.STOPS_CART;
+
+  const value = useMemo(
+    () => ({
+      state,
+      isStarted: state.isStarted,
+      currentStep: state.currentStep,
+      selectedTechnician: state.selectedTechnician,
+      startingPoint: state.startingPoint,
+      cartStops: state.cartStops,
+      calculationState: state.calculationState,
+      isSearchVisible,
+      canAdvance,
+      startWizard,
+      selectTechnician,
+      setStartingPoint,
+      addStop,
+      removeStop,
+      reorderStops,
+      calculateRoutes,
+      saveAssignment,
+      nextStep,
+      prevStep,
+      cancel,
+      resetWizard,
+      goToStep,
+    }),
+    [
+      state,
+      isSearchVisible,
+      canAdvance,
+      startWizard,
+      selectTechnician,
+      setStartingPoint,
+      addStop,
+      removeStop,
+      reorderStops,
+      calculateRoutes,
+      saveAssignment,
+      nextStep,
+      prevStep,
+      cancel,
+      resetWizard,
+      goToStep,
+    ]
+  );
+
+  return (
+    <RouteCreationWizardContext.Provider value={value}>
+      {children}
+    </RouteCreationWizardContext.Provider>
+  );
+}
+
+export function useRouteCreationWizard(): RouteCreationWizardContextType {
+  const context = useContext(RouteCreationWizardContext);
+  if (!context) {
+    throw new Error(
+      "useRouteCreationWizard debe utilizarse dentro de un RouteCreationWizardProvider"
+    );
+  }
+  return context;
+}

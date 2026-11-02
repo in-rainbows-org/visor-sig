@@ -17,7 +17,10 @@ export function ProtectedLayoutShell({
 }) {
   const pathname = usePathname();
 
-  const isMapPage = pathname === "/mapa";
+  const isMapPage =
+    pathname === "/mapa" || pathname.startsWith("/asignacion-rutas/nueva");
+
+  const isNewAssignment = pathname.startsWith("/asignacion-rutas/nueva");
 
   return (
     <div className="bg-[#f5f6fa] text-gray-800 font-sans fixed inset-0 w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none overscroll-none">
@@ -45,8 +48,8 @@ export function ProtectedLayoutShell({
         </main>
       </div>
 
-      {/* 3. Barra de navegación flotante inferior (solo en móviles y tablets < 1024px) */}
-      <AppBottomNav />
+      {/* 3. Barra de navegación flotante inferior (solo en móviles y tablets < 1024px, oculta en nueva asignación) */}
+      {!isNewAssignment && <AppBottomNav />}
     </div>
   );
 }

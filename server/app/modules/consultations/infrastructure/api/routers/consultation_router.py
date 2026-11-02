@@ -11,6 +11,10 @@ from app.modules.consultations.application.queries.get_codigos_fijos_consultatio
     GetCodigosFijosConsultationQuery,
     GetCodigosFijosConsultationQueryHandler,
 )
+from app.modules.consultations.application.queries.search_codigos_fijos_for_assignment import (
+    SearchCodigosFijosForAssignmentQuery,
+    SearchCodigosFijosForAssignmentQueryHandler,
+)
 from app.modules.consultations.application.queries.get_lotes_consultation import (
     GetLotesConsultationQuery,
     GetLotesConsultationQueryHandler,
@@ -24,6 +28,7 @@ from app.modules.consultations.application.queries.get_vias_consultation import 
     GetViasConsultationQueryHandler,
 )
 from app.modules.consultations.infrastructure.api.schemas.consultation_schemas import (
+    CodigoFijoAssignmentCandidateSchema,
     CodigoFijoConsultationItemSchema,
     CodigoFijoDetailSchema,
     LoteConsultationItemSchema,
@@ -92,6 +97,40 @@ def get_codigos_fijos_consultation(
         page_size=result.page_size,
         total_pages=result.total_pages,
     )
+
+
+@router.get(
+    "/codigos-fijos/for-assignment",
+    response_model=list[CodigoFijoAssignmentCandidateSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Búsqueda especializada de Códigos Fijos con coordenadas para asignación de rutas",
+)
+def search_codigos_fijos_for_assignment(
+    db: DBSession,
+    user: CurrentUser,
+    fixed_code: int = Query(..., description="Código fijo exacto o prefijo numérico"),
+    limit: int = Query(10, ge=1, le=50, description="Cantidad máxima de candidatos a retornar"),
+) -> list[CodigoFijoAssignmentCandidateSchema]:
+    reader = SqlModelConsultationReader(db)
+    handler = SearchCodigosFijosForAssignmentQueryHandler(reader)
+    results = handler.execute(
+        SearchCodigosFijosForAssignmentQuery(
+            fixed_code=fixed_code,
+            limit=limit,
+        )
+    )
+
+    return [
+        CodigoFijoAssignmentCandidateSchema(
+            id=item.id,
+            fixed_code=item.fixed_code,
+            name=item.name,
+            status=item.status,
+            latitude=item.latitude,
+            longitude=item.longitude,
+        )
+        for item in results
+    ]
 
 
 @router.get(

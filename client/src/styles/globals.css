@@ -80,6 +80,19 @@
   border: none !important;
 }
 
+/* Marcadores personalizados para el asistente de rutas */
+.route-stop-cart-div-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.route-start-point-pin {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 .consultation-speech-bubble-popup a.leaflet-popup-close-button {
   top: 10px;
   right: 10px;

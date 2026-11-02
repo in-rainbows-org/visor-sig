@@ -74,6 +74,19 @@ class CodigoFijoDetailSchema(BaseModel):
     uv_block_code: str | None = Field(default=None, description="Código compuesto UV-Manzana")
 
 
+class CodigoFijoAssignmentCandidateSchema(BaseModel):
+    """Representación pública ligera de un código fijo con coordenadas para asignación de rutas."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID = Field(description="Identificador único del código fijo")
+    fixed_code: int | None = Field(default=None, description="Número entero de código fijo")
+    name: str | None = Field(default=None, description="Nombre o titular del abonado")
+    status: int = Field(description="Estado del servicio (1 a 5)")
+    latitude: float = Field(description="Latitud en coordenadas WGS84 EPSG:4326")
+    longitude: float = Field(description="Longitud en coordenadas WGS84 EPSG:4326")
+
+
 
 class PaginatedConsultationResponseSchema(BaseModel, Generic[T]):
     """Esquema genérico estándar de respuesta paginada para consultas alfanuméricas."""

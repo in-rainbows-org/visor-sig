@@ -11,15 +11,17 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Calendar, User, Search } from "lucide-react";
-import type {
-  RouteHistoryFilter,
-  WorkerOption,
-} from "../../../../domain/entities/route-assignment-stats.entity";
+export type RouteHistoryFilterValues = {
+  technicianId?: string;
+  workerId?: string;
+  startDate?: string;
+  endDate?: string;
+};
 
 export type RouteHistoryFilterCardProps = {
-  filter: RouteHistoryFilter;
-  workers: WorkerOption[];
-  onApplyFilter: (updated: RouteHistoryFilter) => void;
+  filter: RouteHistoryFilterValues;
+  workers: { id: string; name: string }[];
+  onApplyFilter: (updated: RouteHistoryFilterValues) => void;
   onReset: () => void;
   hasActiveFilters: boolean;
 };
@@ -28,18 +30,36 @@ export function RouteHistoryFilterCard({
   filter,
   workers,
   onApplyFilter,
+  onReset,
+  hasActiveFilters,
 }: RouteHistoryFilterCardProps) {
-  const [localWorkerId, setLocalWorkerId] = useState(filter.workerId || "ALL");
+  const currentWorkerId = filter.technicianId || filter.workerId || "ALL";
+  const [localWorkerId, setLocalWorkerId] = useState(currentWorkerId);
   const [localStartDate, setLocalStartDate] = useState(filter.startDate || "");
   const [localEndDate, setLocalEndDate] = useState(filter.endDate || "");
+
+  // Sincronizar estado local si los filtros de la URL cambian (ej. al navegar o resetear)
+  React.useEffect(() => {
+    setLocalWorkerId(filter.technicianId || filter.workerId || "ALL");
+    setLocalStartDate(filter.startDate || "");
+    setLocalEndDate(filter.endDate || "");
+  }, [filter.technicianId, filter.workerId, filter.startDate, filter.endDate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onApplyFilter({
+      technicianId: localWorkerId === "ALL" ? undefined : localWorkerId,
       workerId: localWorkerId === "ALL" ? undefined : localWorkerId,
       startDate: localStartDate || undefined,
       endDate: localEndDate || undefined,
     });
+  };
+
+  const handleLocalReset = () => {
+    setLocalWorkerId("ALL");
+    setLocalStartDate("");
+    setLocalEndDate("");
+    onReset();
   };
 
   return (

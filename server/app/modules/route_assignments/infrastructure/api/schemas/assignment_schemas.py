@@ -7,6 +7,15 @@ from pydantic import BaseModel, Field
 from app.modules.route_assignments.domain.value_objects.assignment_type import AssignmentType
 
 
+class TechnicianOptionRead(BaseModel):
+    """Representación de un técnico u operario para selectores y formularios."""
+
+    id: str
+    name: str
+    email: str | None = None
+    image: str | None = None
+
+
 class CreateAssignmentStopRequest(BaseModel):
     """Petición para registrar una parada de la asignación."""
 
@@ -20,7 +29,8 @@ class CreateAssignmentStopRequest(BaseModel):
         description="Estado objetivo esperado (3 para CUT, 1 para RECONNECTION)"
     )
     route_geometry: dict[str, Any] = Field(
-        description="Geometría del tramo de ruta que conduce a esta parada"
+        default_factory=dict,
+        description="Geometría del tramo de ruta que conduce a esta parada",
     )
 
 

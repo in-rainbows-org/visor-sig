@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -10,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertCircle,
   Calendar,
   CheckCircle2,
   Clock,
@@ -56,8 +58,8 @@ export function StatusBadge({ status }: { status: AssignmentStatus }) {
   switch (status) {
     case "COMPLETED":
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border-0 shadow-none">
-          <CheckCircle2 className="size-3.5 text-blue-600 shrink-0" />
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border-0 shadow-none">
+          <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
           <span>Completada</span>
         </span>
       );
@@ -66,6 +68,13 @@ export function StatusBadge({ status }: { status: AssignmentStatus }) {
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border-0 shadow-none">
           <span className="inline-flex rounded-full size-2 bg-amber-500 shrink-0" />
           <span>En Proceso</span>
+        </span>
+      );
+    case "CANCELLED":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border-0 shadow-none">
+          <AlertCircle className="size-3.5 text-rose-500 shrink-0" />
+          <span>Cancelada</span>
         </span>
       );
     case "PENDING":
@@ -111,8 +120,19 @@ export function RouteAssignmentsTable({
               {/* Técnico Asignado: Avatar + Nombre + Correo debajo */}
               <TableCell className="py-3.5 pl-6 pr-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative size-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border-0 shadow-none">
-                    {getInitials(assignment.workerName)}
+                  <div className="relative size-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border-0 shadow-none overflow-hidden">
+                    {assignment.technicianImage || assignment.workerAvatar ? (
+                      <Image
+                        src={assignment.technicianImage || assignment.workerAvatar!}
+                        alt={assignment.workerName}
+                        fill
+                        sizes="40px"
+                        unoptimized
+                        className="object-cover"
+                      />
+                    ) : (
+                      getInitials(assignment.workerName)
+                    )}
                   </div>
                   <div className="min-w-0">
                     <span className="text-sm font-semibold text-slate-900 truncate block">

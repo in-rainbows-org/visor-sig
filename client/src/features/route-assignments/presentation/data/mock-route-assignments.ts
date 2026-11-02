@@ -1,3 +1,10 @@
+/**
+ * NOTA DE ARQUITECTURA:
+ * Los registros MOCK_ROUTE_ASSIGNMENTS están DEPRECADOS para el listado del historial
+ * ya que la tabla ahora se alimenta directamente de `GET /api/v1/route-assignments/assignments`.
+ * Se mantienen exclusivamente para alimentar el gráfico estadístico superior ficticio
+ * solicitado por el usuario y como fallback en pruebas unitarias locales.
+ */
 import { RouteAssignment, AssignmentStatus } from "../../domain/entities/route-assignment.entity";
 import {
   RouteAssignmentPieStats,
@@ -463,9 +470,9 @@ export function getStackedBarsSummary(
   const targetAssignments = assignments.slice(0, 25);
 
   const bars = targetAssignments.map((a) => {
-    const completedCount = a.completedStops;
-    const observedCount = a.observedStops;
-    const failedCount = a.failedStops;
+    const completedCount = a.completedStops ?? 0;
+    const observedCount = a.observedStops ?? 0;
+    const failedCount = a.failedStops ?? 0;
     const totalValid = completedCount + observedCount;
     const totalPoints = totalValid + failedCount;
 

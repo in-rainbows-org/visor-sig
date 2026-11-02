@@ -25,6 +25,7 @@ from app.modules.route_assignments.infrastructure.api.schemas.assignment_schemas
     AssignmentSummaryRead,
     CreateAssignmentRequest,
     PaginatedAssignmentsRead,
+    TechnicianOptionRead,
 )
 from app.modules.route_assignments.infrastructure.api.schemas.route_schemas import (
     CalculateRouteRead,
@@ -206,3 +207,27 @@ def list_assignments(
         page_size=result.page_size,
         total_pages=result.total_pages,
     )
+
+
+@router.get(
+    "/technicians",
+    response_model=list[TechnicianOptionRead],
+    summary="Listar usuarios con rol de técnico operativo",
+)
+def list_technicians(
+    db: DBSession,
+    _: CurrentUser,
+) -> list[TechnicianOptionRead]:
+    """Retorna la lista de técnicos habilitados para formularios y selectores de asignación."""
+    reader = SqlModelAssignmentSummaryReader(db)
+    technicians = reader.list_technicians()
+    return [
+        TechnicianOptionRead(
+            id=t.id,
+            name=t.name,
+            email=t.email,
+            image=t.image,
+        )
+        for t in technicians
+    ]
+

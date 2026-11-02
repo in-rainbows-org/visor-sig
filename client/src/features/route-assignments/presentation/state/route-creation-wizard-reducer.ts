@@ -1,5 +1,6 @@
 import type { FixedCodeCandidate } from "../../domain/entities/fixed-code-candidate.entity";
 import {
+  CalculatedRoute,
   RouteCalculationState,
   RouteCartStop,
   RouteCreationWizardState,
@@ -20,6 +21,11 @@ export type RouteWizardAction =
   | { type: "REORDER_STOPS"; payload: RouteCartStop[] }
   | { type: "START_CALCULATION" }
   | { type: "FINISH_CALCULATION" }
+  | { type: "SET_CALCULATED_ROUTE"; payload: CalculatedRoute }
+  | { type: "FAIL_CALCULATION" }
+  | { type: "START_SAVING" }
+  | { type: "FAIL_SAVING"; payload: string }
+  | { type: "FINISH_SAVING" }
   | { type: "GO_TO_STEP"; payload: RouteWizardStep }
   | { type: "RESET_WIZARD" };
 
@@ -40,6 +46,9 @@ export const initialWizardState: RouteCreationWizardState = {
   startingPoint: null,
   cartStops: [],
   calculationState: "idle",
+  calculatedRoute: null,
+  isSaving: false,
+  saveError: null,
 };
 
 /**
@@ -107,6 +116,7 @@ export function routeCreationWizardReducer(
         serviceType: nextServiceType,
         cartStops: reindexStops(sanitizedStops),
         calculationState: stopsChanged ? "idle" : state.calculationState,
+        calculatedRoute: stopsChanged ? null : state.calculatedRoute,
       };
     }
 
@@ -114,6 +124,8 @@ export function routeCreationWizardReducer(
       return {
         ...state,
         startingPoint: action.payload,
+        calculationState: "idle",
+        calculatedRoute: null,
       };
     }
 
@@ -142,7 +154,8 @@ export function routeCreationWizardReducer(
       return {
         ...state,
         cartStops: [...state.cartStops, newStop],
-        calculationState: "idle", // Si se añade una parada, se debe recalcular
+        calculationState: "idle",
+        calculatedRoute: null,
       };
     }
 
@@ -151,7 +164,8 @@ export function routeCreationWizardReducer(
       return {
         ...state,
         cartStops: reindexStops(filtered),
-        calculationState: "idle", // Se debe recalcular tras eliminar
+        calculationState: "idle",
+        calculatedRoute: null,
       };
     }
 
@@ -160,6 +174,7 @@ export function routeCreationWizardReducer(
         ...state,
         cartStops: reindexStops(action.payload),
         calculationState: "idle",
+        calculatedRoute: null,
       };
     }
 
@@ -170,10 +185,71 @@ export function routeCreationWizardReducer(
       };
     }
 
+    case "SET_CALCULATED_ROUTE": {
+      const route = action.payload;
+      const orderMap = new Map<string, number>();
+      route.orderedStops.forEach((s, idx) => {
+        orderMap.set(s.codigoFijoId, s.orderIndex ?? (idx + 1));
+      });
+
+      const reorderedStops = [...state.cartStops]
+        .map((stop) => {
+          const newOrder =
+            orderMap.get(stop.fixedCodeId) ?? orderMap.get(stop.id);
+          return {
+            ...stop,
+            orderIndex: newOrder ?? stop.orderIndex,
+          };
+        })
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((stop, idx) => ({
+          ...stop,
+          orderIndex: idx + 1,
+        }));
+
+      return {
+        ...state,
+        calculationState: "calculated",
+        calculatedRoute: route,
+        cartStops: reorderedStops,
+      };
+    }
+
+    case "FAIL_CALCULATION": {
+      return {
+        ...state,
+        calculationState: "idle",
+      };
+    }
+
     case "FINISH_CALCULATION": {
       return {
         ...state,
         calculationState: "calculated",
+      };
+    }
+
+    case "START_SAVING": {
+      return {
+        ...state,
+        isSaving: true,
+        saveError: null,
+      };
+    }
+
+    case "FAIL_SAVING": {
+      return {
+        ...state,
+        isSaving: false,
+        saveError: action.payload,
+      };
+    }
+
+    case "FINISH_SAVING": {
+      return {
+        ...state,
+        isSaving: false,
+        saveError: null,
       };
     }
 

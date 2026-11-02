@@ -3,7 +3,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import type { FixedCodeCandidate } from "@/features/route-assignments/domain/entities/fixed-code-candidate.entity";
 import { RouteCreationZoomControls } from "./route-creation-zoom-controls";
 import { useRouteCreationWizard } from "@/features/route-assignments/presentation/state/route-creation-wizard-store";
@@ -25,10 +33,12 @@ export type RouteCreationMapProps = {
 function MapController({
   selectedCandidate,
   lastAddedStop,
+  calculatedCoordinates,
   onRegisterZoom,
 }: {
   selectedCandidate: FixedCodeCandidate | null | undefined;
   lastAddedStop: RouteCartStop | null;
+  calculatedCoordinates?: [number, number][];
   onRegisterZoom: (zoomIn: () => void, zoomOut: () => void) => void;
 }) {
   const map = useMap();
@@ -74,6 +84,16 @@ function MapController({
       duration: 0.8,
     });
   }, [lastAddedStop, map]);
+
+  // Encuadrar la polilínea completa de la ruta calculada por OSRM
+  useEffect(() => {
+    if (!calculatedCoordinates || calculatedCoordinates.length < 2) return;
+    map.fitBounds(L.latLngBounds(calculatedCoordinates), {
+      padding: [48, 48],
+      animate: true,
+      maxZoom: 16,
+    });
+  }, [calculatedCoordinates, map]);
 
   return null;
 }
@@ -168,12 +188,116 @@ function getStopCartPinIcon(orderIndex: number): L.DivIcon {
   return icon;
 }
 
+// Subcomponente de polilínea animada que dibuja el avance progresivo de la ruta vial
+function AnimatedRoutePolyline({
+  coordinates,
+}: {
+  coordinates: [number, number][];
+}) {
+  const [animatedCoords, setAnimatedCoords] = useState<[number, number][]>([]);
+  const animFrameRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!coordinates || coordinates.length < 2) {
+      setAnimatedCoords(coordinates || []);
+      return;
+    }
+
+    // Inicializar con los dos primeros puntos idénticos para inicio suave
+    setAnimatedCoords([coordinates[0], coordinates[0]]);
+    startTimeRef.current = null;
+
+    const totalPoints = coordinates.length;
+    // Duración suave y fluida (20% más pausada): entre 1200ms y 1800ms según la densidad de puntos
+    const durationMs = Math.min(1800, Math.max(1200, totalPoints * 12));
+
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(1, elapsed / durationMs);
+
+      // Curva cúbica para inicio ágil y desaceleración elegante al final
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const floatIndex = ease * (totalPoints - 1);
+      const baseIndex = Math.floor(floatIndex);
+      const fraction = floatIndex - baseIndex;
+
+      if (baseIndex >= totalPoints - 1) {
+        setAnimatedCoords(coordinates);
+        return;
+      }
+
+      const p1 = coordinates[baseIndex];
+      const p2 = coordinates[baseIndex + 1];
+
+      // Interpolación lineal precisa del punto de avance (cabeza del trazo)
+      const currentHead: [number, number] = [
+        p1[0] + (p2[0] - p1[0]) * fraction,
+        p1[1] + (p2[1] - p1[1]) * fraction,
+      ];
+
+      const currentSegment = [...coordinates.slice(0, baseIndex + 1), currentHead];
+      setAnimatedCoords(currentSegment);
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [coordinates]);
+
+  if (!coordinates || coordinates.length < 2) return null;
+
+  return (
+    <>
+      {/* 1. Silueta tenue de fondo para mostrar el corredor vial completo */}
+      <Polyline
+        positions={coordinates}
+        pathOptions={{
+          color: "#0e4dcb",
+          weight: 4,
+          opacity: 0.18,
+          lineCap: "round",
+          lineJoin: "round",
+        }}
+      />
+      {/* 2. Trazado vial activo en avance progresivo con azul vibrante */}
+      {animatedCoords.length >= 2 && (
+        <Polyline
+          positions={animatedCoords}
+          pathOptions={{
+            color: "#0e4dcb",
+            weight: 5,
+            opacity: 0.9,
+            lineCap: "round",
+            lineJoin: "round",
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 export function RouteCreationMap({
   selectedCandidate,
   className = "",
 }: RouteCreationMapProps) {
-  const { currentStep, startingPoint, setStartingPoint, cartStops, removeStop } =
-    useRouteCreationWizard();
+  const {
+    currentStep,
+    startingPoint,
+    setStartingPoint,
+    cartStops,
+    removeStop,
+    calculatedRoute,
+  } = useRouteCreationWizard();
 
   const [lastAddedStop, setLastAddedStop] = useState<RouteCartStop | null>(null);
   const prevStopsCountRef = useRef(cartStops.length);
@@ -226,6 +350,7 @@ export function RouteCreationMap({
         <MapController
           selectedCandidate={selectedCandidate}
           lastAddedStop={lastAddedStop}
+          calculatedCoordinates={calculatedRoute?.coordinates}
           onRegisterZoom={handleRegisterZoom}
         />
 
@@ -234,6 +359,11 @@ export function RouteCreationMap({
           isActive={isStartingPointStep}
           onPickStartingPoint={setStartingPoint}
         />
+
+        {/* Trazado Vial Animado con Avance Progresivo */}
+        {calculatedRoute?.coordinates && calculatedRoute.coordinates.length > 0 && (
+          <AnimatedRoutePolyline coordinates={calculatedRoute.coordinates} />
+        )}
 
         {/* Marcador del Punto de Partida */}
         {startingPoint && (
@@ -258,7 +388,7 @@ export function RouteCreationMap({
 
           return (
             <Marker
-              key={stop.id}
+              key={`stop-${stop.id}-${stop.orderIndex}`}
               position={[stop.latitude, stop.longitude]}
               icon={icon}
             >

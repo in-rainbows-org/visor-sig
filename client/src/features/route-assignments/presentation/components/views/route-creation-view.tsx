@@ -42,6 +42,7 @@ function RouteCreationInner() {
     cartStops,
     startingPoint,
     serviceType,
+    calculationState,
     addStop,
   } = useRouteCreationWizard();
   const [isWizardSheetOpen, setIsWizardSheetOpen] = useState(false);
@@ -106,6 +107,24 @@ function RouteCreationInner() {
       }
     };
   }, [currentStep, startingPoint]);
+
+  // Auto-cierre del bottom sheet en móviles y tablets al completar el cálculo de rutas (Paso 5)
+  // Permite que el usuario aprecie el trazado de la ruta renderizada en el mapa sin obstrucciones.
+  // Exclusivo para móviles y tablets (< 1024px); en escritorio no interfiere.
+  const prevCalculationStateRef = useRef(calculationState);
+  useEffect(() => {
+    if (
+      prevCalculationStateRef.current === "calculating" &&
+      calculationState === "calculated"
+    ) {
+      const isMobileOrTablet =
+        typeof window !== "undefined" && window.innerWidth < 1024;
+      if (isMobileOrTablet) {
+        setIsWizardSheetOpen(false);
+      }
+    }
+    prevCalculationStateRef.current = calculationState;
+  }, [calculationState]);
 
   // Escuchar eventos de solicitud de minimizado desde el interior de los pasos
   useEffect(() => {

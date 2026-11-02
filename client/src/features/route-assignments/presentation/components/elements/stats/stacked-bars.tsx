@@ -51,8 +51,8 @@ function makeBars(
 ): Bar[] {
   const slice = assignments.slice(0, n);
   return slice.map((a) => ({
-    vals: [a.completedStops, a.observedStops],
-    esc: a.failedStops,
+    vals: [a.completedStops ?? 0, a.observedStops ?? 0],
+    esc: a.failedStops ?? 0,
     routeCode: a.routeCode,
     workerName: a.workerName,
     scheduledDate: a.scheduledDate,

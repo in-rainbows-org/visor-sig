@@ -423,3 +423,59 @@ def test_osrm_provider_fallback_route_calculation():
     assert result.ordered_stops[1].order_index == 2
     assert result.ordered_stops[0].leg_geometry["type"] == "LineString"
 
+
+def test_list_technicians_reader():
+    from app.modules.route_assignments.application.dtos.assignment_summary_dto import TechnicianOptionDTO
+    from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_assignment_summary_reader import (
+        SqlModelAssignmentSummaryReader,
+    )
+
+    mock_session = MagicMock()
+    mock_exec = MagicMock()
+    mock_user = MagicMock()
+    mock_user.id = "tech-1"
+    mock_user.name = "Carlos Mendoza"
+    mock_user.email = "carlos@test.com"
+    mock_user.image = None
+    mock_exec.all.return_value = [mock_user]
+    mock_session.exec.return_value = mock_exec
+
+    reader = SqlModelAssignmentSummaryReader(mock_session)
+    technicians = reader.list_technicians()
+
+    assert len(technicians) == 1
+    assert technicians[0].id == "tech-1"
+    assert technicians[0].name == "Carlos Mendoza"
+    assert technicians[0].email == "carlos@test.com"
+
+
+def test_osrm_provider_reorders_waypoints_optimally():
+    """Verifica que el proveedor de rutas reordene paradas no óptimas hacia la secuencia más cercana."""
+    from app.modules.route_assignments.infrastructure.external.osrm_route_provider import (
+        OSRMRouteProvider,
+    )
+
+    provider = OSRMRouteProvider()
+
+    far_id = uuid4()
+    near_id = uuid4()
+    req = RouteCalculationRequestDTO(
+        start_latitude=-17.7833,
+        start_longitude=-63.1821,
+        optimize_waypoint_order=True,
+        waypoints=(
+            WaypointInputDTO(codigo_fijo_id=far_id, latitude=-17.8500, longitude=-63.2500),
+            WaypointInputDTO(codigo_fijo_id=near_id, latitude=-17.7835, longitude=-63.1823),
+        ),
+    )
+
+    result = provider.calculate_route(req)
+    assert len(result.ordered_stops) == 2
+    # La primera parada optimizada debe ser la más cercana al punto de partida
+    assert result.ordered_stops[0].codigo_fijo_id == near_id
+    assert result.ordered_stops[0].order_index == 1
+    assert result.ordered_stops[1].codigo_fijo_id == far_id
+    assert result.ordered_stops[1].order_index == 2
+
+
+

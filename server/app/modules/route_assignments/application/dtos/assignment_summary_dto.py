@@ -28,3 +28,13 @@ class PaginatedAssignmentsDTO:
     page: int
     page_size: int
     total_pages: int
+
+
+@dataclass(frozen=True)
+class TechnicianOptionDTO:
+    """Datos de técnico para opciones de selectores."""
+
+    id: str
+    name: str
+    email: str | None = None
+    image: str | None = None

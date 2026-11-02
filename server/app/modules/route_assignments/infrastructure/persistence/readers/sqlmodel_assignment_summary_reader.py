@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 from app.modules.route_assignments.application.dtos.assignment_summary_dto import (
     AssignmentSummaryDTO,
     PaginatedAssignmentsDTO,
+    TechnicianOptionDTO,
 )
 from app.modules.route_assignments.application.ports.readers.assignment_summary_reader import (
     AssignmentSummaryReader,
@@ -88,3 +89,21 @@ class SqlModelAssignmentSummaryReader(AssignmentSummaryReader):
             page_size=clamped_page_size,
             total_pages=total_pages,
         )
+
+    def list_technicians(self) -> list[TechnicianOptionDTO]:
+        stmt = (
+            select(BetterAuthUser)
+            .where(func.upper(BetterAuthUser.role) == "TECHNICIAN")
+            .where((BetterAuthUser.banned.is_(False)) | (BetterAuthUser.banned.is_(None)))
+            .order_by(BetterAuthUser.name.asc())
+        )
+        users = self.session.exec(stmt).all()
+        return [
+            TechnicianOptionDTO(
+                id=u.id,
+                name=u.name,
+                email=u.email,
+                image=u.image,
+            )
+            for u in users
+        ]

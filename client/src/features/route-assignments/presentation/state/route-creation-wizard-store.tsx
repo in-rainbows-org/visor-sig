@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { appToast } from "@/features/shared/presentation/components/notifications/toast";
 import type { FixedCodeCandidate } from "../../domain/entities/fixed-code-candidate.entity";
 import {
+  CalculatedRoute,
   RouteCalculationState,
   RouteCartStop,
   RouteCreationWizardState,
@@ -24,6 +25,7 @@ import {
   initialWizardState,
   routeCreationWizardReducer,
 } from "./route-creation-wizard-reducer";
+import { routeAssignmentRepository } from "../../infrastructure/repositories/route-assignment.repository-impl";
 
 export type RouteCreationWizardContextType = {
   state: RouteCreationWizardState;
@@ -35,6 +37,9 @@ export type RouteCreationWizardContextType = {
   startingPoint: RouteStartingPoint | null;
   cartStops: RouteCartStop[];
   calculationState: RouteCalculationState;
+  calculatedRoute: CalculatedRoute | null;
+  isSaving: boolean;
+  saveError: string | null;
   isSearchVisible: boolean;
   canAdvance: boolean;
 
@@ -47,7 +52,7 @@ export type RouteCreationWizardContextType = {
   removeStop: (id: string) => void;
   reorderStops: (stops: RouteCartStop[]) => void;
   calculateRoutes: () => Promise<void>;
-  saveAssignment: () => void;
+  saveAssignment: () => Promise<void>;
   nextStep: () => void;
   prevStep: () => void;
   cancel: () => void;
@@ -94,13 +99,48 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
   }, []);
 
   const calculateRoutes = useCallback(async () => {
-    dispatch({ type: "START_CALCULATION" });
-    // Simulación de optimización rápida demostrativa (1.2 segundos)
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    dispatch({ type: "FINISH_CALCULATION" });
-  }, []);
+    if (!state.startingPoint) {
+      appToast.warning("Debes definir un punto de partida antes de calcular la ruta");
+      return;
+    }
+    if (state.cartStops.length === 0) {
+      appToast.warning("Debes agregar al menos una parada para calcular la ruta");
+      return;
+    }
 
-  const saveAssignment = useCallback(() => {
+    dispatch({ type: "START_CALCULATION" });
+    try {
+      const res = await routeAssignmentRepository.calculateRoute({
+        startLatitude: state.startingPoint.latitude,
+        startLongitude: state.startingPoint.longitude,
+        optimizeWaypointOrder: true,
+        waypoints: state.cartStops.map((stop) => ({
+          codigoFijoId: stop.fixedCodeId,
+          latitude: stop.latitude,
+          longitude: stop.longitude,
+        })),
+      });
+
+      if (res.ok) {
+        dispatch({ type: "SET_CALCULATED_ROUTE", payload: res.data });
+        appToast.success(
+          "Ruta optimizada con éxito",
+          `${res.data.totalDistanceKm} km calculados en ${res.data.orderedStops.length} paradas`
+        );
+      } else {
+        dispatch({ type: "FAIL_CALCULATION" });
+        appToast.error(
+          "Error al calcular la ruta",
+          res.errors?.[0] || "No se pudo obtener el cálculo de ruta vial."
+        );
+      }
+    } catch {
+      dispatch({ type: "FAIL_CALCULATION" });
+      appToast.error("Error de conexión al calcular ruta con el servidor.");
+    }
+  }, [state.startingPoint, state.cartStops]);
+
+  const saveAssignment = useCallback(async () => {
     if (state.cartStops.length === 0) {
       appToast.warning("Debes agregar al menos una parada a la asignación");
       return;
@@ -122,15 +162,54 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
       return;
     }
 
-    // Éxito con Sileo Toast según la especificación
-    appToast.success("Nueva asignación creada con éxito");
-    router.push("/asignacion-rutas");
+    dispatch({ type: "START_SAVING" });
+    try {
+      const targetDefaultStatus = state.serviceType === "CUT" ? 3 : 1;
+      const res = await routeAssignmentRepository.createAssignment({
+        technicianId: state.selectedTechnician.id,
+        assignmentType: state.serviceType,
+        scheduledDate: state.scheduledDate,
+        startLatitude: state.startingPoint.latitude,
+        startLongitude: state.startingPoint.longitude,
+        totalDistanceKm: state.calculatedRoute?.totalDistanceKm ?? 0,
+        stops: state.cartStops.map((s) => ({
+          codigoFijoId: s.fixedCodeId,
+          orderIndex: s.orderIndex,
+          targetStatus: s.targetStatus ?? targetDefaultStatus,
+          currentStatus: s.status,
+          routeGeometry: s.routeGeometry ?? null,
+        })),
+      });
+
+      if (res.ok) {
+        dispatch({ type: "FINISH_SAVING" });
+        dispatch({ type: "RESET_WIZARD" });
+        appToast.success("Nueva asignación creada con éxito");
+        router.push("/asignacion-rutas");
+      } else {
+        dispatch({
+          type: "FAIL_SAVING",
+          payload: res.errors?.[0] || "No se pudo crear la asignación",
+        });
+        appToast.error(
+          "Error al guardar asignación",
+          res.errors?.[0] || "Hubo un problema al persistir la asignación."
+        );
+      }
+    } catch {
+      dispatch({
+        type: "FAIL_SAVING",
+        payload: "Error de red al guardar la asignación",
+      });
+      appToast.error("Error de conexión con el servidor.");
+    }
   }, [
-    state.cartStops.length,
+    state.cartStops,
     state.selectedTechnician,
     state.scheduledDate,
     state.serviceType,
     state.startingPoint,
+    state.calculatedRoute,
     router,
   ]);
 
@@ -221,6 +300,9 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
       startingPoint: state.startingPoint,
       cartStops: state.cartStops,
       calculationState: state.calculationState,
+      calculatedRoute: state.calculatedRoute,
+      isSaving: state.isSaving,
+      saveError: state.saveError,
       isSearchVisible,
       canAdvance,
       startWizard,

@@ -41,6 +41,25 @@ export type RouteCartStop = {
   targetStatus?: number;  // Estado resultante proyectado
   latitude: number;       // Coordenada latitud
   longitude: number;      // Coordenada longitud
+  routeGeometry?: string | null; // Geometría opcional de tramo
+};
+
+export type OptimizedStop = {
+  codigoFijoId: string;
+  orderIndex: number;
+  latitude: number;
+  longitude: number;
+  legDistanceKm: number;
+  legDurationSeconds: number;
+  legGeometry?: string | null;
+};
+
+export type CalculatedRoute = {
+  totalDistanceKm: number;
+  totalDurationSeconds: number;
+  encodedPolyline: string | null;
+  coordinates: [number, number][]; // Coordenadas decodificadas [lat, lng] para Leaflet
+  orderedStops: OptimizedStop[];
 };
 
 export type RouteCreationWizardState = {
@@ -52,4 +71,7 @@ export type RouteCreationWizardState = {
   startingPoint: RouteStartingPoint | null;
   cartStops: RouteCartStop[];
   calculationState: RouteCalculationState;
+  calculatedRoute: CalculatedRoute | null;
+  isSaving: boolean;
+  saveError: string | null;
 };

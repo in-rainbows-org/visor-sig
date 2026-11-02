@@ -94,14 +94,18 @@ export function StepSummary() {
     selectedTechnician,
     startingPoint,
     cartStops,
+    calculatedRoute,
+    isSaving,
     saveAssignment,
     prevStep,
   } = useRouteCreationWizard();
 
-  const totalDistanceKm = useMemo(
-    () => calculateTotalDistanceKm(startingPoint, cartStops),
-    [startingPoint, cartStops]
-  );
+  const totalDistanceKm = useMemo(() => {
+    if (calculatedRoute?.totalDistanceKm !== undefined) {
+      return calculatedRoute.totalDistanceKm;
+    }
+    return calculateTotalDistanceKm(startingPoint, cartStops);
+  }, [calculatedRoute, startingPoint, cartStops]);
 
   return (
     <div className="flex flex-col h-full min-h-0 justify-between select-none px-6 pt-4 pb-6 sm:pb-4">
@@ -110,7 +114,8 @@ export function StepSummary() {
         <button
           type="button"
           onClick={prevStep}
-          className="h-8 px-3 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200/80 border-0 shadow-none inline-flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+          disabled={isSaving}
+          className="h-8 px-3 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200/80 border-0 shadow-none inline-flex items-center gap-1.5 transition active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           <ArrowLeft className="size-3.5 stroke-[2.5]" />
           <span>Volver a paradas</span>
@@ -271,7 +276,8 @@ export function StepSummary() {
         <SlideConfirm
           onConfirm={saveAssignment}
           text="Desliza para confirmar"
-          confirmedText="Asignación confirmada"
+          confirmedText={isSaving ? "Guardando en el servidor..." : "Asignación confirmada"}
+          disabled={isSaving}
           variant="emerald"
           height={48}
           className="w-full"

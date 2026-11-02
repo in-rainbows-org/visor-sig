@@ -1,27 +1,67 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, ArrowRight, Check, Search, User, X } from "lucide-react";
 import Image from "next/image";
 import { useRouteCreationWizard } from "@/features/route-assignments/presentation/state/route-creation-wizard-store";
 import { MOCK_ROUTE_TECHNICIANS } from "@/features/route-assignments/presentation/data/mock-route-assignments";
 import type { RouteTechnician } from "@/features/route-assignments/domain/entities/route-wizard.entity";
+import { routeAssignmentRepository } from "@/features/route-assignments/infrastructure/repositories/route-assignment.repository-impl";
 
 export function StepTechnician() {
   const { selectedTechnician, selectTechnician, nextStep, prevStep, canAdvance } =
     useRouteCreationWizard();
 
+  const [technicians, setTechnicians] = useState<RouteTechnician[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Cargar técnicos reales desde el backend
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      setIsLoading(true);
+      try {
+        const res = await routeAssignmentRepository.getTechnicians();
+        if (res.ok && isMounted && res.data.length > 0) {
+          setTechnicians(
+            res.data.map((t) => ({
+              id: t.id,
+              name: t.name,
+              email: t.email || "",
+              avatarUrl: t.image || undefined,
+              role: "Técnico de Campo",
+            }))
+          );
+        } else if (isMounted) {
+          // Fallback a técnicos mock si no hay técnicos en BD aún
+          setTechnicians(MOCK_ROUTE_TECHNICIANS);
+        }
+      } catch {
+        if (isMounted) {
+          setTechnicians(MOCK_ROUTE_TECHNICIANS);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredTechnicians = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return MOCK_ROUTE_TECHNICIANS;
-    return MOCK_ROUTE_TECHNICIANS.filter(
+    if (!q) return technicians;
+    return technicians.filter(
       (tech) =>
         tech.name.toLowerCase().includes(q) ||
         tech.email.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, technicians]);
 
   return (
     <div className="flex flex-col h-full min-h-0 justify-between select-none">
@@ -58,9 +98,15 @@ export function StepTechnician() {
         </div>
       </div>
 
-      {/* 3. Contenedor desplazable con lista de técnicos: más redondeados y tono azulado activo */}
+      {/* 3. Contenedor desplazable con lista de técnicos */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-1 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-200">
-        {filteredTechnicians.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-3 py-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 bg-slate-100 rounded-3xl animate-pulse" />
+            ))}
+          </div>
+        ) : filteredTechnicians.length === 0 ? (
           <div className="py-8 text-center text-xs text-slate-400">
             No se encontraron técnicos coincidentes.
           </div>
@@ -97,7 +143,7 @@ export function StepTechnician() {
                     )}
                   </div>
 
-                  {/* Nombre y correo electrónico más azulados en seleccionado */}
+                  {/* Nombre y correo electrónico */}
                   <div className="min-w-0 flex-1">
                     <p
                       className={`text-xs font-bold truncate ${
@@ -128,7 +174,7 @@ export function StepTechnician() {
         )}
       </div>
 
-      {/* 4. Barra inferior fija con acciones planas (Volver y Siguiente) */}
+      {/* 4. Barra inferior fija con acciones (Volver y Siguiente) */}
       <div className="px-6 py-3 pb-6 sm:pb-4 flex items-center justify-between border-t border-slate-100 bg-white shrink-0">
         <button
           type="button"

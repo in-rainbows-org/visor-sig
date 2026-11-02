@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Calendar, Home } from "lucide-react";
 import type { RouteAssignment } from "../../../../domain/entities/route-assignment.entity";
 import { StatusBadge, getWorkerEmail } from "./route-assignments-table";
@@ -40,8 +41,19 @@ export function RouteAssignmentCard({
       {/* Cabecera: Avatar del Técnico + Nombre + Correo debajo + Estado */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="size-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border-0 shadow-none">
-            {getInitials(assignment.workerName)}
+          <div className="relative size-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border-0 shadow-none overflow-hidden">
+            {assignment.technicianImage || assignment.workerAvatar ? (
+              <Image
+                src={assignment.technicianImage || assignment.workerAvatar!}
+                alt={assignment.workerName}
+                fill
+                sizes="40px"
+                unoptimized
+                className="object-cover"
+              />
+            ) : (
+              getInitials(assignment.workerName)
+            )}
           </div>
           <div className="min-w-0">
             <span className="text-sm font-semibold text-slate-900 truncate block">

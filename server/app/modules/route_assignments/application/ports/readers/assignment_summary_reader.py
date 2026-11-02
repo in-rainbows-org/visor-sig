@@ -3,6 +3,7 @@ from datetime import date
 
 from app.modules.route_assignments.application.dtos.assignment_summary_dto import (
     PaginatedAssignmentsDTO,
+    TechnicianOptionDTO,
 )
 
 
@@ -19,3 +20,7 @@ class AssignmentSummaryReader(ABC):
         scheduled_date_to: date | None = None,
     ) -> PaginatedAssignmentsDTO:
         """Obtiene una página de asignaciones activas filtradas."""
+
+    @abstractmethod
+    def list_technicians(self) -> list[TechnicianOptionDTO]:
+        """Obtiene la lista de usuarios con rol de técnico operativo."""

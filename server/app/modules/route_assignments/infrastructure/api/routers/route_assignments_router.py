@@ -1,0 +1,208 @@
+from datetime import date, datetime, timezone
+
+from fastapi import APIRouter, Query, status
+
+from app.core.config import settings
+from app.core.dependencies import CurrentUser, DBSession, UoWDep
+from app.modules.route_assignments.application.dtos.route_dtos import (
+    RouteCalculationRequestDTO,
+    WaypointInputDTO,
+)
+from app.modules.route_assignments.application.queries.list_assignments import (
+    ListAssignmentsQuery,
+    ListAssignmentsQueryHandler,
+)
+from app.modules.route_assignments.application.use_cases.calculate_route import (
+    CalculateRouteUseCase,
+)
+from app.modules.route_assignments.application.use_cases.create_assignment import (
+    CreateAssignmentCommand,
+    CreateAssignmentStopCommand,
+    CreateAssignmentUseCase,
+)
+from app.modules.route_assignments.infrastructure.api.schemas.assignment_schemas import (
+    AssignmentRead,
+    AssignmentSummaryRead,
+    CreateAssignmentRequest,
+    PaginatedAssignmentsRead,
+)
+from app.modules.route_assignments.infrastructure.api.schemas.route_schemas import (
+    CalculateRouteRead,
+    CalculateRouteRequest,
+    OptimizedStopRead,
+)
+from app.modules.route_assignments.infrastructure.external.osrm_route_provider import (
+    OSRMRouteProvider,
+)
+from app.modules.route_assignments.infrastructure.persistence.models.assignment_model import (
+    AssignmentModel,
+)
+from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_assignment_summary_reader import (
+    SqlModelAssignmentSummaryReader,
+)
+from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_repository import (
+    SQLModelAssignmentRepository,
+)
+from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_stop_repository import (
+    SQLModelAssignmentStopRepository,
+)
+
+router = APIRouter(prefix="/v1/route-assignments", tags=["Asignaciones y Rutas"])
+
+
+@router.post(
+    "/routes/calculate",
+    response_model=CalculateRouteRead,
+    summary="Calcular y optimizar ruta de paradas con OSRM",
+)
+def calculate_route(
+    request: CalculateRouteRequest,
+    _: CurrentUser,
+) -> CalculateRouteRead:
+    """Calcula la mejor ruta y desglosa tramos viales para una lista de hasta 10 paradas."""
+    provider = OSRMRouteProvider(
+        base_url=settings.OSRM_BASE_URL,
+        timeout_seconds=settings.OSRM_TIMEOUT_SECONDS,
+    )
+    use_case = CalculateRouteUseCase(provider)
+
+    dto_request = RouteCalculationRequestDTO(
+        start_latitude=request.start_latitude,
+        start_longitude=request.start_longitude,
+        optimize_waypoint_order=request.optimize_waypoint_order,
+        waypoints=tuple(
+            WaypointInputDTO(
+                codigo_fijo_id=wp.codigo_fijo_id,
+                latitude=wp.latitude,
+                longitude=wp.longitude,
+            )
+            for wp in request.waypoints
+        ),
+    )
+
+    result = use_case.execute(dto_request)
+
+    return CalculateRouteRead(
+        total_distance_km=result.total_distance_km,
+        total_duration_seconds=result.total_duration_seconds,
+        encoded_polyline=result.encoded_polyline,
+        ordered_stops=[
+            OptimizedStopRead(
+                codigo_fijo_id=s.codigo_fijo_id,
+                order_index=s.order_index,
+                latitude=s.latitude,
+                longitude=s.longitude,
+                leg_distance_km=s.leg_distance_km,
+                leg_duration_seconds=s.leg_duration_seconds,
+                leg_geometry=s.leg_geometry,
+            )
+            for s in result.ordered_stops
+        ],
+    )
+
+
+@router.post(
+    "/assignments",
+    response_model=AssignmentRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear asignación de ruta con paradas",
+)
+def create_assignment(
+    request: CreateAssignmentRequest,
+    _: CurrentUser,
+    uow: UoWDep,
+) -> AssignmentRead:
+    """Registra en una sola transacción atómica la cabecera y todas las paradas ordenadas."""
+    assignment_repo = SQLModelAssignmentRepository(uow.session)
+    stop_repo = SQLModelAssignmentStopRepository(uow.session)
+    use_case = CreateAssignmentUseCase(assignment_repo, stop_repo, uow)
+
+    command = CreateAssignmentCommand(
+        technician_id=request.technician_id,
+        assignment_type=request.assignment_type,
+        scheduled_date=request.scheduled_date,
+        start_latitude=request.start_latitude,
+        start_longitude=request.start_longitude,
+        total_distance_km=request.total_distance_km,
+        stops=[
+            CreateAssignmentStopCommand(
+                codigo_fijo_id=s.codigo_fijo_id,
+                order_index=s.order_index,
+                target_status=s.target_status,
+                route_geometry=s.route_geometry,
+                current_status=s.current_status,
+            )
+            for s in request.stops
+        ],
+    )
+
+    created_assignment = use_case.execute(command)
+
+    record = uow.session.get(AssignmentModel, created_assignment.id)
+    created_date = record.created_date if record else datetime.now(timezone.utc)
+
+    return AssignmentRead(
+        id=created_assignment.id,
+        technician_id=created_assignment.technician_id,
+        status=created_assignment.status.value,
+        assignment_type=created_assignment.assignment_type.value,
+        scheduled_date=created_assignment.scheduled_date,
+        start_latitude=created_assignment.start_latitude,
+        start_longitude=created_assignment.start_longitude,
+        total_stops=created_assignment.total_stops,
+        total_distance_km=created_assignment.total_distance_km,
+        started_at=created_assignment.started_at,
+        completed_at=created_assignment.completed_at,
+        created_date=created_date,
+    )
+
+
+@router.get(
+    "/assignments",
+    response_model=PaginatedAssignmentsRead,
+    summary="Listar asignaciones paginadas con perfil de técnico",
+)
+def list_assignments(
+    db: DBSession,
+    _: CurrentUser,
+    page: int = Query(default=1, ge=1, description="Número de página"),
+    page_size: int = Query(default=10, ge=1, le=100, description="Cantidad por página"),
+    technician_id: str | None = Query(default=None, description="Filtro opcional por técnico"),
+    scheduled_date_from: date | None = Query(default=None, description="Fecha límite inferior (YYYY-MM-DD)"),
+    scheduled_date_to: date | None = Query(default=None, description="Fecha límite superior (YYYY-MM-DD)"),
+) -> PaginatedAssignmentsRead:
+    """Lista asignaciones paginadas proyectando el avatar, nombre y correo del técnico asignado."""
+    reader = SqlModelAssignmentSummaryReader(db)
+    handler = ListAssignmentsQueryHandler(reader)
+
+    query = ListAssignmentsQuery(
+        page=page,
+        page_size=page_size,
+        technician_id=technician_id,
+        scheduled_date_from=scheduled_date_from,
+        scheduled_date_to=scheduled_date_to,
+    )
+
+    result = handler.execute(query)
+
+    return PaginatedAssignmentsRead(
+        items=[
+            AssignmentSummaryRead(
+                id=item.id,
+                technician_id=item.technician_id,
+                technician_name=item.technician_name,
+                technician_image=item.technician_image,
+                technician_email=item.technician_email,
+                total_stops=item.total_stops,
+                scheduled_date=item.scheduled_date,
+                assignment_type=item.assignment_type,
+                status=item.status,
+                created_date=item.created_date,
+            )
+            for item in result.items
+        ],
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+        total_pages=result.total_pages,
+    )

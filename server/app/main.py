@@ -126,9 +126,14 @@ from app.modules.consultations.infrastructure.api.routers.consultation_router im
 from app.modules.audit_logs.infrastructure.api.routers.audit_log_router import (
     router as audit_log_router,
 )
+from app.modules.route_assignments.infrastructure.api.routers.route_assignments_router import (
+    router as route_assignments_router,
+)
 
 app.include_router(layers_router, prefix="/api")
 app.include_router(map_router, prefix="/api")
 app.include_router(consultation_router, prefix="/api")
 app.include_router(audit_log_router, prefix="/api")
+app.include_router(route_assignments_router, prefix="/api")
+
 

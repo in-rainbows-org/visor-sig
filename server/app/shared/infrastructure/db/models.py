@@ -31,4 +31,10 @@ from app.modules.audit_logs.infrastructure.persistence.models.audit_log_model im
     AuditLogModel,
 )
 from app.modules.layers.infrastructure.persistence.models.via_model import ViaModel
+from app.modules.route_assignments.infrastructure.persistence.models.assignment_model import (
+    AssignmentModel,
+)
+from app.modules.route_assignments.infrastructure.persistence.models.assignment_stop_model import (
+    AssignmentStopModel,
+)
 

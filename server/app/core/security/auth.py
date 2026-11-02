@@ -63,6 +63,8 @@ class Role(StrEnum):
 
     ADMIN = "ADMIN"
     CONSULTANT = "CONSULTANT"
+    TECHNICIAN = "TECHNICIAN"
+
 
 
 # ── DTO del usuario autenticado ───────────────────────────────────────────────

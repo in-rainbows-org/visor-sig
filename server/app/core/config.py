@@ -49,6 +49,21 @@ class Settings(BaseSettings):
         default=100 * 1024 * 1024, env="GEODATA_MAX_ZIP_BYTES"
     )
 
+    # ── OSRM / Motor de Enrutamiento ──────────────────────────────────────────
+    OSRM_BASE_URL: str = Field(
+        default="https://router.project-osrm.org", env="OSRM_BASE_URL"
+    )
+    OSRM_TIMEOUT_SECONDS: float = Field(
+        default=10.0, gt=0, env="OSRM_TIMEOUT_SECONDS"
+    )
+
+    # ── Google Maps / Routes API (Opcional / Legacy) ───────────────────────────
+    GOOGLE_MAPS_API_KEY: str = Field(default="", env="GOOGLE_MAPS_API_KEY")
+    GOOGLE_ROUTES_TIMEOUT_SECONDS: float = Field(
+        default=10.0, gt=0, env="GOOGLE_ROUTES_TIMEOUT_SECONDS"
+    )
+
+
     # ── Better Auth: Configuración de Roles y JWKS ────────────────────────────
     # Si en el frontend tienes instalado el plugin de 'admin', déjalo en True.
     # Si NO usas el plugin de admin en Better Auth, cambia a False en tu .env:

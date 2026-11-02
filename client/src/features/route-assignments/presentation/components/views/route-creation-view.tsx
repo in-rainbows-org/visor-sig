@@ -78,10 +78,13 @@ function RouteCreationInner() {
     },
   });
 
-  // Auto-apertura instantánea del bottom sheet móvil al fijar el punto de partida en el mapa (Paso 3)
-  // Exclusivo para móviles y tablets (< 1024px)
+  // Auto-apertura con delay de 2 segundos del bottom sheet móvil al fijar el punto de partida en el mapa (Paso 4)
+  // Permite que el usuario observe el marcador/símbolo en el mapa antes de desplegar automáticamente el asistente.
+  // Exclusivo para móviles y tablets (< 1024px); en escritorio NUNCA se abre el bottom sheet.
   const prevStartingPointRef = useRef(startingPoint);
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
     if (
       currentStep === RouteWizardStep.STARTING_POINT &&
       startingPoint &&
@@ -90,10 +93,18 @@ function RouteCreationInner() {
       const isMobileOrTablet =
         typeof window !== "undefined" && window.innerWidth < 1024;
       if (isMobileOrTablet) {
-        setIsWizardSheetOpen(true);
+        timer = setTimeout(() => {
+          setIsWizardSheetOpen(true);
+        }, 2000);
       }
     }
     prevStartingPointRef.current = startingPoint;
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [currentStep, startingPoint]);
 
   // Escuchar eventos de solicitud de minimizado desde el interior de los pasos

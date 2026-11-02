@@ -48,6 +48,7 @@ class ConsultationReader(ABC):
         self,
         fixed_code: int,
         limit: int,
+        service_type: str | None = None,
     ) -> list[CodigoFijoAssignmentCandidateDTO]:
         """Búsqueda especializada de códigos fijos con coordenadas y titular para asignación de rutas."""
 

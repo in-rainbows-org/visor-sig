@@ -7,11 +7,12 @@ import { MOCK_FIXED_CODE_CANDIDATES } from "../data/mock-route-assignments";
 
 export type UseRouteCreationSearchOptions = {
   excludedIds?: string[];
+  serviceType?: string | null;
   onAddCandidate?: (candidate: FixedCodeCandidate) => void;
 };
 
 export function useRouteCreationSearch(options?: UseRouteCreationSearchOptions) {
-  const { excludedIds = [], onAddCandidate: externalOnAdd } = options ?? {};
+  const { excludedIds = [], serviceType, onAddCandidate: externalOnAdd } = options ?? {};
   const [query, setQuery] = useState("");
   const [candidates, setCandidates] = useState<FixedCodeCandidate[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -35,34 +36,47 @@ export function useRouteCreationSearch(options?: UseRouteCreationSearchOptions) 
 
     setIsSearching(true);
     try {
-      const result = await routeCandidateRepository.searchCodigosFijosForAssignment(num, 15);
+      const result = await routeCandidateRepository.searchCodigosFijosForAssignment(
+        num,
+        15,
+        serviceType ?? undefined
+      );
       if (result.ok && result.data && result.data.length > 0) {
-        // Filtrar inmediatamente los que ya están en el carrito
-        const filtered = result.data.filter((c) => !excludedIds.includes(c.id));
+        // Filtrar inmediatamente los que ya están en el carrito y validar según serviceType
+        let filtered = result.data.filter((c) => !excludedIds.includes(c.id));
+        if (serviceType === "CUT") {
+          filtered = filtered.filter((c) => c.status !== 3);
+        } else if (serviceType === "RECONNECTION") {
+          filtered = filtered.filter((c) => c.status !== 1);
+        }
         setCandidates(filtered);
         return filtered;
       }
 
       // Fallback a mock data para navegación fluida y pruebas locales
-      const mockFiltered = MOCK_FIXED_CODE_CANDIDATES.filter(
-        (c) =>
-          (c.fixedCode ? String(c.fixedCode).startsWith(clean) : false) &&
-          !excludedIds.includes(c.id)
-      );
+      const mockFiltered = MOCK_FIXED_CODE_CANDIDATES.filter((c) => {
+        if (!c.fixedCode || !String(c.fixedCode).startsWith(clean)) return false;
+        if (excludedIds.includes(c.id)) return false;
+        if (serviceType === "CUT" && c.status === 3) return false;
+        if (serviceType === "RECONNECTION" && c.status === 1) return false;
+        return true;
+      });
       setCandidates(mockFiltered);
       return mockFiltered;
     } catch {
-      const mockFiltered = MOCK_FIXED_CODE_CANDIDATES.filter(
-        (c) =>
-          (c.fixedCode ? String(c.fixedCode).startsWith(clean) : false) &&
-          !excludedIds.includes(c.id)
-      );
+      const mockFiltered = MOCK_FIXED_CODE_CANDIDATES.filter((c) => {
+        if (!c.fixedCode || !String(c.fixedCode).startsWith(clean)) return false;
+        if (excludedIds.includes(c.id)) return false;
+        if (serviceType === "CUT" && c.status === 3) return false;
+        if (serviceType === "RECONNECTION" && c.status === 1) return false;
+        return true;
+      });
       setCandidates(mockFiltered);
       return mockFiltered;
     } finally {
       setIsSearching(false);
     }
-  }, [excludedIds]);
+  }, [excludedIds, serviceType]);
 
   const handleSelectCandidate = useCallback((candidate: FixedCodeCandidate) => {
     setSelectedCandidate(candidate);

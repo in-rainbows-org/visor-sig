@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Spinner } from "@/components/ui/spinner";
+import { appToast } from "@/features/shared/presentation/components/notifications/toast";
 import { RouteCreationSearchBar } from "../elements/create/route-creation-search-bar";
 import { RouteCreationWizardCard } from "../elements/create/route-creation-wizard-card";
 import {
@@ -35,8 +36,14 @@ const RouteCreationMapDynamic = dynamic(
 );
 
 function RouteCreationInner() {
-  const { currentStep, isSearchVisible, cartStops, addStop } =
-    useRouteCreationWizard();
+  const {
+    currentStep,
+    isSearchVisible,
+    cartStops,
+    startingPoint,
+    serviceType,
+    addStop,
+  } = useRouteCreationWizard();
   const [isWizardSheetOpen, setIsWizardSheetOpen] = useState(false);
 
   // IDs de códigos fijos ya agregados para excluirlos en las búsquedas
@@ -61,9 +68,33 @@ function RouteCreationInner() {
     handleClear,
   } = useRouteCreationSearch({
     excludedIds,
-    onAddCandidate: addStop,
+    serviceType,
+    onAddCandidate: (candidate) => {
+      addStop(candidate);
+      appToast.success(
+        "Vivienda agregada a la ruta",
+        `Código fijo #${candidate.fixedCode}${candidate.name ? ` (${candidate.name})` : ""}`
+      );
+    },
   });
 
+  // Auto-apertura instantánea del bottom sheet móvil al fijar el punto de partida en el mapa (Paso 3)
+  // Exclusivo para móviles y tablets (< 1024px)
+  const prevStartingPointRef = useRef(startingPoint);
+  useEffect(() => {
+    if (
+      currentStep === RouteWizardStep.STARTING_POINT &&
+      startingPoint &&
+      startingPoint !== prevStartingPointRef.current
+    ) {
+      const isMobileOrTablet =
+        typeof window !== "undefined" && window.innerWidth < 1024;
+      if (isMobileOrTablet) {
+        setIsWizardSheetOpen(true);
+      }
+    }
+    prevStartingPointRef.current = startingPoint;
+  }, [currentStep, startingPoint]);
 
   // Escuchar eventos de solicitud de minimizado desde el interior de los pasos
   useEffect(() => {

@@ -110,6 +110,7 @@ def search_codigos_fijos_for_assignment(
     user: CurrentUser,
     fixed_code: int = Query(..., description="Código fijo exacto o prefijo numérico"),
     limit: int = Query(10, ge=1, le=50, description="Cantidad máxima de candidatos a retornar"),
+    service_type: str | None = Query(None, description="Tipo de servicio de asignación: CUT o RECONNECTION"),
 ) -> list[CodigoFijoAssignmentCandidateSchema]:
     reader = SqlModelConsultationReader(db)
     handler = SearchCodigosFijosForAssignmentQueryHandler(reader)
@@ -117,6 +118,7 @@ def search_codigos_fijos_for_assignment(
         SearchCodigosFijosForAssignmentQuery(
             fixed_code=fixed_code,
             limit=limit,
+            service_type=service_type,
         )
     )
 

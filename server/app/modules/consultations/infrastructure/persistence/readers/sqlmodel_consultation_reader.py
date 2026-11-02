@@ -196,11 +196,25 @@ class SqlModelConsultationReader(ConsultationReader):
         self,
         fixed_code: int,
         limit: int,
+        service_type: str | None = None,
     ) -> list[CodigoFijoAssignmentCandidateDTO]:
         """Búsqueda especializada de códigos fijos con coordenadas y titular para asignación de rutas."""
         version_id = self._get_active_version_id(LayerKind.CODIGOS_FIJOS.value)
         if not version_id:
             return []
+
+        conditions = [
+            CodigoFijoModel.data_version_id == version_id,
+            CodigoFijoModel.deleted_date.is_(None),
+            cast(CodigoFijoModel.fixed_code, String).like(f"{fixed_code}%"),
+        ]
+
+        if service_type == "CUT":
+            # En modo corte se excluyen viviendas que ya están cortadas (status == 3)
+            conditions.append(CodigoFijoModel.status != 3)
+        elif service_type == "RECONNECTION":
+            # En modo reconexión se excluyen viviendas con suministro normal activo (status == 1)
+            conditions.append(CodigoFijoModel.status != 1)
 
         stmt = (
             select(
@@ -211,11 +225,7 @@ class SqlModelConsultationReader(ConsultationReader):
                 CodigoFijoModel.latitude,
                 CodigoFijoModel.longitude,
             )
-            .where(
-                CodigoFijoModel.data_version_id == version_id,
-                CodigoFijoModel.deleted_date.is_(None),
-                cast(CodigoFijoModel.fixed_code, String).like(f"{fixed_code}%"),
-            )
+            .where(*conditions)
             .order_by(CodigoFijoModel.fixed_code.asc().nulls_last(), CodigoFijoModel.id)
             .limit(limit)
         )

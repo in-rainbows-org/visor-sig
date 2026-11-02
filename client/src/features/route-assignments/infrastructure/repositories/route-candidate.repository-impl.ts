@@ -11,11 +11,15 @@ export class RouteCandidateRepositoryImpl implements RouteCandidateRepository {
 
   async searchCodigosFijosForAssignment(
     fixedCode: number,
-    limit: number = 10
+    limit: number = 10,
+    serviceType?: string
   ): Promise<ApiResult<FixedCodeCandidate[]>> {
     const url = new URL(this.baseUrl);
     url.searchParams.set("fixed_code", String(fixedCode));
     url.searchParams.set("limit", String(limit));
+    if (serviceType) {
+      url.searchParams.set("service_type", serviceType);
+    }
 
     return apiRequestData({
       url: url.toString(),

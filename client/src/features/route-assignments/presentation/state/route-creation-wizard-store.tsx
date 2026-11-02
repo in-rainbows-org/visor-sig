@@ -15,6 +15,7 @@ import {
   RouteCalculationState,
   RouteCartStop,
   RouteCreationWizardState,
+  RouteServiceType,
   RouteStartingPoint,
   RouteTechnician,
   RouteWizardStep,
@@ -29,6 +30,8 @@ export type RouteCreationWizardContextType = {
   isStarted: boolean;
   currentStep: RouteWizardStep;
   selectedTechnician: RouteTechnician | null;
+  scheduledDate: string | null;
+  serviceType: RouteServiceType | null;
   startingPoint: RouteStartingPoint | null;
   cartStops: RouteCartStop[];
   calculationState: RouteCalculationState;
@@ -37,6 +40,8 @@ export type RouteCreationWizardContextType = {
 
   startWizard: () => void;
   selectTechnician: (technician: RouteTechnician) => void;
+  setScheduledDate: (date: string) => void;
+  selectServiceType: (serviceType: RouteServiceType) => void;
   setStartingPoint: (point: RouteStartingPoint) => void;
   addStop: (candidate: FixedCodeCandidate) => void;
   removeStop: (id: string) => void;
@@ -62,6 +67,14 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
 
   const selectTechnician = useCallback((technician: RouteTechnician) => {
     dispatch({ type: "SELECT_TECHNICIAN", payload: technician });
+  }, []);
+
+  const setScheduledDate = useCallback((date: string) => {
+    dispatch({ type: "SET_SCHEDULED_DATE", payload: date });
+  }, []);
+
+  const selectServiceType = useCallback((serviceType: RouteServiceType) => {
+    dispatch({ type: "SELECT_SERVICE_TYPE", payload: serviceType });
   }, []);
 
   const setStartingPoint = useCallback((point: RouteStartingPoint) => {
@@ -96,6 +109,14 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
       appToast.warning("Debes seleccionar un técnico responsable");
       return;
     }
+    if (!state.scheduledDate) {
+      appToast.warning("Debes seleccionar una fecha de asignación");
+      return;
+    }
+    if (!state.serviceType) {
+      appToast.warning("Debes seleccionar el tipo de servicio");
+      return;
+    }
     if (!state.startingPoint) {
       appToast.warning("Debes definir un punto de partida en el mapa");
       return;
@@ -104,7 +125,14 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
     // Éxito con Sileo Toast según la especificación
     appToast.success("Nueva asignación creada con éxito");
     router.push("/asignacion-rutas");
-  }, [state.cartStops.length, state.selectedTechnician, state.startingPoint, router]);
+  }, [
+    state.cartStops.length,
+    state.selectedTechnician,
+    state.scheduledDate,
+    state.serviceType,
+    state.startingPoint,
+    router,
+  ]);
 
   const canAdvance = useMemo(() => {
     switch (state.currentStep) {
@@ -112,6 +140,10 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
         return true;
       case RouteWizardStep.TECHNICIAN:
         return state.selectedTechnician !== null;
+      case RouteWizardStep.SCHEDULE_DATE:
+        return Boolean(state.scheduledDate && state.scheduledDate.trim().length > 0);
+      case RouteWizardStep.SERVICE_TYPE:
+        return state.serviceType !== null;
       case RouteWizardStep.STARTING_POINT:
         return state.startingPoint !== null;
       case RouteWizardStep.STOPS_CART:
@@ -124,6 +156,8 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
   }, [
     state.currentStep,
     state.selectedTechnician,
+    state.scheduledDate,
+    state.serviceType,
     state.startingPoint,
     state.cartStops.length,
     state.calculationState,
@@ -134,6 +168,10 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
     if (state.currentStep === RouteWizardStep.WELCOME) {
       dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.TECHNICIAN });
     } else if (state.currentStep === RouteWizardStep.TECHNICIAN) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.SCHEDULE_DATE });
+    } else if (state.currentStep === RouteWizardStep.SCHEDULE_DATE) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.SERVICE_TYPE });
+    } else if (state.currentStep === RouteWizardStep.SERVICE_TYPE) {
       dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STARTING_POINT });
     } else if (state.currentStep === RouteWizardStep.STARTING_POINT) {
       dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STOPS_CART });
@@ -148,6 +186,10 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
     } else if (state.currentStep === RouteWizardStep.STOPS_CART) {
       dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.STARTING_POINT });
     } else if (state.currentStep === RouteWizardStep.STARTING_POINT) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.SERVICE_TYPE });
+    } else if (state.currentStep === RouteWizardStep.SERVICE_TYPE) {
+      dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.SCHEDULE_DATE });
+    } else if (state.currentStep === RouteWizardStep.SCHEDULE_DATE) {
       dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.TECHNICIAN });
     } else if (state.currentStep === RouteWizardStep.TECHNICIAN) {
       dispatch({ type: "GO_TO_STEP", payload: RouteWizardStep.WELCOME });
@@ -174,6 +216,8 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
       isStarted: state.isStarted,
       currentStep: state.currentStep,
       selectedTechnician: state.selectedTechnician,
+      scheduledDate: state.scheduledDate,
+      serviceType: state.serviceType,
       startingPoint: state.startingPoint,
       cartStops: state.cartStops,
       calculationState: state.calculationState,
@@ -181,6 +225,8 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
       canAdvance,
       startWizard,
       selectTechnician,
+      setScheduledDate,
+      selectServiceType,
       setStartingPoint,
       addStop,
       removeStop,
@@ -199,6 +245,8 @@ export function RouteCreationWizardProvider({ children }: { children: ReactNode 
       canAdvance,
       startWizard,
       selectTechnician,
+      setScheduledDate,
+      selectServiceType,
       setStartingPoint,
       addStop,
       removeStop,

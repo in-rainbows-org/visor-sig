@@ -16,13 +16,15 @@ export function WizardProgressHeader({ currentStep }: WizardProgressHeaderProps)
     return null;
   }
 
-  const totalSteps = 3;
-  const stepNumber = currentStep; // 1: Técnico, 2: Punto de Partida, 3: Paradas
+  const totalSteps = 5;
+  const stepNumber = currentStep; // 1: Técnico, 2: Fecha, 3: Tipo de Servicio, 4: Punto de Partida, 5: Paradas
 
   const stepLabels: Record<number, string> = {
     1: "PASO 1: SELECCIONAR TÉCNICO",
-    2: "PASO 2: PUNTO DE PARTIDA",
-    3: "PASO 3: PARADAS Y CÁLCULO",
+    2: "PASO 2: FECHA DE ASIGNACIÓN",
+    3: "PASO 3: TIPO DE SERVICIO",
+    4: "PASO 4: PUNTO DE PARTIDA",
+    5: "PASO 5: PARADAS Y CÁLCULO",
   };
 
   return (

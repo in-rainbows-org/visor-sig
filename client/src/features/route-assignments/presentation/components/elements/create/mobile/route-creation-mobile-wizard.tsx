@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -14,6 +14,8 @@ import { useRouteCreationWizard } from "@/features/route-assignments/presentatio
 import { WizardProgressHeader } from "../wizard/wizard-progress-header";
 import { StepWelcome } from "../wizard/step-welcome";
 import { StepTechnician } from "../wizard/step-technician";
+import { StepScheduleDate } from "../wizard/step-schedule-date";
+import { StepServiceType } from "../wizard/step-service-type";
 import { StepStartingPoint } from "../wizard/step-starting-point";
 import { StepStopsCart } from "../wizard/step-stops-cart";
 import { StepSummary } from "../wizard/step-summary";
@@ -26,6 +28,20 @@ export function RouteCreationMobileWizard({
   className = "",
 }: RouteCreationMobileWizardProps) {
   const { currentStep } = useRouteCreationWizard();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  if (!isMobile) {
+    return null;
+  }
 
   const transitionVariants = {
     initial: (direction: number) => ({
@@ -56,7 +72,7 @@ export function RouteCreationMobileWizard({
         side="bottom"
         showCloseButton={false}
         className={cn(
-          "fixed inset-0 top-0 bottom-0 left-0 right-0 h-[100dvh] max-h-[100dvh] h-screen max-h-screen w-full p-0 m-0 bg-white border-0 shadow-none rounded-none flex flex-col z-[2000] overflow-hidden outline-none data-[side=bottom]:inset-x-0 data-[side=bottom]:top-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-full data-[side=bottom]:max-h-full",
+          "fixed bottom-0 left-0 right-0 h-[88vh] max-h-[88vh] w-full p-0 m-0 bg-white border-0 shadow-2xl rounded-t-3xl flex flex-col z-[2000] overflow-hidden outline-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:top-auto data-[side=bottom]:h-[88vh] data-[side=bottom]:max-h-[88vh]",
           className
         )}
       >
@@ -64,10 +80,8 @@ export function RouteCreationMobileWizard({
           <SheetTitle>Asistente de Asignación de Rutas</SheetTitle>
         </SheetHeader>
 
-        {/* 1. Barra de Control Superior Móvil: Manija táctil y botón X de cierre */}
-        <div className="flex items-center justify-between px-5 pt-3 pb-2 shrink-0 bg-white border-b border-slate-100">
-          <div className="w-8" />
-          <div className="w-12 h-1 rounded-full bg-slate-300 select-none" />
+        {/* 1. Barra de Control Superior Móvil: Botón X de cierre a la derecha */}
+        <div className="flex items-center justify-end px-5 pt-3 pb-2 shrink-0 bg-white border-b border-slate-100">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -78,7 +92,7 @@ export function RouteCreationMobileWizard({
           </button>
         </div>
 
-        {/* 2. Barra de Progreso del Wizard (Pasos 1 a 3) */}
+        {/* 2. Barra de Progreso del Wizard (Pasos 1 a 4) */}
         <div className="shrink-0 bg-white">
           <WizardProgressHeader currentStep={currentStep} />
         </div>
@@ -111,6 +125,34 @@ export function RouteCreationMobileWizard({
                 className="w-full h-full min-h-0 flex flex-col flex-1"
               >
                 <StepTechnician />
+              </motion.div>
+            )}
+
+            {currentStep === RouteWizardStep.SCHEDULE_DATE && (
+              <motion.div
+                key="mobile-step-schedule-date"
+                custom={1}
+                variants={transitionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="w-full h-full min-h-0 flex flex-col flex-1"
+              >
+                <StepScheduleDate />
+              </motion.div>
+            )}
+
+            {currentStep === RouteWizardStep.SERVICE_TYPE && (
+              <motion.div
+                key="mobile-step-service-type"
+                custom={1}
+                variants={transitionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="w-full h-full min-h-0 flex flex-col flex-1"
+              >
+                <StepServiceType />
               </motion.div>
             )}
 

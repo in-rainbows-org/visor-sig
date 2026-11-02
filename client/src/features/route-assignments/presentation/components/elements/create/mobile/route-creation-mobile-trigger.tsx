@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, User, MapPin, Home, FileCheck } from "lucide-react";
+import { ArrowRight, User, Calendar, Scissors, MapPin, Home, FileCheck } from "lucide-react";
 import { RouteWizardStep } from "@/features/route-assignments/domain/entities/route-wizard.entity";
 import type { RouteCreationMobileTriggerProps } from "./types";
 import { cn } from "@/lib/utils";
@@ -30,14 +30,24 @@ export function RouteCreationMobileTrigger({
           label: "Continuar con Paso 1: Técnico",
           icon: <User className="size-4 stroke-[2.5]" />,
         };
+      case RouteWizardStep.SCHEDULE_DATE:
+        return {
+          label: "Continuar con Paso 2: Fecha de asignación",
+          icon: <Calendar className="size-4 stroke-[2.5]" />,
+        };
+      case RouteWizardStep.SERVICE_TYPE:
+        return {
+          label: "Continuar con Paso 3: Tipo de servicio",
+          icon: <Scissors className="size-4 stroke-[2.5]" />,
+        };
       case RouteWizardStep.STARTING_POINT:
         return {
-          label: "Continuar con Paso 2: Punto de partida",
+          label: "Continuar con Paso 4: Punto de partida",
           icon: <MapPin className="size-4 stroke-[2.5]" />,
         };
       case RouteWizardStep.STOPS_CART:
         return {
-          label: `Continuar con Paso 3: Paradas (${cartStopsCount})`,
+          label: `Continuar con Paso 5: Paradas (${cartStopsCount})`,
           icon: <Home className="size-4 stroke-[2.5]" />,
         };
       case RouteWizardStep.SUMMARY:

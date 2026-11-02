@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import { ArrowLeft, Home, Route, User } from "lucide-react";
+import { ArrowLeft, Home, Route, User, Scissors, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import { useRouteCreationWizard } from "@/features/route-assignments/presentation/state/route-creation-wizard-store";
 import { FIXED_CODE_STATUSES, type FixedCodeStatusValue } from "@/features/map/domain/entities/fixed-code-status.entity";
 import type { RouteCartStop, RouteStartingPoint } from "@/features/route-assignments/domain/entities/route-wizard.entity";
@@ -70,8 +70,27 @@ function calculateTotalDistanceKm(
   return Math.round(dist * 10) / 10;
 }
 
+function formatSummaryDate(dateStr: string | null): string {
+  if (!dateStr) return "Sin fecha asignada";
+  try {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    const formatted = new Intl.DateTimeFormat("es-BO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  } catch {
+    return dateStr;
+  }
+}
+
 export function StepSummary() {
   const {
+    scheduledDate,
+    serviceType,
     selectedTechnician,
     startingPoint,
     cartStops,
@@ -129,6 +148,62 @@ export function StepSummary() {
               {selectedTechnician?.name ?? "Técnico no asignado"}
             </h4>
           </div>
+        </div>
+
+        {/* Card: Fecha de asignación */}
+        <div className="w-full bg-[#ebf3ff] rounded-3xl p-3.5 flex items-center justify-between border-0 shadow-none shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-blue-100 text-[#0e4dcb] shrink-0">
+              <CalendarIcon className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
+                Fecha programada
+              </span>
+              <h4 className="text-sm font-bold text-slate-900 truncate">
+                {formatSummaryDate(scheduledDate)}
+              </h4>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border bg-white/90 text-slate-700 border-blue-200/80 shrink-0">
+            {scheduledDate ?? "No definida"}
+          </span>
+        </div>
+
+        {/* Card: Tipo de Servicio */}
+        <div className="w-full bg-[#ebf3ff] rounded-3xl p-3.5 flex items-center justify-between border-0 shadow-none shrink-0">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2.5 rounded-xl shrink-0 ${
+                serviceType === "CUT"
+                  ? "bg-rose-100 text-rose-700"
+                  : "bg-blue-100 text-[#0e4dcb]"
+              }`}
+            >
+              {serviceType === "CUT" ? (
+                <Scissors className="size-5" />
+              ) : (
+                <RefreshCw className="size-5" />
+              )}
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
+                Tipo de servicio
+              </span>
+              <h4 className="text-sm font-bold text-slate-900">
+                {serviceType === "CUT" ? "Corte de servicio" : "Reconexión de servicio"}
+              </h4>
+            </div>
+          </div>
+          <span
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+              serviceType === "CUT"
+                ? "bg-rose-50 text-rose-700 border-rose-200/80"
+                : "bg-blue-50 text-[#0e4dcb] border-blue-200/80"
+            }`}
+          >
+            {serviceType === "CUT" ? "Objetivo: Cortado" : "Objetivo: Normal"}
+          </span>
         </div>
 
         {/* Card 2: Métricas con Iconos y Tono Celeste Suave */}

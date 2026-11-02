@@ -63,7 +63,7 @@ export function RouteCreationMobileResultsSheet({
         </div>
 
         {/* 2. Cuerpo con scroll de resultados */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2.5">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2.5 bg-slate-50/50">
           {isSearching ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
               <Loader2 className="size-6 animate-spin text-blue-600" />
@@ -89,7 +89,6 @@ export function RouteCreationMobileResultsSheet({
                   }}
                   onAdd={onAddCandidate}
                   isAdded={isAdded}
-                  className="bg-slate-50/90 hover:bg-slate-100 border-slate-200/70"
                 />
               );
             })

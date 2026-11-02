@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Search, X, Loader2, Hash } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { RouteCreationResultCard } from "./route-creation-result-card";
 import type { FixedCodeCandidate } from "../../../../domain/entities/fixed-code-candidate.entity";
 import { cn } from "@/lib/utils";
@@ -109,10 +108,10 @@ export function RouteCreationSearchBar({
           )}
         </div>
 
-        <Button
+        <button
           type="submit"
           disabled={isSearching || !query.trim()}
-          className="h-[38px] px-4 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold shrink-0 gap-1.5 transition-all shadow-none cursor-pointer disabled:opacity-50"
+          className="h-[38px] px-4 rounded-full bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-all shadow-none border-0 cursor-pointer hover:opacity-95 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed select-none"
         >
           {isSearching ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -120,7 +119,7 @@ export function RouteCreationSearchBar({
             <Search className="w-3.5 h-3.5" />
           )}
           <span>Buscar</span>
-        </Button>
+        </button>
       </form>
 
       {/* Desplegable integrado de resultados */}

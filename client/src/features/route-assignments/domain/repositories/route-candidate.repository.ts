@@ -4,6 +4,7 @@ import type { FixedCodeCandidate } from "../entities/fixed-code-candidate.entity
 export type RouteCandidateRepository = {
   searchCodigosFijosForAssignment(
     fixedCode: number,
-    limit?: number
+    limit?: number,
+    serviceType?: string
   ): Promise<ApiResult<FixedCodeCandidate[]>>;
 };

@@ -3,6 +3,7 @@ import {
   RouteCalculationState,
   RouteCartStop,
   RouteCreationWizardState,
+  RouteServiceType,
   RouteStartingPoint,
   RouteTechnician,
   RouteWizardStep,
@@ -11,6 +12,8 @@ import {
 export type RouteWizardAction =
   | { type: "START_WIZARD" }
   | { type: "SELECT_TECHNICIAN"; payload: RouteTechnician }
+  | { type: "SET_SCHEDULED_DATE"; payload: string }
+  | { type: "SELECT_SERVICE_TYPE"; payload: RouteServiceType }
   | { type: "SET_STARTING_POINT"; payload: RouteStartingPoint }
   | { type: "ADD_STOP"; payload: FixedCodeCandidate }
   | { type: "REMOVE_STOP"; payload: { id: string } }
@@ -20,10 +23,20 @@ export type RouteWizardAction =
   | { type: "GO_TO_STEP"; payload: RouteWizardStep }
   | { type: "RESET_WIZARD" };
 
+function getTodayDateString(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export const initialWizardState: RouteCreationWizardState = {
   isStarted: false,
   currentStep: RouteWizardStep.WELCOME,
   selectedTechnician: null,
+  scheduledDate: getTodayDateString(),
+  serviceType: null,
   startingPoint: null,
   cartStops: [],
   calculationState: "idle",
@@ -59,6 +72,44 @@ export function routeCreationWizardReducer(
       };
     }
 
+    case "SET_SCHEDULED_DATE": {
+      return {
+        ...state,
+        scheduledDate: action.payload,
+      };
+    }
+
+    case "SELECT_SERVICE_TYPE": {
+      const nextServiceType = action.payload;
+      const targetStatus = nextServiceType === "CUT" ? 3 : 1;
+
+      // Depurar paradas incompatibles si ya existían en el carrito
+      const sanitizedStops = state.cartStops
+        .filter((stop) => {
+          if (nextServiceType === "CUT") {
+            return stop.status !== 3;
+          }
+          if (nextServiceType === "RECONNECTION") {
+            return stop.status !== 1;
+          }
+          return true;
+        })
+        .map((stop) => ({
+          ...stop,
+          serviceType: nextServiceType,
+          targetStatus,
+        }));
+
+      const stopsChanged = sanitizedStops.length !== state.cartStops.length;
+
+      return {
+        ...state,
+        serviceType: nextServiceType,
+        cartStops: reindexStops(sanitizedStops),
+        calculationState: stopsChanged ? "idle" : state.calculationState,
+      };
+    }
+
     case "SET_STARTING_POINT": {
       return {
         ...state,
@@ -73,12 +124,16 @@ export function routeCreationWizardReducer(
         return state;
       }
 
+      const targetStatus = state.serviceType === "CUT" ? 3 : 1;
+
       const newStop: RouteCartStop = {
         id: candidate.id,
         fixedCodeId: candidate.id,
         fixedCode: candidate.fixedCode,
         name: candidate.name,
         status: candidate.status,
+        serviceType: state.serviceType ?? undefined,
+        targetStatus,
         latitude: candidate.latitude,
         longitude: candidate.longitude,
         orderIndex: state.cartStops.length + 1,

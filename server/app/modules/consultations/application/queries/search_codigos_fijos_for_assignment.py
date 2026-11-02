@@ -16,6 +16,7 @@ class SearchCodigosFijosForAssignmentQuery:
 
     fixed_code: int
     limit: int = 10
+    service_type: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,4 +44,5 @@ class SearchCodigosFijosForAssignmentQueryHandler:
         return self.reader.search_codigos_fijos_for_assignment(
             fixed_code=query.fixed_code,
             limit=limit,
+            service_type=query.service_type,
         )

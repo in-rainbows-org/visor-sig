@@ -7,6 +7,8 @@ import { useRouteCreationWizard } from "@/features/route-assignments/presentatio
 import { WizardProgressHeader } from "./wizard/wizard-progress-header";
 import { StepWelcome } from "./wizard/step-welcome";
 import { StepTechnician } from "./wizard/step-technician";
+import { StepScheduleDate } from "./wizard/step-schedule-date";
+import { StepServiceType } from "./wizard/step-service-type";
 import { StepStartingPoint } from "./wizard/step-starting-point";
 import { StepStopsCart } from "./wizard/step-stops-cart";
 import { StepSummary } from "./wizard/step-summary";
@@ -72,6 +74,34 @@ export function RouteCreationWizardCard() {
                 className="w-full h-full flex flex-col"
               >
                 <StepTechnician />
+              </motion.div>
+            )}
+
+            {currentStep === RouteWizardStep.SCHEDULE_DATE && (
+              <motion.div
+                key="step-schedule-date"
+                custom={1}
+                variants={transitionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="w-full h-full flex flex-col"
+              >
+                <StepScheduleDate />
+              </motion.div>
+            )}
+
+            {currentStep === RouteWizardStep.SERVICE_TYPE && (
+              <motion.div
+                key="step-service-type"
+                custom={1}
+                variants={transitionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="w-full h-full flex flex-col"
+              >
+                <StepServiceType />
               </motion.div>
             )}
 

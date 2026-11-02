@@ -7,7 +7,6 @@ import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup,
   Polyline,
   useMap,
   useMapEvents,
@@ -119,9 +118,11 @@ function MapStartingPointPicker({
 }
 
 // Configuración y cache del ícono del Punto de Partida (start-point.webp)
-// Imagen centrada: la coordenada queda en el centro geométrico de la imagen
+// Banderita 3D con pedestal/base en la parte inferior izquierda:
+// - Centro horizontal de la base y mástil: x ≈ 31.9% del ancho (13.5px de 42px)
+// - Centro del pedestal elíptico en el suelo: y ≈ 93% del alto (46.5px de 50px)
 const START_POINT_SIZE: [number, number] = [42, 50];
-const START_POINT_ANCHOR: [number, number] = [21, 25];
+const START_POINT_ANCHOR: [number, number] = [13.5, 46.5];
 
 let cachedStartingIcon: L.Icon | null = null;
 
@@ -131,7 +132,7 @@ function getStartingPinIcon(): L.Icon {
     iconUrl: "/navigation-map/start-point.webp",
     iconSize: START_POINT_SIZE,
     iconAnchor: START_POINT_ANCHOR,
-    popupAnchor: [0, -25],
+    popupAnchor: [0, -46.5],
     className: "route-start-point-pin",
   });
   return cachedStartingIcon;
@@ -295,7 +296,6 @@ export function RouteCreationMap({
     startingPoint,
     setStartingPoint,
     cartStops,
-    removeStop,
     calculatedRoute,
   } = useRouteCreationWizard();
 
@@ -365,24 +365,15 @@ export function RouteCreationMap({
           <AnimatedRoutePolyline coordinates={calculatedRoute.coordinates} />
         )}
 
-        {/* Marcador del Punto de Partida */}
+        {/* Marcador del Punto de Partida (sin popover) */}
         {startingPoint && (
           <Marker
             position={[startingPoint.latitude, startingPoint.longitude]}
             icon={getStartingPinIcon()}
-          >
-            <Popup className="route-candidate-popup" closeButton={false}>
-              <div className="p-2 space-y-1 text-xs font-sans min-w-[140px]">
-                <p className="font-bold text-blue-700">Punto de Partida</p>
-                <p className="text-[10px] text-slate-500 font-mono">
-                  {startingPoint.latitude.toFixed(5)}, {startingPoint.longitude.toFixed(5)}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
+          />
         )}
 
-        {/* Marcadores numerados del Carrito de Paradas */}
+        {/* Marcadores numerados del Carrito de Paradas (sin popover) */}
         {cartStops.map((stop) => {
           const icon = getStopCartPinIcon(stop.orderIndex);
 
@@ -391,33 +382,7 @@ export function RouteCreationMap({
               key={`stop-${stop.id}-${stop.orderIndex}`}
               position={[stop.latitude, stop.longitude]}
               icon={icon}
-            >
-              <Popup className="route-candidate-popup" closeButton={false}>
-                <div className="p-2 space-y-1.5 text-xs font-sans min-w-[160px]">
-                  <div className="flex items-center justify-between gap-2 border-b pb-1">
-                    <span className="font-bold text-slate-900 text-sm">
-                      #{stop.fixedCode}
-                    </span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                      Parada {stop.orderIndex}
-                    </span>
-                  </div>
-                  <p className="text-slate-600 font-medium truncate">
-                    {stop.name || "Sin titular"}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-mono">
-                    {stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => removeStop(stop.id)}
-                    className="w-full mt-1.5 py-1 px-2.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 transition cursor-pointer"
-                  >
-                    Quitar de la ruta
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
+            />
           );
         })}
       </MapContainer>

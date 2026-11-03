@@ -48,7 +48,7 @@ from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmo
     SQLModelAssignmentStopRepository,
 )
 
-router = APIRouter(prefix="/v1/route-assignments", tags=["Asignaciones y Rutas"])
+router = APIRouter(prefix="/route-assignments", tags=["Asignaciones y Rutas"])
 
 
 @router.post(

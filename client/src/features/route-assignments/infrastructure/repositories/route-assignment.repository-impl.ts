@@ -22,7 +22,7 @@ import {
 } from "../schemas/route-assignment.schemas";
 
 export class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository {
-  private readonly baseUrl = `${API_BASE_URL}/api/v1/route-assignments`;
+  private readonly baseUrl = `${API_BASE_URL}/api/route-assignments`;
 
   async getAssignments(
     filter?: RouteAssignmentFilter

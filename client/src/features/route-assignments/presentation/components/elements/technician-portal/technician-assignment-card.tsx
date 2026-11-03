@@ -42,6 +42,13 @@ export function TechnicianAssignmentCard({ assignment }: TechnicianAssignmentCar
           dot: "bg-blue-500",
           icon: Clock,
         };
+      case "ASSIGNED":
+        return {
+          label: "Asignada",
+          bg: "bg-blue-50 text-blue-700",
+          dot: "bg-blue-500",
+          icon: Clock,
+        };
       case "PENDING":
       default:
         return {

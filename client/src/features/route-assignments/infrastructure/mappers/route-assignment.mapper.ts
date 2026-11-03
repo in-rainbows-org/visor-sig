@@ -5,6 +5,8 @@ import type {
   TechnicianOptionReadDTO,
 } from "../schemas/route-assignment.schemas";
 import type {
+  AssignmentStatus,
+  AssignmentType,
   PaginatedRouteAssignments,
   RouteAssignmentSummary,
 } from "../../domain/entities/route-assignment.entity";
@@ -37,10 +39,23 @@ export const routeAssignmentMapper = {
     const technicianName = dto.technician_name ?? "Técnico sin nombre";
     const technicianEmail = dto.technician_email ?? "";
     const routeCode = `ASG-${dto.id.substring(0, 8).toUpperCase()}`;
-    const routeName =
-      dto.assignment_type === "CUT"
-        ? "Ruta de Corte"
-        : "Ruta de Reconexión";
+
+    const rawType = (dto.assignment_type || "").toUpperCase();
+    const isCut = rawType === "CUT" || rawType === "CORTE";
+    const assignmentType: AssignmentType = isCut ? "CUT" : "RECONNECTION";
+    const routeName = isCut ? "Ruta de Corte" : "Ruta de Reconexión";
+
+    const rawStatus = (dto.status || "").toUpperCase();
+    const status: AssignmentStatus =
+      rawStatus === "IN_PROGRESS"
+        ? "IN_PROGRESS"
+        : rawStatus === "COMPLETED"
+        ? "COMPLETED"
+        : rawStatus === "CANCELLED"
+        ? "CANCELLED"
+        : rawStatus === "PENDING"
+        ? "PENDING"
+        : "ASSIGNED";
 
     return {
       id: dto.id,
@@ -50,9 +65,9 @@ export const routeAssignmentMapper = {
       technicianImage: dto.technician_image ?? null,
       totalStops: dto.total_stops,
       scheduledDate: dto.scheduled_date,
-      status: dto.status,
+      status,
       createdDate: dto.created_date,
-      assignmentType: dto.assignment_type,
+      assignmentType,
 
       // Campos de compatibilidad con UI existente
       workerId: dto.technician_id,

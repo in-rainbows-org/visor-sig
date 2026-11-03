@@ -1,7 +1,7 @@
 /**
  * NOTA DE ARQUITECTURA:
  * Los registros MOCK_ROUTE_ASSIGNMENTS están DEPRECADOS para el listado del historial
- * ya que la tabla ahora se alimenta directamente de `GET /api/v1/route-assignments/assignments`.
+ * ya que la tabla ahora se alimenta directamente de `GET /api/route-assignments/assignments`.
  * Se mantienen exclusivamente para alimentar el gráfico estadístico superior ficticio
  * solicitado por el usuario y como fallback en pruebas unitarias locales.
  */
@@ -377,7 +377,7 @@ export function getRouteAssignmentPieStats(
   const total = assignments.length;
   const completed = assignments.filter((a) => a.status === "COMPLETED").length;
   const inProgress = assignments.filter((a) => a.status === "IN_PROGRESS").length;
-  const pending = assignments.filter((a) => a.status === "PENDING").length;
+  const pending = assignments.filter((a) => a.status === "ASSIGNED" || a.status === "PENDING").length;
 
   const pct = (val: number) => (total > 0 ? (val / total) * 100 : 0);
 

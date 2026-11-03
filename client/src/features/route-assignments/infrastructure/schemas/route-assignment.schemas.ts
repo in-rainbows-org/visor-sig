@@ -23,8 +23,8 @@ export const assignmentSummaryReadSchema = z.object({
   technician_email: z.string().nullable().optional(),
   total_stops: z.number().int().nonnegative(),
   scheduled_date: z.string(),
-  assignment_type: z.enum(["CUT", "RECONNECTION"]),
-  status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]),
+  assignment_type: z.string(),
+  status: z.string(),
   created_date: z.string(),
 });
 

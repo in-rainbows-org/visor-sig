@@ -77,6 +77,13 @@ export function StatusBadge({ status }: { status: AssignmentStatus }) {
           <span>Cancelada</span>
         </span>
       );
+    case "ASSIGNED":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border-0 shadow-none">
+          <Clock className="size-3.5 text-blue-500 shrink-0" />
+          <span>Asignada</span>
+        </span>
+      );
     case "PENDING":
     default:
       return (

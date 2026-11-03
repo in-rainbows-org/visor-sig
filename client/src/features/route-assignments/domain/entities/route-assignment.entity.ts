@@ -1,7 +1,12 @@
 /**
  * Estado operativo de una asignación de ruta de inspección
  */
-export type AssignmentStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export type AssignmentStatus =
+  | "ASSIGNED"
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
 
 /**
  * Tipo de servicio programado en la asignación

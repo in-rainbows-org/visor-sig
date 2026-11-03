@@ -203,6 +203,11 @@ export async function apiRequestData<TParsed, TResult>(
     const responseData = await res.json();
     const parsed = config.responseSchema.safeParse(responseData);
     if (!parsed.success) {
+      console.error(
+        `[api-client] Error de validación Zod en endpoint ${config.method} ${config.url}:`,
+        parsed.error.issues,
+        responseData
+      );
       return errorResult("Error en la respuesta del servidor");
     }
 

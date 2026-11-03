@@ -5,8 +5,13 @@ import type { BetterAuthUserDto } from "../schemas/user.schemas";
 export const userMapper = {
   toDomain(dto: BetterAuthUserDto, currentUserId?: string): User {
     const isCurrentUser = Boolean(currentUserId && dto.id === currentUserId);
+    const normalizedRole = dto.role?.toUpperCase();
     const role: AppRole =
-      dto.role === APP_ROLES.ADMIN ? APP_ROLES.ADMIN : APP_ROLES.CONSULTANT;
+      normalizedRole === APP_ROLES.ADMIN
+        ? APP_ROLES.ADMIN
+        : normalizedRole === APP_ROLES.TECHNICIAN
+        ? APP_ROLES.TECHNICIAN
+        : APP_ROLES.CONSULTANT;
 
     let banExpires: Date | null = null;
     if (dto.banExpires) {

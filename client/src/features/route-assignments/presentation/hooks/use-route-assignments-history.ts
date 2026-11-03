@@ -8,6 +8,7 @@ import type {
 } from "../../domain/entities/route-assignment.entity";
 import type { RouteTechnicianOption } from "../../domain/entities/route-technician.entity";
 import { routeAssignmentRepository } from "../../infrastructure/repositories/route-assignment.repository-impl";
+import { techniciansCache } from "../../infrastructure/cache/technicians-cache";
 
 const EMPTY_ITEMS: RouteAssignmentSummary[] = [];
 
@@ -45,16 +46,22 @@ export function useRouteAssignmentsHistory() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [technicians, setTechnicians] = useState<RouteTechnicianOption[]>([]);
-  const [isLoadingTechnicians, setIsLoadingTechnicians] = useState<boolean>(false);
+  const [technicians, setTechnicians] = useState<RouteTechnicianOption[]>(
+    () => techniciansCache.getCachedTechnicians() || []
+  );
+  const [isLoadingTechnicians, setIsLoadingTechnicians] = useState<boolean>(
+    () => !techniciansCache.getCachedTechnicians()
+  );
 
-  // 3. Cargar listado de técnicos una sola vez
+  // 3. Cargar listado de técnicos usando caché compartida
   useEffect(() => {
     let isMounted = true;
     async function loadTechnicians() {
-      setIsLoadingTechnicians(true);
+      if (!techniciansCache.getCachedTechnicians()) {
+        setIsLoadingTechnicians(true);
+      }
       try {
-        const res = await routeAssignmentRepository.getTechnicians();
+        const res = await techniciansCache.getTechnicians();
         if (res.ok && isMounted) {
           setTechnicians(res.data);
         }

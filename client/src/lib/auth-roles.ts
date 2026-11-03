@@ -54,6 +54,7 @@ import { createAccessControl } from "better-auth/plugins/access";
 export const APP_ROLES = {
   CONSULTANT: "CONSULTANT", // Consultor / Lector (rol por defecto al registrarse)
   ADMIN:      "ADMIN",      // Administrador con acceso total
+  TECHNICIAN: "TECHNICIAN", // Técnico de campo / Operador
 } as const;
 
 /** Tipo inferido automáticamente. TypeScript validará cualquier uso de roles. */
@@ -182,6 +183,16 @@ export const roles = {
       "update",
     ],
     session: ["list", "revoke", "delete"],
+  }),
+
+  /**
+   * TECHNICIAN — Técnico de campo / Operador.
+   * Sin acceso a operaciones administrativas de Better Auth.
+   * Su acceso se restringe a su portal de asignaciones (/mis-asignaciones).
+   */
+  [APP_ROLES.TECHNICIAN]: ac.newRole({
+    user:    [],
+    session: [],
   }),
 
 } satisfies Record<AppRole, ReturnType<typeof ac.newRole>>;

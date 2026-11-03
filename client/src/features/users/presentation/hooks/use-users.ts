@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { type AppRole } from "@/lib/auth-roles";
+import { APP_ROLES, type AppRole } from "@/lib/auth-roles";
 import { appToast } from "@/features/shared/presentation/components/notifications/toast";
+import { techniciansCache } from "@/features/route-assignments/infrastructure/cache/technicians-cache";
 import type { User } from "../../domain/entities/user.entity";
 import { UserRepositoryImpl } from "../../infrastructure/repositories/user.repository-impl";
 
@@ -60,10 +61,19 @@ export function useUsers() {
       try {
         const result = await userRepository.updateRole({ userId, role: newRole });
         if (result.ok) {
+          // Invalidar caché de técnicos para sincronizar selectores de asignación de rutas
+          techniciansCache.invalidateCache();
+
           setUsers((prev) =>
             prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
           );
-          appToast.success(`Rol actualizado a ${newRole === "ADMIN" ? "Administrador" : "Consultor"}`);
+          const roleLabel =
+            newRole === APP_ROLES.ADMIN
+              ? "Administrador"
+              : newRole === APP_ROLES.TECHNICIAN
+              ? "Técnico"
+              : "Consultor";
+          appToast.success(`Rol actualizado a ${roleLabel}`);
           // Refrescar en segundo plano para asegurar consistencia
           void userRepository.getUsers(currentUserId).then((freshRes) => {
             if (freshRes.ok) setUsers(freshRes.data);

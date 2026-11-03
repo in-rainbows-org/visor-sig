@@ -9,57 +9,10 @@ import { RouteAssignment, AssignmentStatus } from "../../domain/entities/route-a
 import {
   RouteAssignmentPieStats,
   StackedBarsSummary,
-  WorkerOption,
 } from "../../domain/entities/route-assignment-stats.entity";
-import type { RouteTechnician } from "../../domain/entities/route-wizard.entity";
-
-export const MOCK_ROUTE_TECHNICIANS: RouteTechnician[] = [
-  {
-    id: "w-01",
-    name: "Carlos Mendoza",
-    email: "carlos.mendoza@gisvisor.com",
-    role: "Técnico Especialista en Catastro",
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "w-02",
-    name: "Elena Rojas",
-    email: "elena.rojas@gisvisor.com",
-    role: "Inspectora de Vías y Lotes",
-    avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "w-03",
-    name: "Andrés Silva",
-    email: "andres.silva@gisvisor.com",
-    role: "Técnico de Campo GIS",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "w-04",
-    name: "Mariana Valenzuela",
-    email: "mariana.valenzuela@gisvisor.com",
-    role: "Supervisora Territorial",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "w-05",
-    name: "Rodrigo Peña",
-    email: "rodrigo.pena@gisvisor.com",
-    role: "Técnico Operativo de Rutas",
-    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-  },
-];
-
-export const MOCK_WORKERS: WorkerOption[] = MOCK_ROUTE_TECHNICIANS.map((w) => ({
-  id: w.id,
-  name: w.name,
-  email: w.email,
-  avatar: w.avatarUrl,
-}));
 
 /**
- * Conjunto de 20 asignaciones de ruta representativas para el visor territorial
+ * Conjunto de asignaciones de ruta representativas para el gráfico de estadísticas superior
  */
 export const MOCK_ROUTE_ASSIGNMENTS: RouteAssignment[] = [
   {

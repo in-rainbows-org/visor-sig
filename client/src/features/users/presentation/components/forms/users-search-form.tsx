@@ -17,6 +17,7 @@ const ROLE_OPTIONS = [
   { value: "ALL", label: "Todos los roles" },
   { value: APP_ROLES.ADMIN, label: "Administradores" },
   { value: APP_ROLES.CONSULTANT, label: "Consultores" },
+  { value: APP_ROLES.TECHNICIAN, label: "Técnicos" },
 ] as const;
 
 const STATUS_OPTIONS = [

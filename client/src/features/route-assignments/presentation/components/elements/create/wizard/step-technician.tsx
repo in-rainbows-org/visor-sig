@@ -4,26 +4,38 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, ArrowRight, Check, Search, User, X } from "lucide-react";
 import Image from "next/image";
 import { useRouteCreationWizard } from "@/features/route-assignments/presentation/state/route-creation-wizard-store";
-import { MOCK_ROUTE_TECHNICIANS } from "@/features/route-assignments/presentation/data/mock-route-assignments";
 import type { RouteTechnician } from "@/features/route-assignments/domain/entities/route-wizard.entity";
-import { routeAssignmentRepository } from "@/features/route-assignments/infrastructure/repositories/route-assignment.repository-impl";
+import { techniciansCache } from "@/features/route-assignments/infrastructure/cache/technicians-cache";
 
 export function StepTechnician() {
   const { selectedTechnician, selectTechnician, nextStep, prevStep, canAdvance } =
     useRouteCreationWizard();
 
-  const [technicians, setTechnicians] = useState<RouteTechnician[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [technicians, setTechnicians] = useState<RouteTechnician[]>(() => {
+    const cached = techniciansCache.getCachedTechnicians();
+    return cached
+      ? cached.map((t) => ({
+          id: t.id,
+          name: t.name,
+          email: t.email || "",
+          avatarUrl: t.image || undefined,
+          role: "Técnico de Campo",
+        }))
+      : [];
+  });
+  const [isLoading, setIsLoading] = useState(() => !techniciansCache.getCachedTechnicians());
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Cargar técnicos reales desde el backend
+  // Cargar técnicos reales desde la caché compartida
   useEffect(() => {
     let isMounted = true;
     async function load() {
-      setIsLoading(true);
+      if (!techniciansCache.getCachedTechnicians()) {
+        setIsLoading(true);
+      }
       try {
-        const res = await routeAssignmentRepository.getTechnicians();
-        if (res.ok && isMounted && res.data.length > 0) {
+        const res = await techniciansCache.getTechnicians();
+        if (res.ok && isMounted) {
           setTechnicians(
             res.data.map((t) => ({
               id: t.id,
@@ -33,14 +45,9 @@ export function StepTechnician() {
               role: "Técnico de Campo",
             }))
           );
-        } else if (isMounted) {
-          // Fallback a técnicos mock si no hay técnicos en BD aún
-          setTechnicians(MOCK_ROUTE_TECHNICIANS);
         }
       } catch {
-        if (isMounted) {
-          setTechnicians(MOCK_ROUTE_TECHNICIANS);
-        }
+        // En caso de fallo de red, se mantiene la lista vacía
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -106,9 +113,21 @@ export function StepTechnician() {
               <div key={i} className="h-14 bg-slate-100 rounded-3xl animate-pulse" />
             ))}
           </div>
+        ) : technicians.length === 0 ? (
+          <div className="py-10 px-4 text-center space-y-2">
+            <div className="size-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+              <User className="size-6 text-slate-400" />
+            </div>
+            <p className="text-xs font-semibold text-slate-700">
+              No hay técnicos registrados
+            </p>
+            <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed">
+              Para asignar rutas de inspección, primero debes asignar el rol Técnico a usuarios del sistema en Administración de Usuarios.
+            </p>
+          </div>
         ) : filteredTechnicians.length === 0 ? (
           <div className="py-8 text-center text-xs text-slate-400">
-            No se encontraron técnicos coincidentes.
+            No se encontraron técnicos coincidentes con &quot;{searchQuery}&quot;.
           </div>
         ) : (
           filteredTechnicians.map((tech: RouteTechnician) => {

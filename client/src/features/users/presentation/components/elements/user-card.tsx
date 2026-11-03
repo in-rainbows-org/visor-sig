@@ -17,6 +17,7 @@ import {
   Loader2,
   Calendar,
   Mail,
+  Wrench,
 } from "lucide-react";
 import { APP_ROLES, type AppRole } from "@/lib/auth-roles";
 import type { User } from "../../../domain/entities/user.entity";
@@ -165,6 +166,8 @@ export function UserCard({
                 "h-9 w-full text-xs rounded-full bg-slate-100/80 hover:bg-slate-100 border-0 shadow-none px-3 transition-colors",
                 user.role === APP_ROLES.ADMIN
                   ? "text-blue-700 font-semibold"
+                  : user.role === APP_ROLES.TECHNICIAN
+                  ? "text-indigo-700 font-semibold"
                   : "text-slate-700",
                 isSelf && "cursor-not-allowed opacity-80"
               )}
@@ -182,6 +185,12 @@ export function UserCard({
                 <div className="flex items-center gap-2">
                   <UserIcon className="size-3.5 text-slate-500" />
                   <span>Consultor</span>
+                </div>
+              </SelectItem>
+              <SelectItem value={APP_ROLES.TECHNICIAN} className="text-xs rounded-xl py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <Wrench className="size-3.5 text-indigo-600" />
+                  <span>Técnico</span>
                 </div>
               </SelectItem>
             </SelectContent>

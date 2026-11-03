@@ -5,7 +5,6 @@ import { PageHero } from "@/features/shared/presentation/components/layout/page-
 import {
   MOCK_ROUTE_ASSIGNMENTS,
   getRouteAssignmentPieStats,
-  MOCK_WORKERS,
 } from "../../data/mock-route-assignments";
 import { RouteStatsSection } from "../elements/stats/route-stats-section";
 import { RouteHistorySection } from "../elements/history/route-history-section";
@@ -19,14 +18,6 @@ export function RouteAssignmentsView() {
     () => getRouteAssignmentPieStats(MOCK_ROUTE_ASSIGNMENTS),
     []
   );
-
-  // Trabajadores/Técnicos para filtros: priorizar técnicos reales del backend
-  const availableWorkers = useMemo(() => {
-    if (history.technicians.length > 0) {
-      return history.technicians;
-    }
-    return MOCK_WORKERS;
-  }, [history.technicians]);
 
   return (
     <div className="h-full w-full lg:-ml-[32px] lg:pl-[32px] lg:w-[calc(100%+32px)] overflow-y-auto bg-slate-50/70 overscroll-contain">
@@ -48,7 +39,7 @@ export function RouteAssignmentsView() {
         {/* 3. Sección Inferior: Historial de Asignaciones con datos reales y paginación */}
         <RouteHistorySection
           assignments={history.items}
-          workers={availableWorkers}
+          workers={history.technicians}
           totalCount={history.totalCount}
           currentPage={history.currentPage}
           pageSize={history.pageSize}

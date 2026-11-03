@@ -66,6 +66,14 @@ export const APP_ROUTES: NavigationRoute[] = [
     icon: "/navigation-icons/usuarios.webp",
     allowedRoles: [APP_ROLES.ADMIN],
   },
+  {
+    key: "mis-asignaciones",
+    label: "Mis Asignaciones",
+    shortLabel: "Mis Asignaciones",
+    href: "/mis-asignaciones",
+    icon: "/navigation-icons/mis-asignaciones.webp",
+    allowedRoles: [APP_ROLES.TECHNICIAN],
+  },
 ];
 
 /**

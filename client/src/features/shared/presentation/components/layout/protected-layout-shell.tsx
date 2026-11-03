@@ -2,6 +2,8 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { AppRole, APP_ROLES, DEFAULT_ROLE } from "@/lib/auth-roles";
 import { cn } from "@/lib/utils";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
@@ -16,11 +18,18 @@ export function ProtectedLayoutShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
+  const userRole = (session?.user?.role as AppRole) || DEFAULT_ROLE;
 
   const isMapPage =
     pathname === "/mapa" || pathname.startsWith("/asignacion-rutas/nueva");
 
   const isNewAssignment = pathname.startsWith("/asignacion-rutas/nueva");
+  const isTechnician = userRole === APP_ROLES.TECHNICIAN;
+  const isTechnicianPortal =
+    pathname === "/mis-asignaciones" || pathname.startsWith("/mis-asignaciones/");
+
+  const hideBottomNav = isNewAssignment || isTechnician || isTechnicianPortal;
 
   return (
     <div className="bg-[#f5f6fa] text-gray-800 font-sans fixed inset-0 w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col select-none overscroll-none">
@@ -48,8 +57,8 @@ export function ProtectedLayoutShell({
         </main>
       </div>
 
-      {/* 3. Barra de navegación flotante inferior (solo en móviles y tablets < 1024px, oculta en nueva asignación) */}
-      {!isNewAssignment && <AppBottomNav />}
+      {/* 3. Barra de navegación flotante inferior (solo en móviles y tablets < 1024px, oculta en nueva asignación y para técnicos) */}
+      {!hideBottomNav && <AppBottomNav />}
     </div>
   );
 }

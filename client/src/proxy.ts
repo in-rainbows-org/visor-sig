@@ -15,7 +15,12 @@ export async function proxy(request: NextRequest) {
 
   const isAuthenticated = !!session;
   const userRole = (session?.user?.role as AppRole) || DEFAULT_ROLE;
-  const defaultLandingPath = userRole === APP_ROLES.ADMIN ? "/dashboard" : "/mapa";
+  const defaultLandingPath =
+    userRole === APP_ROLES.ADMIN
+      ? "/dashboard"
+      : userRole === APP_ROLES.TECHNICIAN
+      ? "/mis-asignaciones"
+      : "/mapa";
 
   // 1. Redirección de la raíz (/)
   if (pathname === "/") {
@@ -78,7 +83,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/consultar" ||
     pathname.startsWith("/consultar/") ||
     pathname === "/asignacion-rutas" ||
-    pathname.startsWith("/asignacion-rutas/");
+    pathname.startsWith("/asignacion-rutas/") ||
+    pathname === "/mis-asignaciones" ||
+    pathname.startsWith("/mis-asignaciones/");
 
   if (isProtectedRoute) {
     if (!isAuthenticated) {
@@ -89,7 +96,7 @@ export async function proxy(request: NextRequest) {
 
     // Validación de acceso por rol
     if (!isRouteAllowedForRole(pathname, userRole)) {
-      return NextResponse.redirect(new URL("/mapa", request.url));
+      return NextResponse.redirect(new URL(defaultLandingPath, request.url));
     }
 
     return NextResponse.next();
@@ -120,5 +127,7 @@ export const config = {
     "/consultar/:path*",
     "/asignacion-rutas",
     "/asignacion-rutas/:path*",
+    "/mis-asignaciones",
+    "/mis-asignaciones/:path*",
   ],
 };

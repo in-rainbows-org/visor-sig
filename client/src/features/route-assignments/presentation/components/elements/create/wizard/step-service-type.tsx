@@ -33,8 +33,10 @@ export function StepServiceType() {
         <div
           onClick={() => handleSelect("CUT")}
           className={cn(
-            "p-3.5 sm:p-4 rounded-3xl bg-[#edf4fe] border-0 shadow-none transition-all cursor-pointer flex items-center justify-between gap-3 relative select-none hover:bg-[#e4effd] active:scale-[0.99]",
-            serviceType === "CUT" && "ring-2 ring-[#0e4dcb]/40 bg-[#e4effd]"
+            "p-3.5 sm:p-4 rounded-3xl border-0 shadow-none transition-all cursor-pointer flex items-center justify-between gap-3 relative select-none active:scale-[0.99]",
+            serviceType === "CUT"
+              ? "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white"
+              : "bg-[#edf4fe] hover:bg-[#e4effd] text-slate-900"
           )}
         >
           {/* Imagen 3D alineada a la izquierda */}
@@ -51,11 +53,21 @@ export function StepServiceType() {
           </div>
 
           {/* Línea divisoria vertical sutil */}
-          <div className="w-[1.5px] h-12 bg-blue-200/80 shrink-0" />
+          <div
+            className={cn(
+              "w-[1.5px] h-12 shrink-0 transition-colors",
+              serviceType === "CUT" ? "bg-white/20" : "bg-blue-200/80"
+            )}
+          />
 
           {/* Nombre del servicio a la derecha */}
           <div className="flex-1 min-w-0 pl-1">
-            <h4 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+            <h4
+              className={cn(
+                "text-base sm:text-lg font-bold leading-tight transition-colors",
+                serviceType === "CUT" ? "text-white" : "text-slate-900"
+              )}
+            >
               Corte de <br /> servicio
             </h4>
           </div>
@@ -63,7 +75,7 @@ export function StepServiceType() {
           {/* Checkbox circular azul o borde blanco */}
           <div className="pr-1 shrink-0">
             {serviceType === "CUT" ? (
-              <div className="size-7 rounded-full bg-[#0e4dcb] text-white flex items-center justify-center shadow-none">
+              <div className="size-7 rounded-full bg-white text-[#0e4dcb] flex items-center justify-center shadow-none">
                 <Check className="size-4 stroke-[3]" />
               </div>
             ) : (
@@ -76,8 +88,10 @@ export function StepServiceType() {
         <div
           onClick={() => handleSelect("RECONNECTION")}
           className={cn(
-            "p-3.5 sm:p-4 rounded-3xl bg-[#edf4fe] border-0 shadow-none transition-all cursor-pointer flex items-center justify-between gap-3 relative select-none hover:bg-[#e4effd] active:scale-[0.99]",
-            serviceType === "RECONNECTION" && "ring-2 ring-[#0e4dcb]/40 bg-[#e4effd]"
+            "p-3.5 sm:p-4 rounded-3xl border-0 shadow-none transition-all cursor-pointer flex items-center justify-between gap-3 relative select-none active:scale-[0.99]",
+            serviceType === "RECONNECTION"
+              ? "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white"
+              : "bg-[#edf4fe] hover:bg-[#e4effd] text-slate-900"
           )}
         >
           {/* Imagen 3D alineada a la izquierda */}
@@ -94,11 +108,21 @@ export function StepServiceType() {
           </div>
 
           {/* Línea divisoria vertical sutil */}
-          <div className="w-[1.5px] h-12 bg-blue-200/80 shrink-0" />
+          <div
+            className={cn(
+              "w-[1.5px] h-12 shrink-0 transition-colors",
+              serviceType === "RECONNECTION" ? "bg-white/20" : "bg-blue-200/80"
+            )}
+          />
 
           {/* Nombre del servicio a la derecha */}
           <div className="flex-1 min-w-0 pl-1">
-            <h4 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+            <h4
+              className={cn(
+                "text-base sm:text-lg font-bold leading-tight transition-colors",
+                serviceType === "RECONNECTION" ? "text-white" : "text-slate-900"
+              )}
+            >
               Reconexión <br /> de servicio
             </h4>
           </div>
@@ -106,7 +130,7 @@ export function StepServiceType() {
           {/* Checkbox circular azul o borde blanco */}
           <div className="pr-1 shrink-0">
             {serviceType === "RECONNECTION" ? (
-              <div className="size-7 rounded-full bg-[#0e4dcb] text-white flex items-center justify-center shadow-none">
+              <div className="size-7 rounded-full bg-white text-[#0e4dcb] flex items-center justify-center shadow-none">
                 <Check className="size-4 stroke-[3]" />
               </div>
             ) : (

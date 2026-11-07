@@ -210,16 +210,19 @@ function AnimatedRoutePolyline({
     startTimeRef.current = null;
 
     const totalPoints = coordinates.length;
-    // Duración suave y fluida (20% más pausada): entre 1200ms y 1800ms según la densidad de puntos
-    const durationMs = Math.min(1800, Math.max(1200, totalPoints * 12));
+    // Duración fluida y pausada (~15% más lenta): entre 1650ms y 2500ms según la densidad de puntos
+    const durationMs = Math.min(2500, Math.max(1650, totalPoints * 17));
 
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const elapsed = timestamp - startTimeRef.current;
       const progress = Math.min(1, elapsed / durationMs);
 
-      // Curva cúbica para inicio ágil y desaceleración elegante al final
-      const ease = 1 - Math.pow(1 - progress, 3);
+      // Curva easeInOut suave para eliminar el inicio apresurado y lograr un avance continuo y fluido
+      const ease =
+        progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
       const floatIndex = ease * (totalPoints - 1);
       const baseIndex = Math.floor(floatIndex);
       const fraction = floatIndex - baseIndex;

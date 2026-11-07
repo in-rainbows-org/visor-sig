@@ -17,32 +17,27 @@ export type RouteCreationResultCardProps = {
   className?: string;
 };
 
+const badgeColors: Record<number, { bg: string; dot: string }> = {
+  1: { bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
+  2: { bg: "bg-amber-50 text-amber-700", dot: "bg-amber-500" },
+  3: { bg: "bg-rose-50 text-rose-700", dot: "bg-rose-500" },
+  4: { bg: "bg-orange-50 text-orange-700", dot: "bg-orange-500" },
+  5: { bg: "bg-slate-100 text-slate-700", dot: "bg-slate-400" },
+};
+
 const getStatusBadge = (statusValue: number) => {
   const def = FIXED_CODE_STATUSES[statusValue as FixedCodeStatusValue];
-  if (!def) {
-    return (
-      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
-        Estado {statusValue}
-      </span>
-    );
-  }
-
-  const badgeColors: Record<number, string> = {
-    1: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
-    2: "bg-amber-50 text-amber-700 border-amber-200/60",
-    3: "bg-rose-50 text-rose-700 border-rose-200/60",
-    4: "bg-orange-50 text-orange-700 border-orange-200/60",
-    5: "bg-slate-100 text-slate-700 border-slate-200/60",
+  const conf = badgeColors[statusValue] ?? {
+    bg: "bg-slate-100 text-slate-700",
+    dot: "bg-slate-400",
   };
 
   return (
     <span
-      className={cn(
-        "text-[10px] sm:text-[11px] font-semibold font-sans px-2.5 py-0.5 rounded-full border shadow-none inline-flex items-center",
-        badgeColors[statusValue] ?? "bg-slate-100 text-slate-700 border-slate-200"
-      )}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border-0 shadow-none ${conf.bg}`}
     >
-      {def.label}
+      <span className={`size-1.5 rounded-full ${conf.dot} shrink-0`} />
+      <span>{def?.label ?? `Estado ${statusValue}`}</span>
     </span>
   );
 };

@@ -5,7 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
-  Sparkles,
+  Route,
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
@@ -13,31 +13,27 @@ import { useRouteCreationWizard } from "@/features/route-assignments/presentatio
 import { FIXED_CODE_STATUSES, type FixedCodeStatusValue } from "@/features/map/domain/entities/fixed-code-status.entity";
 import type { RouteCartStop } from "@/features/route-assignments/domain/entities/route-wizard.entity";
 
+const badgeColors: Record<number, { bg: string; dot: string }> = {
+  1: { bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
+  2: { bg: "bg-amber-50 text-amber-700", dot: "bg-amber-500" },
+  3: { bg: "bg-rose-50 text-rose-700", dot: "bg-rose-500" },
+  4: { bg: "bg-orange-50 text-orange-700", dot: "bg-orange-500" },
+  5: { bg: "bg-slate-100 text-slate-700", dot: "bg-slate-400" },
+};
+
 const getStatusBadge = (statusValue: number) => {
   const def = FIXED_CODE_STATUSES[statusValue as FixedCodeStatusValue];
-  if (!def) {
-    return (
-      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">
-        Estado {statusValue}
-      </span>
-    );
-  }
-
-  const badgeColors: Record<number, string> = {
-    1: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
-    2: "bg-amber-50 text-amber-700 border-amber-200/60",
-    3: "bg-rose-50 text-rose-700 border-rose-200/60",
-    4: "bg-orange-50 text-orange-700 border-orange-200/60",
-    5: "bg-slate-100 text-slate-700 border-slate-200/60",
+  const conf = badgeColors[statusValue] ?? {
+    bg: "bg-slate-100 text-slate-700",
+    dot: "bg-slate-400",
   };
 
   return (
     <span
-      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
-        badgeColors[statusValue] ?? "bg-slate-100 text-slate-700"
-      }`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border-0 shadow-none ${conf.bg}`}
     >
-      {def.label}
+      <span className={`size-1.5 rounded-full ${conf.dot} shrink-0`} />
+      <span>{def?.label ?? `Estado ${statusValue}`}</span>
     </span>
   );
 };
@@ -124,23 +120,26 @@ export function StepStopsCart() {
                 key={stop.id}
                 className="w-full bg-slate-100/90 hover:bg-slate-200/70 rounded-2xl p-3 border-0 shadow-none transition-colors flex items-center justify-between gap-2.5"
               >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
                   {/* Badge de Orden Secuencial (1..N) */}
                   <div className="size-6 rounded-full bg-[#0e4dcb] text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-none">
                     {stop.orderIndex}
                   </div>
 
                   {/* Datos de la Vivienda */}
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-slate-900">
-                        #{stop.fixedCode}
-                      </span>
-                      {getStatusBadge(stop.status)}
-                    </div>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <span className="text-xs font-bold text-slate-900 font-mono block">
+                      #{stop.fixedCode}
+                    </span>
                     <p className="text-[11px] text-slate-600 truncate font-medium">
                       {stop.name || "Sin titular registrado"}
                     </p>
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <span className="text-[10px] sm:text-[11px] font-medium text-slate-500">
+                        Estado actual:
+                      </span>
+                      {getStatusBadge(stop.status)}
+                    </div>
                   </div>
                 </div>
 
@@ -148,10 +147,10 @@ export function StepStopsCart() {
                 <button
                   type="button"
                   onClick={() => removeStop(stop.id)}
-                  className="size-7 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition shrink-0 cursor-pointer border-0 shadow-none"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 transition-colors shrink-0 cursor-pointer border-0 shadow-none bg-transparent"
                   title="Quitar parada"
                 >
-                  <Trash2 className="size-3.5 stroke-[2]" />
+                  <Trash2 className="size-4 stroke-[2]" />
                 </button>
               </div>
             ))}
@@ -178,7 +177,7 @@ export function StepStopsCart() {
               disabled
               className="hidden lg:flex h-11 px-6 rounded-full font-semibold text-xs items-center gap-2 border-0 shadow-none bg-slate-100 text-slate-400 cursor-not-allowed shrink-0"
             >
-              <Sparkles className="size-3.5" />
+              <Route className="size-3.5 stroke-[2]" />
               <span>Calcular rutas</span>
             </button>
 
@@ -221,7 +220,7 @@ export function StepStopsCart() {
               </>
             ) : (
               <>
-                <Sparkles className="size-3.5" />
+                <Route className="size-3.5 stroke-[2]" />
                 <span>Calcular rutas</span>
               </>
             )}

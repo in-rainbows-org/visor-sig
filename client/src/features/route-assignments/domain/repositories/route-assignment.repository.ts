@@ -1,4 +1,5 @@
-import type { ApiResult } from "@/features/shared/domain/types/api-results";
+import type { ApiMaybeResult, ApiResult } from "@/features/shared/domain/types/api-results";
+import type { AssignmentDetail } from "../entities/assignment-detail.entity";
 import type {
   PaginatedRouteAssignments,
   RouteAssignmentFilter,
@@ -22,7 +23,7 @@ export type CreateAssignmentStopParams = {
   orderIndex: number;
   targetStatus: number;
   currentStatus: number;
-  routeGeometry?: string | null;
+  routeGeometry?: Record<string, unknown> | string | null;
 };
 
 export type CreateAssignmentRequestParams = {
@@ -62,4 +63,9 @@ export interface RouteAssignmentRepository {
    * Crea y persiste atómicamente una asignación de ruta con sus paradas.
    */
   createAssignment(params: CreateAssignmentRequestParams): Promise<ApiResult<CreatedAssignmentResult>>;
+
+  /**
+   * Obtiene el detalle integral de una asignación específica por su ID.
+   */
+  getAssignmentDetail(id: string): Promise<ApiMaybeResult<AssignmentDetail>>;
 }

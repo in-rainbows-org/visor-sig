@@ -71,13 +71,33 @@ def test_assignment_stop_create_and_lifecycle():
     assert stop.status == StopStatus.PENDING
     assert stop.status.is_pending() is True
     assert stop.is_active is True
+    assert stop.in_transit_at is None
+    assert stop.arrived_at is None
+    assert stop.completed_at is None
 
-    # Completar parada
-    stop.mark_completed()
+    # Iniciar traslado
+    transit_time = datetime.now(timezone.utc)
+    stop.start_transit(transit_time)
+    assert stop.status == StopStatus.IN_TRANSIT
+    assert stop.status.is_in_transit() is True
+    assert stop.in_transit_at == transit_time
+
+    # Llegar a la parada
+    arrived_time = datetime.now(timezone.utc)
+    stop.mark_arrived(arrived_time)
+    assert stop.status == StopStatus.ARRIVED
+    assert stop.status.is_arrived() is True
+    assert stop.arrived_at == arrived_time
+
+    # Completar parada con timestamp
+    completed_time = datetime.now(timezone.utc)
+    stop.mark_completed(completed_time)
     assert stop.status == StopStatus.COMPLETED
     assert stop.status.is_completed() is True
+    assert stop.completed_at == completed_time
 
     # Marcar como fallida
     stop.mark_failed()
     assert stop.status == StopStatus.FAILED
     assert stop.status.is_failed() is True
+

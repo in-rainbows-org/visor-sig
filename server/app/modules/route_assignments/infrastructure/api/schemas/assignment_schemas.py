@@ -90,3 +90,40 @@ class PaginatedAssignmentsRead(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class AssignmentStopDetailRead(BaseModel):
+    """Proyección de una parada para la vista de detalle de asignación."""
+
+    id: UUID
+    codigo_fijo_id: UUID
+    fixed_code: int | None = None
+    name: str | None = None
+    latitude: float
+    longitude: float
+    order_index: int
+    status: str
+    in_transit_at: datetime | None = None
+    arrived_at: datetime | None = None
+    completed_at: datetime | None = None
+    route_geometry: dict[str, Any] = Field(default_factory=dict)
+
+
+class AssignmentDetailRead(BaseModel):
+    """Detalle integral de la asignación para supervisión y monitoreo administrativo."""
+
+    id: UUID
+    technician_name: str | None = None
+    technician_image: str | None = None
+    scheduled_date: date
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    status: str
+    assignment_type: str
+    total_stops: int
+    total_distance_km: float
+    start_latitude: float
+    start_longitude: float
+    completed_stops: int
+    stops: list[AssignmentStopDetailRead] = Field(default_factory=list)
+

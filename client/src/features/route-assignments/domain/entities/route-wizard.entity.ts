@@ -41,7 +41,7 @@ export type RouteCartStop = {
   targetStatus?: number;  // Estado resultante proyectado
   latitude: number;       // Coordenada latitud
   longitude: number;      // Coordenada longitud
-  routeGeometry?: string | null; // Geometría opcional de tramo
+  routeGeometry?: Record<string, unknown> | string | null; // Geometría opcional de tramo (GeoJSON LineString)
 };
 
 export type OptimizedStop = {
@@ -51,7 +51,7 @@ export type OptimizedStop = {
   longitude: number;
   legDistanceKm: number;
   legDurationSeconds: number;
-  legGeometry?: string | null;
+  legGeometry?: Record<string, unknown> | string | null;
 };
 
 export type CalculatedRoute = {

@@ -3,8 +3,12 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from app.modules.route_assignments.domain.value_objects.assignment_status import AssignmentStatus
-from app.modules.route_assignments.domain.value_objects.assignment_type import AssignmentType
+from app.modules.route_assignments.domain.value_objects.assignment_status import (
+    AssignmentStatus,
+)
+from app.modules.route_assignments.domain.value_objects.assignment_type import (
+    AssignmentType,
+)
 
 
 class Assignment:

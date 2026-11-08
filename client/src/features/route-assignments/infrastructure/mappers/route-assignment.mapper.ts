@@ -137,7 +137,10 @@ export const routeAssignmentMapper = {
         order_index: s.orderIndex,
         target_status: s.targetStatus,
         current_status: s.currentStatus,
-        route_geometry: {},
+        route_geometry:
+          s.routeGeometry && typeof s.routeGeometry === "object"
+            ? s.routeGeometry
+            : {},
       })),
     };
   },

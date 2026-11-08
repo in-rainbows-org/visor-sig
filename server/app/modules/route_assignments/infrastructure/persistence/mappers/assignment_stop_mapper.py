@@ -19,6 +19,9 @@ class AssignmentStopMapper:
             target_status=model.target_status,
             status=StopStatus(model.status),
             route_geometry=model.route_geometry or {},
+            in_transit_at=model.in_transit_at,
+            arrived_at=model.arrived_at,
+            completed_at=model.completed_at,
             is_active=model.deleted_date is None,
         )
 
@@ -33,7 +36,11 @@ class AssignmentStopMapper:
             target_status=entity.target_status,
             status=entity.status.value if hasattr(entity.status, "value") else str(entity.status),
             route_geometry=entity.route_geometry,
+            in_transit_at=entity.in_transit_at,
+            arrived_at=entity.arrived_at,
+            completed_at=entity.completed_at,
         )
         if not entity.is_active:
             model.deleted_date = datetime.now(timezone.utc)
         return model
+

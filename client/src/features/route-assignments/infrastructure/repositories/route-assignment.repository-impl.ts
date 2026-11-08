@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "@/features/shared/config/api.config";
-import type { ApiResult } from "@/features/shared/domain/types/api-results";
-import { apiRequestData } from "@/features/shared/infrastructure/http/api-client";
+import type { ApiMaybeResult, ApiResult } from "@/features/shared/domain/types/api-results";
+import { apiRequestData, apiRequestMaybeData } from "@/features/shared/infrastructure/http/api-client";
+import type { AssignmentDetail } from "../../domain/entities/assignment-detail.entity";
 import type {
   PaginatedRouteAssignments,
   RouteAssignmentFilter,
@@ -13,7 +14,9 @@ import type {
   CreatedAssignmentResult,
   RouteAssignmentRepository,
 } from "../../domain/repositories/route-assignment.repository";
+import { AssignmentDetailMapper } from "../mappers/assignment-detail.mapper";
 import { routeAssignmentMapper } from "../mappers/route-assignment.mapper";
+import { assignmentDetailReadSchema } from "../schemas/assignment-detail.schemas";
 import {
   calculateRouteReadSchema,
   createdAssignmentReadSchema,
@@ -96,6 +99,18 @@ export class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository 
         status: data.status,
         scheduledDate: data.scheduled_date,
       }),
+    });
+  }
+
+  async getAssignmentDetail(id: string): Promise<ApiMaybeResult<AssignmentDetail>> {
+    const url = `${this.baseUrl}/assignments/${encodeURIComponent(id)}`;
+
+    return apiRequestMaybeData({
+      url,
+      method: "GET",
+      responseSchema: assignmentDetailReadSchema,
+      fallbackMessage: "No se pudo obtener el detalle de la asignación.",
+      mapData: (data) => AssignmentDetailMapper.toDomain(data),
     });
   }
 }

@@ -1,7 +1,8 @@
+from datetime import datetime
+from typing import Any, Optional
 import uuid
-from typing import Any
 
-from sqlalchemy import Column, ForeignKey, Index, Integer, JSON, SmallInteger, String
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, SmallInteger, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Field
@@ -57,3 +58,19 @@ class AssignmentStopModel(BaseModel, table=True):
             server_default="{}",
         ),
     )
+    in_transit_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+        nullable=True,
+    )
+    arrived_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+        nullable=True,
+    )
+    completed_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+        nullable=True,
+    )
+

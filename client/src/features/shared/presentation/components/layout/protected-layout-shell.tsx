@@ -22,9 +22,11 @@ export function ProtectedLayoutShell({
   const userRole = (session?.user?.role as AppRole) || DEFAULT_ROLE;
 
   const isMapPage =
-    pathname === "/mapa" || pathname.startsWith("/asignacion-rutas/nueva");
+    pathname === "/mapa" ||
+    (pathname.startsWith("/asignacion-rutas/") && pathname !== "/asignacion-rutas");
 
-  const isNewAssignment = pathname.startsWith("/asignacion-rutas/nueva");
+  const isNewAssignment =
+    pathname.startsWith("/asignacion-rutas/") && pathname !== "/asignacion-rutas";
   const isTechnician = userRole === APP_ROLES.TECHNICIAN;
   const isTechnicianPortal =
     pathname === "/mis-asignaciones" || pathname.startsWith("/mis-asignaciones/");

@@ -188,17 +188,22 @@ export function routeCreationWizardReducer(
     case "SET_CALCULATED_ROUTE": {
       const route = action.payload;
       const orderMap = new Map<string, number>();
+      const geomMap = new Map<string, Record<string, unknown> | string | null>();
       route.orderedStops.forEach((s, idx) => {
         orderMap.set(s.codigoFijoId, s.orderIndex ?? (idx + 1));
+        geomMap.set(s.codigoFijoId, s.legGeometry ?? null);
       });
 
       const reorderedStops = [...state.cartStops]
         .map((stop) => {
           const newOrder =
             orderMap.get(stop.fixedCodeId) ?? orderMap.get(stop.id);
+          const newGeom =
+            geomMap.get(stop.fixedCodeId) ?? geomMap.get(stop.id) ?? stop.routeGeometry;
           return {
             ...stop,
             orderIndex: newOrder ?? stop.orderIndex,
+            routeGeometry: newGeom,
           };
         })
         .sort((a, b) => a.orderIndex - b.orderIndex)

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Calendar, Home } from "lucide-react";
 import type { RouteAssignment } from "../../../../domain/entities/route-assignment.entity";
 import { StatusBadge, getWorkerEmail } from "./route-assignments-table";
@@ -33,11 +34,19 @@ function formatDate(dateStr: string): string {
 
 export function RouteAssignmentCard({
   assignment,
+  onSelect,
 }: RouteAssignmentCardProps) {
+  const router = useRouter();
   const email = getWorkerEmail(assignment.workerName, assignment.workerEmail);
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 border-0 shadow-none space-y-3.5 select-none hover:bg-white/95 transition-all">
+    <div
+      onClick={() => {
+        onSelect?.(assignment);
+        router.push(`/asignacion-rutas/${assignment.id}`);
+      }}
+      className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 border-0 shadow-none space-y-3.5 select-none hover:bg-white/95 transition-all cursor-pointer active:scale-[0.99]"
+    >
       {/* Cabecera: Avatar del Técnico + Nombre + Correo debajo + Estado */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">

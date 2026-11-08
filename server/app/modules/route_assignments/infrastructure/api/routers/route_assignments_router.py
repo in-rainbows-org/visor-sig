@@ -1,12 +1,17 @@
 from datetime import date, datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
 from app.core.config import settings
-from app.core.dependencies import CurrentUser, DBSession, UoWDep
+from app.core.dependencies import Admin, CurrentUser, DBSession, UoWDep
 from app.modules.route_assignments.application.dtos.route_dtos import (
     RouteCalculationRequestDTO,
     WaypointInputDTO,
+)
+from app.modules.route_assignments.application.queries.get_assignment_detail import (
+    GetAssignmentDetailQuery,
+    GetAssignmentDetailQueryHandler,
 )
 from app.modules.route_assignments.application.queries.list_assignments import (
     ListAssignmentsQuery,
@@ -21,12 +26,15 @@ from app.modules.route_assignments.application.use_cases.create_assignment impor
     CreateAssignmentUseCase,
 )
 from app.modules.route_assignments.infrastructure.api.schemas.assignment_schemas import (
+    AssignmentDetailRead,
     AssignmentRead,
+    AssignmentStopDetailRead,
     AssignmentSummaryRead,
     CreateAssignmentRequest,
     PaginatedAssignmentsRead,
     TechnicianOptionRead,
 )
+
 from app.modules.route_assignments.infrastructure.api.schemas.route_schemas import (
     CalculateRouteRead,
     CalculateRouteRequest,
@@ -38,9 +46,13 @@ from app.modules.route_assignments.infrastructure.external.osrm_route_provider i
 from app.modules.route_assignments.infrastructure.persistence.models.assignment_model import (
     AssignmentModel,
 )
+from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_assignment_detail_reader import (
+    SqlModelAssignmentDetailReader,
+)
 from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_assignment_summary_reader import (
     SqlModelAssignmentSummaryReader,
 )
+
 from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_repository import (
     SQLModelAssignmentRepository,
 )
@@ -230,4 +242,56 @@ def list_technicians(
         )
         for t in technicians
     ]
+
+
+@router.get(
+    "/assignments/{assignment_id}",
+    response_model=AssignmentDetailRead,
+    summary="Obtener detalle integral de una asignación de ruta (Solo Administradores)",
+)
+def get_assignment_detail(
+    assignment_id: UUID,
+    db: DBSession,
+    _: Admin,
+) -> AssignmentDetailRead:
+    """Retorna la cabecera, perfil del técnico, paradas ordenadas y geometrías de tramos viales."""
+    reader = SqlModelAssignmentDetailReader(db)
+    handler = GetAssignmentDetailQueryHandler(reader)
+
+    query = GetAssignmentDetailQuery(assignment_id=assignment_id)
+    result = handler.execute(query)
+
+    return AssignmentDetailRead(
+        id=result.id,
+        technician_name=result.technician_name,
+        technician_image=result.technician_image,
+        scheduled_date=result.scheduled_date,
+        started_at=result.started_at,
+        completed_at=result.completed_at,
+        status=result.status,
+        assignment_type=result.assignment_type,
+        total_stops=result.total_stops,
+        total_distance_km=result.total_distance_km,
+        start_latitude=result.start_latitude,
+        start_longitude=result.start_longitude,
+        completed_stops=result.completed_stops,
+        stops=[
+            AssignmentStopDetailRead(
+                id=s.id,
+                codigo_fijo_id=s.codigo_fijo_id,
+                fixed_code=s.fixed_code,
+                name=s.name,
+                latitude=s.latitude,
+                longitude=s.longitude,
+                order_index=s.order_index,
+                status=s.status,
+                in_transit_at=s.in_transit_at,
+                arrived_at=s.arrived_at,
+                completed_at=s.completed_at,
+                route_geometry=s.route_geometry,
+            )
+            for s in result.stops
+        ],
+    )
+
 

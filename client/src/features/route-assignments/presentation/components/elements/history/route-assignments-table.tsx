@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -97,7 +98,10 @@ export function StatusBadge({ status }: { status: AssignmentStatus }) {
 
 export function RouteAssignmentsTable({
   assignments,
+  onSelectAssignment,
 }: RouteAssignmentsTableProps) {
+  const router = useRouter();
+
   return (
     <div className="w-full overflow-hidden rounded-[24px] sm:rounded-[32px] bg-white border-0 shadow-none">
       <Table>
@@ -122,7 +126,11 @@ export function RouteAssignmentsTable({
           {assignments.map((assignment) => (
             <TableRow
               key={assignment.id}
-              className="border-b border-slate-100/70 hover:bg-slate-50/50 transition-colors last:border-b-0"
+              onClick={() => {
+                onSelectAssignment?.(assignment);
+                router.push(`/asignacion-rutas/${assignment.id}`);
+              }}
+              className="border-b border-slate-100/70 hover:bg-slate-50/50 transition-colors last:border-b-0 cursor-pointer"
             >
               {/* Técnico Asignado: Avatar + Nombre + Correo debajo */}
               <TableCell className="py-3.5 pl-6 pr-4">

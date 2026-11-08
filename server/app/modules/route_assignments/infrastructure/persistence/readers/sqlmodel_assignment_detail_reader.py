@@ -118,6 +118,7 @@ class SqlModelAssignmentDetailReader(AssignmentDetailReader):
             start_longitude=assignment.start_longitude,
             completed_stops=completed_stops,
             stops=tuple(stops),
+            technician_id=str(assignment.technician_id),
         )
 
     def _backfill_missing_geometries(

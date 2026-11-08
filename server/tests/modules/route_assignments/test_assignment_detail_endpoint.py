@@ -33,22 +33,90 @@ def test_assignment_detail_requires_authentication(client):
     assert body["error"]["code"] == "AUTH_TOKEN_MISSING"
 
 
-def test_assignment_detail_forbidden_for_technician(client):
-    """Petición con usuario de rol TECHNICIAN debe ser rechazada con HTTP 403."""
+def test_assignment_detail_forbidden_for_non_owner_technician(client):
+    """Petición con usuario de rol TECHNICIAN sobre una asignación ajena debe responder HTTP 403."""
     assignment_id = uuid4()
+    mock_dto = AssignmentDetailDTO(
+        id=assignment_id,
+        technician_name="Otro Tecnico",
+        technician_image=None,
+        scheduled_date=date(2026, 11, 10),
+        started_at=None,
+        completed_at=None,
+        status=AssignmentStatus.ASSIGNED.value,
+        assignment_type=AssignmentType.CUT.value,
+        total_stops=0,
+        total_distance_km=0.0,
+        start_latitude=-17.7812,
+        start_longitude=-63.1804,
+        completed_stops=0,
+        stops=(),
+        technician_id="tech-owner-99",
+    )
+
     app.dependency_overrides[get_current_user] = lambda: AuthUser(
         user_id="tech-01",
         email="tech@example.com",
         role=Role.TECHNICIAN,
     )
 
-    try:
-        response = client.get(f"/api/route-assignments/assignments/{assignment_id}")
-        assert response.status_code == 403
-        body = response.json()
-        assert body["error"]["code"] == "AUTH_FORBIDDEN"
-    finally:
-        app.dependency_overrides.pop(get_current_user, None)
+    with patch(
+        "app.modules.route_assignments.infrastructure.api.routers.route_assignments_router.SqlModelAssignmentDetailReader"
+    ) as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.get_by_id.return_value = mock_dto
+        mock_reader_cls.return_value = mock_reader
+
+        try:
+            response = client.get(f"/api/route-assignments/assignments/{assignment_id}")
+            assert response.status_code == 403
+            body = response.json()
+            assert body["error"]["code"] == "AUTH_FORBIDDEN"
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_assignment_detail_technician_owner_success_200(client):
+    """Petición con usuario de rol TECHNICIAN sobre su propia asignación debe responder HTTP 200."""
+    assignment_id = uuid4()
+    mock_dto = AssignmentDetailDTO(
+        id=assignment_id,
+        technician_name="Juan Perez",
+        technician_image=None,
+        scheduled_date=date(2026, 11, 10),
+        started_at=None,
+        completed_at=None,
+        status=AssignmentStatus.ASSIGNED.value,
+        assignment_type=AssignmentType.CUT.value,
+        total_stops=0,
+        total_distance_km=0.0,
+        start_latitude=-17.7812,
+        start_longitude=-63.1804,
+        completed_stops=0,
+        stops=(),
+        technician_id="tech-01",
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: AuthUser(
+        user_id="tech-01",
+        email="tech@example.com",
+        role=Role.TECHNICIAN,
+    )
+
+    with patch(
+        "app.modules.route_assignments.infrastructure.api.routers.route_assignments_router.SqlModelAssignmentDetailReader"
+    ) as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.get_by_id.return_value = mock_dto
+        mock_reader_cls.return_value = mock_reader
+
+        try:
+            response = client.get(f"/api/route-assignments/assignments/{assignment_id}")
+            assert response.status_code == 200
+            data = response.json()
+            assert data["id"] == str(assignment_id)
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
 
 
 def test_assignment_detail_forbidden_for_consultant(client):

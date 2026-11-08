@@ -40,3 +40,4 @@ class AssignmentDetailDTO:
     start_longitude: float
     completed_stops: int
     stops: tuple[AssignmentStopDetailItemDTO, ...]
+    technician_id: str = ""

@@ -10,7 +10,10 @@ import {
   Polyline,
   useMap,
 } from "react-leaflet";
-import type { AssignmentStopDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import type {
+  AssignmentDetailStatus,
+  AssignmentStopDetail,
+} from "@/features/route-assignments/domain/entities/assignment-detail.entity";
 import { routeAssignmentRepository } from "@/features/route-assignments/infrastructure/repositories/route-assignment.repository-impl";
 import { RouteCreationZoomControls } from "../create/route-creation-zoom-controls";
 import {
@@ -174,18 +177,25 @@ function AnimatedRoutePolyline({
 
   useEffect(() => {
     if (!coordinates || coordinates.length < 2) {
-      setAnimatedCoords(coordinates || []);
-      return;
+      animFrameRef.current = requestAnimationFrame(() => {
+        setAnimatedCoords(coordinates || []);
+      });
+      return () => {
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      };
     }
 
-    setAnimatedCoords([coordinates[0], coordinates[0]]);
     startTimeRef.current = null;
-
     const totalPoints = coordinates.length;
     const durationMs = Math.min(2500, Math.max(1650, totalPoints * 17));
 
     const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+        setAnimatedCoords([coordinates[0], coordinates[0]]);
+        animFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
       const elapsed = timestamp - startTimeRef.current;
       const progress = Math.min(1, elapsed / durationMs);
 
@@ -260,6 +270,7 @@ function AnimatedRoutePolyline({
 }
 
 export type AssignmentDetailMapProps = {
+  assignmentStatus?: AssignmentDetailStatus;
   startLatitude: number;
   startLongitude: number;
   stops: readonly AssignmentStopDetail[];
@@ -271,6 +282,7 @@ export type AssignmentDetailMapProps = {
 };
 
 export function AssignmentDetailMap({
+  assignmentStatus,
   startLatitude,
   startLongitude,
   stops,
@@ -288,43 +300,78 @@ export function AssignmentDetailMap({
     zoomOutRef.current = zOut;
   };
 
-  // 1. Concatenar los puntos viales de los tramos de cada parada sin duplicar puntos contiguos
-  const fullRouteCoordinates = useMemo(() => {
-    const list: [number, number][] = [];
-
-    const pushCoord = (lat: number, lng: number) => {
-      if (isNaN(lat) || isNaN(lng)) return;
-      if (list.length > 0) {
-        const last = list[list.length - 1];
-        if (Math.abs(last[0] - lat) < 1e-6 && Math.abs(last[1] - lng) < 1e-6) {
-          return;
-        }
-      }
-      list.push([lat, lng]);
-    };
+  // 1. Trazados viales visibles según el estado de la asignación y de cada parada:
+  // - Si assignmentStatus === "IN_PROGRESS": únicamente paradas con status "PENDING" o "IN_TRANSIT"
+  //   muestran su trazado geométrico. Paradas con "COMPLETED", "FAILED" o "ARRIVED" no muestran ruta.
+  // - Si assignmentStatus !== "IN_PROGRESS" (ej. "ASSIGNED", etc.): se muestran todas las rutas.
+  // Agrupamos tramos contiguos para evitar unir saltos discontinuos con líneas rectas erróneas.
+  const routeSegments = useMemo(() => {
+    const isAssignmentInProgress = assignmentStatus === "IN_PROGRESS";
+    const segments: [number, number][][] = [];
+    let currentSegment: [number, number][] = [];
 
     const hasLegGeometries = stops.some(
       (s) => s.coordinates && s.coordinates.length > 0
     );
 
-    if (hasLegGeometries) {
-      stops.forEach((stop) => {
-        if (stop.coordinates && stop.coordinates.length > 0) {
-          stop.coordinates.forEach(([lat, lng]) => pushCoord(lat, lng));
-        }
-      });
+    if (!hasLegGeometries) {
+      return segments;
     }
 
-    return list;
-  }, [stops]);
+    for (let i = 0; i < stops.length; i++) {
+      const stop = stops[i];
+      const shouldRenderRoute =
+        !isAssignmentInProgress ||
+        stop.status === "PENDING" ||
+        stop.status === "IN_TRANSIT";
+
+      if (shouldRenderRoute && stop.coordinates && stop.coordinates.length > 0) {
+        if (currentSegment.length === 0) {
+          currentSegment = [...stop.coordinates];
+        } else {
+          const lastPoint = currentSegment[currentSegment.length - 1];
+          const firstNewPoint = stop.coordinates[0];
+          const isSamePoint =
+            Math.abs(lastPoint[0] - firstNewPoint[0]) < 1e-6 &&
+            Math.abs(lastPoint[1] - firstNewPoint[1]) < 1e-6;
+
+          const pointsToAdd = isSamePoint
+            ? stop.coordinates.slice(1)
+            : stop.coordinates;
+
+          currentSegment.push(...pointsToAdd);
+        }
+      } else {
+        if (currentSegment.length >= 2) {
+          segments.push(currentSegment);
+        }
+        currentSegment = [];
+      }
+    }
+
+    if (currentSegment.length >= 2) {
+      segments.push(currentSegment);
+    }
+
+    return segments;
+  }, [stops, assignmentStatus]);
 
   // 2. Fallback resiliente: si las paradas no tenían geometrías viales guardadas,
   // calcular la ruta vial con OSRM para no trazar líneas rectas que crucen cuadras
   const [clientRouteCoords, setClientRouteCoords] = useState<[number, number][]>([]);
 
   useEffect(() => {
-    if (fullRouteCoordinates.length >= 2) return;
+    if (routeSegments.length > 0) return;
     if (!startLatitude || !startLongitude || stops.length === 0) return;
+
+    const targetStops =
+      assignmentStatus === "IN_PROGRESS"
+        ? stops.filter((s) => s.status === "PENDING" || s.status === "IN_TRANSIT")
+        : stops;
+
+    if (targetStops.length === 0) {
+      return;
+    }
 
     let isMounted = true;
     routeAssignmentRepository
@@ -332,7 +379,7 @@ export function AssignmentDetailMap({
         startLatitude,
         startLongitude,
         optimizeWaypointOrder: false,
-        waypoints: stops.map((s) => ({
+        waypoints: targetStops.map((s) => ({
           codigoFijoId: s.codigoFijoId,
           latitude: s.latitude,
           longitude: s.longitude,
@@ -348,16 +395,19 @@ export function AssignmentDetailMap({
     return () => {
       isMounted = false;
     };
-  }, [fullRouteCoordinates.length, startLatitude, startLongitude, stops]);
+  }, [routeSegments.length, startLatitude, startLongitude, stops, assignmentStatus]);
 
-  const activeRouteCoordinates = useMemo(() => {
-    return fullRouteCoordinates.length >= 2 ? fullRouteCoordinates : clientRouteCoords;
-  }, [fullRouteCoordinates, clientRouteCoords]);
+  const activeSegments = useMemo<[number, number][][]>(() => {
+    if (routeSegments.length > 0) {
+      return routeSegments;
+    }
+    if (clientRouteCoords.length >= 2) {
+      return [clientRouteCoords];
+    }
+    return [];
+  }, [routeSegments, clientRouteCoords]);
 
   const allCoordinates = useMemo(() => {
-    if (activeRouteCoordinates.length >= 2) {
-      return activeRouteCoordinates;
-    }
     const list: [number, number][] = [];
     if (startLatitude && startLongitude) {
       list.push([startLatitude, startLongitude]);
@@ -367,8 +417,11 @@ export function AssignmentDetailMap({
         list.push([stop.latitude, stop.longitude]);
       }
     });
+    activeSegments.forEach((segment) => {
+      segment.forEach((pt) => list.push(pt));
+    });
     return list;
-  }, [activeRouteCoordinates, startLatitude, startLongitude, stops]);
+  }, [activeSegments, startLatitude, startLongitude, stops]);
 
   const center: [number, number] = useMemo(() => {
     if (startLatitude && startLongitude) {
@@ -409,10 +462,13 @@ export function AssignmentDetailMap({
           onRegisterZoom={handleRegisterZoom}
         />
 
-        {/* 1. Trazado Vial Animado con Avance Progresivo siguiendo calles reales */}
-        {activeRouteCoordinates.length >= 2 && (
-          <AnimatedRoutePolyline coordinates={activeRouteCoordinates} />
-        )}
+        {/* 1. Trazados Viales Animados con Avance Progresivo siguiendo calles reales */}
+        {activeSegments.map((segment, idx) => (
+          <AnimatedRoutePolyline
+            key={`route-seg-${idx}-${segment.length}`}
+            coordinates={segment}
+          />
+        ))}
 
         {/* 2. Marcador del Punto de Partida interactivo */}
         {startLatitude && startLongitude && (
@@ -425,7 +481,7 @@ export function AssignmentDetailMap({
           />
         )}
 
-        {/* 3. Marcadores numerados oficiales de las Paradas */}
+        {/* 3. Marcadores de las Paradas con iconos dinámicos según estado */}
         {stops.map((stop) => {
           if (!stop.latitude || !stop.longitude) return null;
           const isSelected = selectedStop?.id === stop.id;
@@ -434,7 +490,7 @@ export function AssignmentDetailMap({
             <Marker
               key={stop.id}
               position={[stop.latitude, stop.longitude]}
-              icon={getDetailStopPinIcon(stop.orderIndex, isSelected)}
+              icon={getDetailStopPinIcon(stop.orderIndex, stop.status, isSelected)}
               eventHandlers={{
                 click: () => onSelectStop?.(stop),
               }}

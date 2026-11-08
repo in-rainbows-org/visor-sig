@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 
 from app.core.config import settings
-from app.core.dependencies import Admin, CurrentUser, DBSession, TechnicianUser, UoWDep
+from app.core.dependencies import Admin, CurrentUser, DBSession, Role, TechnicianUser, UoWDep
+from app.core.errors.exceptions import APIHTTPException
 from app.modules.route_assignments.application.dtos.route_dtos import (
     RouteCalculationRequestDTO,
     WaypointInputDTO,
@@ -257,19 +258,33 @@ def list_technicians(
 @router.get(
     "/assignments/{assignment_id}",
     response_model=AssignmentDetailRead,
-    summary="Obtener detalle integral de una asignación de ruta (Solo Administradores)",
+    summary="Obtener detalle integral de una asignación de ruta (Admin y Técnico asignado)",
 )
 def get_assignment_detail(
     assignment_id: UUID,
     db: DBSession,
-    _: Admin,
+    current_user: CurrentUser,
 ) -> AssignmentDetailRead:
     """Retorna la cabecera, perfil del técnico, paradas ordenadas y geometrías de tramos viales."""
+    if current_user.role not in (Role.ADMIN, Role.TECHNICIAN):
+        raise APIHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="AUTH_FORBIDDEN",
+            message="No tienes permisos para acceder a este recurso.",
+        )
+
     reader = SqlModelAssignmentDetailReader(db)
     handler = GetAssignmentDetailQueryHandler(reader)
 
     query = GetAssignmentDetailQuery(assignment_id=assignment_id)
     result = handler.execute(query)
+
+    if current_user.role == Role.TECHNICIAN and result.technician_id != current_user.id:
+        raise APIHTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="AUTH_FORBIDDEN",
+            message="No tienes permisos para visualizar esta asignación.",
+        )
 
     return AssignmentDetailRead(
         id=result.id,

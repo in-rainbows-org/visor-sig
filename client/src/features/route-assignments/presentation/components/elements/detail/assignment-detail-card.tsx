@@ -18,7 +18,11 @@ export type AssignmentDetailCardProps = {
   selectedStop?: AssignmentStopDetail | null;
   onSelectStop?: (stop: AssignmentStopDetail) => void;
   showBackButton?: boolean;
+  backHref?: string;
+  backLabel?: string;
   className?: string;
+  showMetricsCards?: boolean;
+  customStopsList?: React.ReactNode;
   children?: React.ReactNode;
 };
 
@@ -61,7 +65,11 @@ export function AssignmentDetailCard({
   selectedStop = null,
   onSelectStop,
   showBackButton = true,
+  backHref = "/asignacion-rutas",
+  backLabel = "Volver a asignaciones",
   className = "",
+  showMetricsCards = true,
+  customStopsList,
   children,
 }: AssignmentDetailCardProps) {
   return (
@@ -76,11 +84,11 @@ export function AssignmentDetailCard({
         <div className="pb-3 shrink-0 border-b border-slate-100/80">
           {showBackButton && (
             <Link
-              href="/asignacion-rutas"
+              href={backHref}
               className="hidden lg:inline-flex h-8 px-3 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200/80 border-0 shadow-none items-center gap-1.5 transition active:scale-95 cursor-pointer"
             >
               <ArrowLeft className="size-3.5 stroke-[2.5]" />
-              <span>Volver a asignaciones</span>
+              <span>{backLabel}</span>
             </Link>
           )}
 
@@ -108,6 +116,7 @@ export function AssignmentDetailCard({
             totalStops={assignment.totalStops}
             totalDistanceKm={assignment.totalDistanceKm}
             status={assignment.status}
+            showMetricsCards={showMetricsCards}
           />
 
           {/* Barra de Progreso */}
@@ -117,11 +126,15 @@ export function AssignmentDetailCard({
           />
 
           {/* Contenedor ampliado de Detalle de Paradas (scrolleable) */}
-          <AssignmentDetailStopsList
-            stops={assignment.stops}
-            selectedStop={selectedStop}
-            onSelectStop={onSelectStop}
-          />
+          {customStopsList ? (
+            customStopsList
+          ) : (
+            <AssignmentDetailStopsList
+              stops={assignment.stops}
+              selectedStop={selectedStop}
+              onSelectStop={onSelectStop}
+            />
+          )}
 
           {children}
         </div>

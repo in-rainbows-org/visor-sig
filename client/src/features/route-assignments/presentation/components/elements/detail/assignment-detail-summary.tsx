@@ -17,6 +17,7 @@ export type AssignmentDetailSummaryProps = {
   totalStops: number;
   totalDistanceKm: number;
   status: AssignmentDetailStatus;
+  showMetricsCards?: boolean;
 };
 
 function formatSummaryDate(dateStr: string | null): string {
@@ -43,6 +44,7 @@ export function AssignmentDetailSummary({
   assignmentType,
   totalStops,
   totalDistanceKm,
+  showMetricsCards = true,
 }: AssignmentDetailSummaryProps) {
   const isCut = assignmentType === "CUT";
 
@@ -138,53 +140,55 @@ export function AssignmentDetailSummary({
       </div>
 
       {/* 4. Métricas: Dos cards en grid de 2 columnas (Casas y Distancia) */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-2.5 shrink-0">
-        {/* Card Casas */}
-        <div className="bg-[#ebf3ff] rounded-3xl p-2.5 sm:p-3 flex items-center border-0 shadow-none gap-2 sm:gap-2.5 min-w-0">
-          <div className="relative w-10 sm:w-11 h-9 sm:h-10 shrink-0 flex items-center justify-center">
-            <Image
-              src="/assignment-route/casas.webp"
-              alt="Casas seleccionadas"
-              fill
-              sizes="(max-width: 640px) 40px, 48px"
-              priority
-              unoptimized
-              className="object-contain pointer-events-none"
-            />
+      {showMetricsCards && (
+        <div className="grid grid-cols-2 gap-2 sm:gap-2.5 shrink-0">
+          {/* Card Casas */}
+          <div className="bg-[#ebf3ff] rounded-3xl p-2.5 sm:p-3 flex items-center border-0 shadow-none gap-2 sm:gap-2.5 min-w-0">
+            <div className="relative w-10 sm:w-11 h-9 sm:h-10 shrink-0 flex items-center justify-center">
+              <Image
+                src="/assignment-route/casas.webp"
+                alt="Casas seleccionadas"
+                fill
+                sizes="(max-width: 640px) 40px, 48px"
+                priority
+                unoptimized
+                className="object-contain pointer-events-none"
+              />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block leading-tight">
+                Casas
+              </span>
+              <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-tight mt-0.5 break-words">
+                {totalStops} {totalStops === 1 ? "casa" : "casas"}
+              </h4>
+            </div>
           </div>
-          <div className="min-w-0 flex-1 text-left">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block leading-tight">
-              Casas
-            </span>
-            <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-tight mt-0.5 break-words">
-              {totalStops} {totalStops === 1 ? "casa" : "casas"}
-            </h4>
-          </div>
-        </div>
 
-        {/* Card Distancia */}
-        <div className="bg-[#f5f3ff] rounded-3xl p-2.5 sm:p-3 flex items-center border-0 shadow-none gap-2 sm:gap-2.5 min-w-0">
-          <div className="relative w-10 sm:w-11 h-9 sm:h-10 shrink-0 flex items-center justify-center">
-            <Image
-              src="/assignment-route/distancia.webp"
-              alt="Distancia en kilómetros"
-              fill
-              sizes="(max-width: 640px) 40px, 48px"
-              priority
-              unoptimized
-              className="object-contain pointer-events-none"
-            />
-          </div>
-          <div className="min-w-0 flex-1 text-left">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700/80 block leading-tight">
-              Distancia
-            </span>
-            <h4 className="text-sm sm:text-base font-bold text-purple-950 leading-tight mt-0.5 break-words">
-              {totalDistanceKm} km
-            </h4>
+          {/* Card Distancia */}
+          <div className="bg-[#f5f3ff] rounded-3xl p-2.5 sm:p-3 flex items-center border-0 shadow-none gap-2 sm:gap-2.5 min-w-0">
+            <div className="relative w-10 sm:w-11 h-9 sm:h-10 shrink-0 flex items-center justify-center">
+              <Image
+                src="/assignment-route/distancia.webp"
+                alt="Distancia en kilómetros"
+                fill
+                sizes="(max-width: 640px) 40px, 48px"
+                priority
+                unoptimized
+                className="object-contain pointer-events-none"
+              />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700/80 block leading-tight">
+                Distancia
+              </span>
+              <h4 className="text-sm sm:text-base font-bold text-purple-950 leading-tight mt-0.5 break-words">
+                {totalDistanceKm} km
+              </h4>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

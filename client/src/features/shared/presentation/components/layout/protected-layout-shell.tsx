@@ -23,7 +23,8 @@ export function ProtectedLayoutShell({
 
   const isMapPage =
     pathname === "/mapa" ||
-    (pathname.startsWith("/asignacion-rutas/") && pathname !== "/asignacion-rutas");
+    (pathname.startsWith("/asignacion-rutas/") && pathname !== "/asignacion-rutas") ||
+    (pathname.startsWith("/mis-asignaciones/") && pathname !== "/mis-asignaciones");
 
   const isNewAssignment =
     pathname.startsWith("/asignacion-rutas/") && pathname !== "/asignacion-rutas";

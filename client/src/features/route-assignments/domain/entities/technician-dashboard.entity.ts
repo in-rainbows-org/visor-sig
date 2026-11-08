@@ -13,6 +13,21 @@ export type TechnicianAssignmentStatus =
   | "CANCELLED";
 
 /**
+ * Asignación completa del técnico tal como se recibe y normaliza desde el backend.
+ */
+export interface TechnicianAssignmentItem {
+  id: string;
+  assignmentType: TechnicianServiceType;
+  status: TechnicianAssignmentStatus;
+  scheduledDate: string;
+  totalStops: number;
+  totalDistanceKm: number;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdDate: string;
+}
+
+/**
  * Representa la asignación actualmente en progreso por el técnico (Card Hero superior).
  */
 export interface ActiveAssignmentProgress {
@@ -20,8 +35,9 @@ export interface ActiveAssignmentProgress {
   routeCode: string;
   serviceType: TechnicianServiceType;
   startedAt: string;
-  completedStops: number;
+  completedStops?: number;
   totalStops: number;
+  totalDistanceKm?: number;
   status: "IN_PROGRESS";
   targetUrl?: string;
 }
@@ -40,6 +56,7 @@ export interface PendingAssignmentsSummary {
 export interface TechnicianPerformanceBar {
   id: string;
   routeCode: string;
+  serviceType?: TechnicianServiceType;
   scheduledDate: string;
   dateFormatted?: string;
   completedStops: number;
@@ -55,8 +72,10 @@ export interface TechnicianFeedItem {
   routeCode: string;
   serviceType: TechnicianServiceType;
   scheduledDate: string;
-  completedAt?: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
   totalStops: number;
   distanceKm: number;
-  status: "ASSIGNED" | "COMPLETED";
+  status: TechnicianAssignmentStatus;
 }
+

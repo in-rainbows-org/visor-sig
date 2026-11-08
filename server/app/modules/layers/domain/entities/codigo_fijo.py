@@ -14,17 +14,17 @@ class CodigoFijo:
     """
 
     id: uuid.UUID
-    data_version_id: uuid.UUID
-    source_feature_id: str | None
-    label: str | None
-    sql_code: int | None
-    sig_code: str | None
-    fixed_code: int | None
-    name: str | None
     longitude: float
     latitude: float
     status: CodigoFijoStatus
     status_changed_at: datetime
     geometry_wkt: str
+    data_version_id: uuid.UUID | None = None
+    source_feature_id: str | None = None
+    label: str | None = None
+    sql_code: int | None = None
+    sig_code: str | None = None
+    fixed_code: int | None = None
+    name: str | None = None
     lote_id: uuid.UUID | None = None
     properties: dict[str, Any] = field(default_factory=dict)

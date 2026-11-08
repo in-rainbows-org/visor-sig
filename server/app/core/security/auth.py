@@ -241,3 +241,6 @@ AdminUser = Annotated[AuthUser, Depends(require_role(Role.ADMIN))]
 
 Admin = AdminUser
 """Alias para AdminUser por compatibilidad."""
+
+TechnicianUser = Annotated[AuthUser, Depends(require_role(Role.TECHNICIAN))]
+"""Solo usuarios con role='TECHNICIAN' (requiere BETTER_AUTH_ENABLE_ROLES=True)."""

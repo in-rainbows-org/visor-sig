@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Calendar, Check, Home, Route } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronRight, Home, Route } from "lucide-react";
 import type { TechnicianFeedItem } from "../../../../domain/entities/technician-dashboard.entity";
 
 export type FeedTab = "ASSIGNED" | "COMPLETED";
@@ -22,9 +22,43 @@ function formatDate(dateStr: string): string {
       weekday: "short",
       day: "numeric",
       month: "short",
+      year: "numeric",
     }).format(d);
-    // Capitalizar la primera letra: "mar, 3 nov" -> "Mar, 3 nov"
     return formatted.charAt(0).toUpperCase() + formatted.slice(1).replace(".", "");
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatDateTime(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTime(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d
+      .toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toUpperCase();
   } catch {
     return dateStr;
   }
@@ -40,79 +74,87 @@ export function TechnicianFeedCard({
   const iconSrc = isCut
     ? "/technician-routes/servicio-corte.webp"
     : "/technician-routes/servicio-reconexion.webp";
+  const serviceLabel = isCut ? "Servicio de Corte" : "Servicio de Reconexión";
 
   return (
     <div
       onClick={onClick}
-      className={`rounded-[24px] sm:rounded-[30px] bg-white p-4 sm:p-5.5 border-0 shadow-[0_2px_8px_rgba(15,23,42,0.04)] flex items-center justify-between gap-3 sm:gap-5 hover:bg-slate-50/80 hover:shadow-[0_4px_16px_rgba(15,23,42,0.06)] transition-all duration-200 select-none ${
+      className={`group relative rounded-[24px] sm:rounded-[30px] bg-white p-4 sm:p-5 border-0 shadow-none flex items-center justify-between gap-3 sm:gap-5 hover:bg-slate-50/80 transition-all duration-200 select-none ${
         onClick ? "cursor-pointer" : ""
       } ${className}`}
     >
-      {/* Columna Izquierda: Ilustración 3D del servicio */}
-      <div className="relative size-14 sm:size-16 md:size-18 shrink-0 drop-shadow-sm flex items-center justify-center">
+      {/* 1. Lado Izquierdo: Ilustración 3D del servicio */}
+      <div className="relative size-14 sm:size-16 md:size-18 shrink-0 flex items-center justify-center">
         <Image
           src={iconSrc}
-          alt={isCut ? "Corte de servicio" : "Reconexión de servicio"}
+          alt={serviceLabel}
           fill
           sizes="(max-width: 640px) 56px, (max-width: 768px) 64px, 72px"
           className="object-contain"
         />
       </div>
 
-      {/* Línea divisoria vertical (Pipe) */}
-      <div className="w-[1.5px] h-18 sm:h-22 bg-slate-200/90 shrink-0 mx-1 sm:mx-2 rounded-full" />
+      {/* Línea divisoria vertical sutil */}
+      <div className="w-[1.5px] h-16 sm:h-20 bg-slate-200/80 shrink-0 mx-0.5 sm:mx-1 rounded-full" />
 
-      {/* Columna Central: 3 filas con píldoras de información bien estructuradas */}
+      {/* 2. Centro: Estructura vertical (Tipo servicio superior, fecha centro, badges inferior) */}
       <div className="flex flex-col gap-1.5 sm:gap-2 min-w-0 flex-1 justify-center">
-        {/* Fila 1: Fecha (o Check con fecha y hora si está completada) */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1 rounded-full bg-[#eaf1fb] text-[#1e293b] text-[11px] sm:text-xs font-bold w-fit shadow-none">
-          {tab === "COMPLETED" ? (
-            <>
-              <Check className="size-3.5 text-emerald-600 stroke-[2.5] shrink-0" />
-              <span>{item.completedAt || formatDate(item.scheduledDate)}</span>
-            </>
-          ) : (
-            <>
-              <Calendar className="size-3.5 text-[#1a65f0] shrink-0" />
-              <span>{formatDate(item.scheduledDate)}</span>
-            </>
+        {/* Parte superior: Tipo de servicio */}
+        <div className="flex items-center gap-2">
+          <h4
+            className={`text-base sm:text-lg font-bold tracking-tight leading-tight ${
+              isCut ? "text-rose-600" : "text-blue-600"
+            }`}
+          >
+            {serviceLabel}
+          </h4>
+          {item.status === "IN_PROGRESS" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+              En progreso
+            </span>
           )}
         </div>
 
-        {/* Fila 2: Cantidad de casas */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1 rounded-full bg-[#eaf1fb] text-[#1e293b] text-[11px] sm:text-xs font-bold w-fit shadow-none">
-          <Home className="size-3.5 text-[#475569] shrink-0" />
-          <span>{item.totalStops} casas</span>
+        {/* Centro: Fecha agendada (Asignadas) o Finalizada + Inicio (Completadas) */}
+        <div className="min-w-0">
+          {tab === "COMPLETED" ? (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-600 font-medium">
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                {item.completedAt
+                  ? `Completada: ${formatDateTime(item.completedAt)}`
+                  : `Completada (${formatDate(item.scheduledDate)})`}
+              </span>
+              {item.startedAt && (
+                <span className="text-slate-400 text-[11px]">
+                  • Inicio: {formatTime(item.startedAt)}
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+              <Calendar className="size-3.5 text-[#1a65f0] shrink-0" />
+              <span>Agendada: {formatDate(item.scheduledDate)}</span>
+            </div>
+          )}
         </div>
 
-        {/* Fila 3: Distancia en kilómetros */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1 rounded-full bg-[#eaf1fb] text-[#1e293b] text-[11px] sm:text-xs font-bold w-fit shadow-none">
-          <Route className="size-3.5 text-[#475569] shrink-0" />
-          <span>{item.distanceKm.toFixed(1)} km</span>
+        {/* Parte inferior: Badges de cantidad de casas y distancia en una sola fila */}
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] sm:text-xs font-semibold">
+            <Home className="size-3 text-slate-500 shrink-0" />
+            <span>{item.totalStops} casas</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] sm:text-xs font-semibold">
+            <Route className="size-3 text-slate-500 shrink-0" />
+            <span>{item.distanceKm.toFixed(1)} km</span>
+          </span>
         </div>
       </div>
 
-      {/* Columna Derecha: Tipo de servicio en dos líneas en negrita y color temático */}
-      <div className="shrink-0 text-right sm:text-left pl-2 sm:pl-3">
-        <h4
-          className={`text-base sm:text-lg md:text-xl font-bold leading-[1.15] tracking-tight ${
-            isCut ? "text-[#dc2626]" : "text-[#0055d4]"
-          }`}
-        >
-          {isCut ? (
-            <>
-              Corte de
-              <br />
-              servicio
-            </>
-          ) : (
-            <>
-              Reconexión
-              <br />
-              de servicio
-            </>
-          )}
-        </h4>
+      {/* 3. Lado Derecho: Icono simple de flecha mayor que hacia la derecha */}
+      <div className="shrink-0 pl-1 sm:pl-2 flex items-center justify-center">
+        <ChevronRight className="size-5 sm:size-6 text-slate-300 group-hover:text-slate-600 transition-all duration-200 stroke-[2.5] group-hover:translate-x-0.5" />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 
 from app.core.config import settings
-from app.core.dependencies import Admin, CurrentUser, DBSession, UoWDep
+from app.core.dependencies import Admin, CurrentUser, DBSession, TechnicianUser, UoWDep
 from app.modules.route_assignments.application.dtos.route_dtos import (
     RouteCalculationRequestDTO,
     WaypointInputDTO,
@@ -16,6 +16,10 @@ from app.modules.route_assignments.application.queries.get_assignment_detail imp
 from app.modules.route_assignments.application.queries.list_assignments import (
     ListAssignmentsQuery,
     ListAssignmentsQueryHandler,
+)
+from app.modules.route_assignments.application.queries.list_technician_assignments import (
+    ListTechnicianAssignmentsQuery,
+    ListTechnicianAssignmentsQueryHandler,
 )
 from app.modules.route_assignments.application.use_cases.calculate_route import (
     CalculateRouteUseCase,
@@ -46,11 +50,17 @@ from app.modules.route_assignments.infrastructure.external.osrm_route_provider i
 from app.modules.route_assignments.infrastructure.persistence.models.assignment_model import (
     AssignmentModel,
 )
+from app.modules.route_assignments.infrastructure.api.schemas.technician_assignment_schemas import (
+    TechnicianAssignmentRead,
+)
 from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_assignment_detail_reader import (
     SqlModelAssignmentDetailReader,
 )
 from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_assignment_summary_reader import (
     SqlModelAssignmentSummaryReader,
+)
+from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_technician_assignments_reader import (
+    SqlModelTechnicianAssignmentsReader,
 )
 
 from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_repository import (
@@ -293,5 +303,38 @@ def get_assignment_detail(
             for s in result.stops
         ],
     )
+
+
+@router.get(
+    "/my-assignments",
+    response_model=list[TechnicianAssignmentRead],
+    summary="Obtener asignaciones del técnico autenticado",
+)
+def get_my_assignments(
+    db: DBSession,
+    current_user: TechnicianUser,
+) -> list[TechnicianAssignmentRead]:
+    """Retorna todas las asignaciones no eliminadas correspondientes al técnico autenticado."""
+    reader = SqlModelTechnicianAssignmentsReader(db)
+    handler = ListTechnicianAssignmentsQueryHandler(reader)
+
+    query = ListTechnicianAssignmentsQuery(technician_id=current_user.id)
+    dtos = handler.execute(query)
+
+    return [
+        TechnicianAssignmentRead(
+            id=dto.id,
+            assignment_type=dto.assignment_type,
+            status=dto.status,
+            scheduled_date=dto.scheduled_date,
+            total_stops=dto.total_stops,
+            total_distance_km=dto.total_distance_km,
+            started_at=dto.started_at,
+            completed_at=dto.completed_at,
+            created_date=dto.created_date,
+        )
+        for dto in dtos
+    ]
+
 
 

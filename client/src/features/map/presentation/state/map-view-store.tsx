@@ -56,6 +56,10 @@ export type MapViewContextType = {
   registerZoomHandlers: (zoomIn: () => void, zoomOut: () => void) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  toggleSelectingFixedCodeLocation: () => void;
+  setSelectingFixedCodeLocation: (active: boolean) => void;
+  setSelectedFixedCodeCoordinates: (coords: { latitude: number; longitude: number } | null) => void;
+  cancelSelectingFixedCodeLocation: () => void;
 };
 
 const MapViewContext = createContext<MapViewContextType | null>(null);
@@ -170,6 +174,25 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_MACRO_LAYERS_LOADING", payload: loading });
   }, []);
 
+  const toggleSelectingFixedCodeLocation = useCallback(() => {
+    dispatch({ type: "TOGGLE_SELECTING_FIXED_CODE_LOCATION" });
+  }, []);
+
+  const setSelectingFixedCodeLocation = useCallback((active: boolean) => {
+    dispatch({ type: "SET_SELECTING_FIXED_CODE_LOCATION", payload: active });
+  }, []);
+
+  const setSelectedFixedCodeCoordinates = useCallback(
+    (coords: { latitude: number; longitude: number } | null) => {
+      dispatch({ type: "SET_SELECTED_FIXED_CODE_COORDINATES", payload: coords });
+    },
+    []
+  );
+
+  const cancelSelectingFixedCodeLocation = useCallback(() => {
+    dispatch({ type: "CANCEL_SELECTING_FIXED_CODE_LOCATION" });
+  }, []);
+
   const contextValue = useMemo(
     () => ({
       state,
@@ -191,6 +214,10 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
       registerZoomHandlers,
       zoomIn,
       zoomOut,
+      toggleSelectingFixedCodeLocation,
+      setSelectingFixedCodeLocation,
+      setSelectedFixedCodeCoordinates,
+      cancelSelectingFixedCodeLocation,
     }),
     [
       state,
@@ -212,6 +239,10 @@ export function MapViewProvider({ children }: { children: ReactNode }) {
       registerZoomHandlers,
       zoomIn,
       zoomOut,
+      toggleSelectingFixedCodeLocation,
+      setSelectingFixedCodeLocation,
+      setSelectedFixedCodeCoordinates,
+      cancelSelectingFixedCodeLocation,
     ]
   );
 

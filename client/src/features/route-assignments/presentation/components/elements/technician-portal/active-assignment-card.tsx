@@ -11,44 +11,47 @@ export interface ActiveAssignmentCardProps {
   className?: string;
 }
 
+function formatStartedAt(dateStr?: string | null): string {
+  if (!dateStr) return "Sin fecha registrada";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = d.getDate();
+    const months = [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre",
+    ];
+    const month = months[d.getMonth()];
+    const time = d
+      .toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toUpperCase();
+    return `${day} de ${month}, ${time}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 export function ActiveAssignmentCard({
   assignment,
   onNavigate,
   className = "",
 }: ActiveAssignmentCardProps) {
   if (!assignment) {
-    return (
-      <div
-        className={`rounded-[28px] sm:rounded-[36px] bg-gradient-to-r from-[#1965f3] via-[#247af6] to-[#368bf9] p-4 sm:p-5 text-white flex items-center justify-between gap-4 shadow-sm select-none ${className}`}
-      >
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <div className="relative size-16 sm:size-20 shrink-0 drop-shadow-sm">
-            <Image
-              src="/technician-routes/in-progress.webp"
-              alt="Sin asignación activa"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-
-          <div className="w-[2px] h-14 sm:h-16 bg-white/40 shrink-0 rounded-full" />
-
-          <div className="space-y-1 min-w-0">
-            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#dbeafe] text-[#1e40af] text-[11px] sm:text-xs font-bold shadow-none">
-              <span className="text-[9px]">▶</span>
-              <span>Sin ruta activa</span>
-            </span>
-            <h3 className="text-base sm:text-lg font-extrabold text-white tracking-tight leading-tight">
-              No tienes asignaciones en curso
-            </h3>
-            <p className="text-xs text-blue-100/90 font-medium">
-              Inicia una asignación desde la sección inferior.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const isCut = assignment.serviceType === "CUT";
@@ -104,7 +107,7 @@ export function ActiveAssignmentCard({
           {/* Fecha y hora de inicio con icono */}
           <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-blue-100 font-medium leading-tight">
             <CalendarClock className="size-3.5 text-blue-200 shrink-0" />
-            <span>{assignment.startedAt}</span>
+            <span>{formatStartedAt(assignment.startedAt)}</span>
           </div>
         </div>
       </div>

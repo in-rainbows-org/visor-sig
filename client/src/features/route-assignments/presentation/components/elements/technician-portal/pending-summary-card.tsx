@@ -19,7 +19,7 @@ export function PendingSummaryCard({
     >
       {/* Columna Izquierda: Protegida con shrink-0 para que la imagen no comprima su contenido */}
       <div className="flex flex-col justify-center shrink-0">
-        <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-[#0f172a] tracking-tight leading-[1.12]">
+        <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-[1.15]">
           Asignaciones
           <br />
           pendientes
@@ -30,7 +30,7 @@ export function PendingSummaryCard({
         </div>
 
         <div>
-          <span className="inline-flex items-center px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full bg-[#e3efff] text-[#1862f1] text-xs sm:text-sm font-black tracking-wide border-0 shadow-2xs">
+          <span className="inline-flex items-center px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full bg-[#e3efff] text-[#1862f1] text-xs sm:text-sm font-semibold border-0">
             {summary.todayCount} para hoy
           </span>
         </div>

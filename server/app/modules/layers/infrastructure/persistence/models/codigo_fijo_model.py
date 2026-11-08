@@ -34,11 +34,12 @@ class CodigoFijoModel(BaseModel, table=True):
         Index("idx_codigos_fijos_name", "name"),
     )
 
-    data_version_id: uuid.UUID = Field(
+    data_version_id: uuid.UUID | None = Field(
+        default=None,
         sa_column=Column(
             PG_UUID(as_uuid=True),
             ForeignKey("data_versions.id", ondelete="CASCADE"),
-            nullable=False,
+            nullable=True,
         ),
     )
     lote_id: uuid.UUID | None = Field(

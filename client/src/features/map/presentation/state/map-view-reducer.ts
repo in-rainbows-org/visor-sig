@@ -39,6 +39,8 @@ export type MapViewState = {
   macroFeaturesByKind: Partial<Record<"MANZANAS" | "VIAS", MapGeoJsonFeatureCollection>>;
   macroLayerMetadataByKind: Partial<Record<"MANZANAS" | "VIAS", MapLayerFeatures>>;
   isLoadingMacroLayers: boolean;
+  isSelectingFixedCodeLocation: boolean;
+  selectedFixedCodeCoordinates: { latitude: number; longitude: number } | null;
 };
 
 export type MapViewAction =
@@ -72,7 +74,11 @@ export type MapViewAction =
         metadataByKind: Partial<Record<"MANZANAS" | "VIAS", MapLayerFeatures>>;
       };
     }
-  | { type: "SET_MACRO_LAYERS_LOADING"; payload: boolean };
+  | { type: "SET_MACRO_LAYERS_LOADING"; payload: boolean }
+  | { type: "TOGGLE_SELECTING_FIXED_CODE_LOCATION" }
+  | { type: "SET_SELECTING_FIXED_CODE_LOCATION"; payload: boolean }
+  | { type: "SET_SELECTED_FIXED_CODE_COORDINATES"; payload: { latitude: number; longitude: number } | null }
+  | { type: "CANCEL_SELECTING_FIXED_CODE_LOCATION" };
 
 export const initialMapViewState: MapViewState = {
   viewport: {
@@ -99,6 +105,8 @@ export const initialMapViewState: MapViewState = {
   macroFeaturesByKind: {},
   macroLayerMetadataByKind: {},
   isLoadingMacroLayers: false,
+  isSelectingFixedCodeLocation: false,
+  selectedFixedCodeCoordinates: null,
 };
 
 export function mapViewReducer(state: MapViewState, action: MapViewAction): MapViewState {
@@ -302,6 +310,32 @@ export function mapViewReducer(state: MapViewState, action: MapViewAction): MapV
       return {
         ...state,
         isLoadingMacroLayers: action.payload,
+      };
+
+    case "TOGGLE_SELECTING_FIXED_CODE_LOCATION":
+      return {
+        ...state,
+        isSelectingFixedCodeLocation: !state.isSelectingFixedCodeLocation,
+      };
+
+    case "SET_SELECTING_FIXED_CODE_LOCATION":
+      if (state.isSelectingFixedCodeLocation === action.payload) return state;
+      return {
+        ...state,
+        isSelectingFixedCodeLocation: action.payload,
+      };
+
+    case "SET_SELECTED_FIXED_CODE_COORDINATES":
+      return {
+        ...state,
+        selectedFixedCodeCoordinates: action.payload,
+      };
+
+    case "CANCEL_SELECTING_FIXED_CODE_LOCATION":
+      return {
+        ...state,
+        isSelectingFixedCodeLocation: false,
+        selectedFixedCodeCoordinates: null,
       };
 
     default:

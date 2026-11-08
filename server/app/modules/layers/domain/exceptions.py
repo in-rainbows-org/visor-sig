@@ -69,3 +69,12 @@ class IncompatibleGeometryTypeException(ValidationException):
 class InvalidCoordinateReferenceSystemException(ValidationException):
     def __init__(self, message: str = "El sistema de referencia espacial (CRS) debe ser EPSG:4326 (WGS84)."):
         super().__init__(message=message, code="INVALID_CRS")
+
+
+class CodigoFijoAlreadyExistsException(ConflictException):
+    def __init__(self, fixed_code: int):
+        super().__init__(
+            message=f"El código fijo '{fixed_code}' ya se encuentra registrado.",
+            code="CODIGO_FIJO_ALREADY_EXISTS",
+        )
+

@@ -10,7 +10,7 @@ const CH = 150; // Altura sobre la línea base
 const BH = 36;  // Altura debajo de la línea base para paradas fallidas
 const SEG_GAP = 2;
 const LIFT = 2;
-const TIP_W = 165;
+const TIP_W = 175;
 const SPRING = { type: "spring" as const, stiffness: 380, damping: 34 };
 
 const CATS = ["Completadas", "Pendientes"] as const;
@@ -69,7 +69,7 @@ export function TechnicianStackedBars({
     const el = root.current;
     if (!el || seen) return;
     if (typeof IntersectionObserver === "undefined") {
-      setSeen(true);
+      requestAnimationFrame(() => setSeen(true));
       return;
     }
     const io = new IntersectionObserver(
@@ -86,16 +86,26 @@ export function TechnicianStackedBars({
   }, [seen]);
 
   const data = useMemo(() => {
-    return barsData.map((b) => ({
-      vals: [b.completedStops, b.pendingStops],
-      esc: b.failedStops,
-      routeCode: b.routeCode,
-      scheduledDate: b.scheduledDate,
-      dateFormatted: b.dateFormatted || formatDate(b.scheduledDate),
-      completed: b.completedStops,
-      pending: b.pendingStops,
-      failed: b.failedStops,
-    }));
+    return barsData.map((b) => {
+      const isCut =
+        b.serviceType === "CUT" ||
+        (b.routeCode ? b.routeCode.toUpperCase().includes("COR") : false);
+      const serviceLabel = isCut
+        ? "Servicio de corte"
+        : "Servicio de recolección";
+
+      return {
+        vals: [b.completedStops, b.pendingStops],
+        esc: b.failedStops,
+        routeCode: b.routeCode,
+        serviceLabel,
+        scheduledDate: b.scheduledDate,
+        dateFormatted: b.dateFormatted || formatDate(b.scheduledDate),
+        completed: b.completedStops,
+        pending: b.pendingStops,
+        failed: b.failedStops,
+      };
+    });
   }, [barsData]);
 
   const capacity = n;
@@ -332,7 +342,7 @@ export function TechnicianStackedBars({
                 <div className="flex flex-col gap-1.5">
                   <div>
                     <span className="text-xs font-bold text-slate-900 leading-tight block truncate">
-                      {cur.routeCode}
+                      {cur.serviceLabel}
                     </span>
                     <span className="text-[11px] font-medium text-slate-500 leading-tight block truncate">
                       {cur.dateFormatted}

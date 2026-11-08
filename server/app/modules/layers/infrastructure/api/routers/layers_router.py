@@ -22,6 +22,10 @@ from app.modules.layers.application.use_cases.change_layer_color import (
     ChangeLayerColorCommand,
     ChangeLayerColorUseCase,
 )
+from app.modules.layers.application.use_cases.create_codigo_fijo import (
+    CreateCodigoFijoCommand,
+    CreateCodigoFijoUseCase,
+)
 from app.modules.layers.application.use_cases.import_geographic_data import (
     ImportGeographicDataCommand,
     ImportGeographicDataUseCase,
@@ -33,7 +37,9 @@ from app.modules.layers.domain.enums import (
     LayerKind,
 )
 from app.modules.layers.infrastructure.api.schemas.codigo_fijo_schemas import (
+    CodigoFijoRead,
     CodigoFijoStatisticsRead,
+    CreateCodigoFijoRequest,
 )
 from app.modules.layers.infrastructure.api.schemas.data_version_schemas import (
     DataVersionListRead,
@@ -46,6 +52,9 @@ from app.modules.layers.infrastructure.api.schemas.layer_schemas import (
 )
 from app.modules.layers.infrastructure.persistence.readers.sqlmodel_codigo_fijo_statistics_reader import (
     SqlModelCodigoFijoStatisticsReader,
+)
+from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_codigo_fijo_repository import (
+    SqlModelCodigoFijoRepository,
 )
 from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_data_version_repository import (
     SqlModelDataVersionRepository,
@@ -266,3 +275,54 @@ def activate_data_version(
         is_active=version.is_active,
         created_at=version.created_at or datetime.now(timezone.utc),
     )
+
+
+# ==============================================================================
+# CÓDIGOS FIJOS (REGISTRO DIRECTO DESDE MAPA)
+# ==============================================================================
+@router.post(
+    "/codigos-fijos",
+    response_model=CodigoFijoRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar un nuevo código fijo desde el mapa (Admin)",
+)
+def create_codigo_fijo(
+    request: CreateCodigoFijoRequest,
+    db: DBSession,
+    uow: UoWDep,
+    current_user: AdminUser,
+) -> CodigoFijoRead:
+    codigo_fijo_repo = SqlModelCodigoFijoRepository(db)
+    layer_repo = SqlModelLayerRepository(db)
+
+    use_case = CreateCodigoFijoUseCase(
+        codigo_fijo_repository=codigo_fijo_repo,
+        layer_repository=layer_repo,
+        uow=uow,
+    )
+
+    command = CreateCodigoFijoCommand(
+        fixed_code=request.fixed_code,
+        name=request.name,
+        latitude=request.latitude,
+        longitude=request.longitude,
+        status=request.status,
+        user_id=current_user.user_id,
+    )
+
+    codigo_fijo = use_case.execute(command)
+
+    return CodigoFijoRead(
+        id=codigo_fijo.id,
+        data_version_id=codigo_fijo.data_version_id,
+        fixed_code=codigo_fijo.fixed_code,
+        name=codigo_fijo.name,
+        latitude=codigo_fijo.latitude,
+        longitude=codigo_fijo.longitude,
+        status=codigo_fijo.status.value,
+        status_changed_at=codigo_fijo.status_changed_at,
+        sql_code=codigo_fijo.sql_code,
+        sig_code=codigo_fijo.sig_code,
+        lote_id=codigo_fijo.lote_id,
+    )
+

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { MapContainer } from "react-leaflet";
+import { MapContainer, useMapEvents } from "react-leaflet";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_MAP_CENTER,
@@ -16,16 +16,37 @@ import { MapLayerOverlays } from "./map-layer-overlays";
 import { MapViewportListener } from "./map-viewport-listener";
 import { HighlightedConsultationMarker } from "./highlighted-consultation-marker";
 
+function MapLocationClickListener({
+  isSelecting,
+  onSelectLocation,
+}: {
+  isSelecting: boolean;
+  onSelectLocation?: (coords: { latitude: number; longitude: number }) => void;
+}) {
+  useMapEvents({
+    click(e) {
+      if (!isSelecting) return;
+      onSelectLocation?.({
+        latitude: Number(e.latlng.lat.toFixed(6)),
+        longitude: Number(e.latlng.lng.toFixed(6)),
+      });
+    },
+  });
+  return null;
+}
+
 export type MapLeafletProps = {
   highlightedEntity?: HighlightedMapEntity | null;
   onClearHighlight?: () => void;
   onSelectEntity?: (entity: HighlightedMapEntity) => void;
+  onSelectLocation?: (coords: { latitude: number; longitude: number }) => void;
 };
 
 export function MapLeaflet({
   highlightedEntity,
   onClearHighlight,
   onSelectEntity,
+  onSelectLocation,
 }: MapLeafletProps = {}) {
   const { state, setViewport } = useMapView();
   const {
@@ -66,8 +87,16 @@ export function MapLeaflet({
         zoomControl={false}
         attributionControl={false}
         preferCanvas={true}
-        className="w-full h-full"
+        className={cn(
+          "w-full h-full",
+          state.isSelectingFixedCodeLocation &&
+            "[&_.leaflet-grab]:!cursor-crosshair [&_.leaflet-interactive]:!cursor-crosshair !cursor-crosshair"
+        )}
       >
+        <MapLocationClickListener
+          isSelecting={state.isSelectingFixedCodeLocation}
+          onSelectLocation={onSelectLocation}
+        />
         <MapBasemap providerId={activeBasemapId} isVisible={isBasemapVisible} />
         <MapViewportListener onViewportChange={handleViewportChange} />
         <MapLayerOverlays

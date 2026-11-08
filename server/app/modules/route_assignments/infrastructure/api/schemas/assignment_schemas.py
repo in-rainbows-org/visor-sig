@@ -107,6 +107,9 @@ class AssignmentStopDetailRead(BaseModel):
     arrived_at: datetime | None = None
     completed_at: datetime | None = None
     route_geometry: dict[str, Any] = Field(default_factory=dict)
+    meter_reading: str | None = None
+    evidence_photo_url: str | None = None
+    observation: str | None = None
 
 
 class AssignmentDetailRead(BaseModel):

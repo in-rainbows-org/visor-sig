@@ -83,7 +83,7 @@ class SqlModelAssignmentDetailReader(AssignmentDetailReader):
         completed_stops = 0
 
         for stop, cf_fixed_code, cf_name, cf_lat, cf_lon in stop_rows:
-            if stop.status == StopStatus.COMPLETED.value:
+            if stop.status in (StopStatus.COMPLETED.value, StopStatus.FAILED.value):
                 completed_stops += 1
 
             stops.append(
@@ -100,6 +100,9 @@ class SqlModelAssignmentDetailReader(AssignmentDetailReader):
                     arrived_at=stop.arrived_at,
                     completed_at=stop.completed_at,
                     route_geometry=stop.route_geometry or {},
+                    meter_reading=stop.meter_reading,
+                    evidence_photo_url=stop.evidence_photo_url,
+                    observation=stop.observation,
                 )
             )
 

@@ -42,7 +42,8 @@ function formatTime(date: Date | null): string {
 }
 
 function StopStatusBadge({ status }: { status: AssignmentStopStatus }) {
-  switch (status) {
+  const normalized = (status ? String(status).toUpperCase().trim() : "PENDING") as AssignmentStopStatus;
+  switch (normalized) {
     case "COMPLETED":
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shrink-0">
@@ -50,12 +51,18 @@ function StopStatusBadge({ status }: { status: AssignmentStopStatus }) {
           <span>Completa</span>
         </span>
       );
-    case "IN_TRANSIT":
     case "ARRIVED":
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60 shrink-0">
           <span className="size-2 rounded-full bg-amber-500 shrink-0" />
           <span>En proceso</span>
+        </span>
+      );
+    case "IN_TRANSIT":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200/60 shrink-0">
+          <span className="size-2 rounded-full bg-sky-500 shrink-0" />
+          <span>En tránsito</span>
         </span>
       );
     case "FAILED":

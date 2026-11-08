@@ -123,6 +123,7 @@ export function AssignmentDetailCard({
           <AssignmentDetailProgress
             totalStops={assignment.totalStops}
             completedStops={assignment.completedStops}
+            stops={assignment.stops}
           />
 
           {/* Contenedor ampliado de Detalle de Paradas (scrolleable) */}

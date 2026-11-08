@@ -314,6 +314,9 @@ def get_assignment_detail(
                 arrived_at=s.arrived_at,
                 completed_at=s.completed_at,
                 route_geometry=s.route_geometry,
+                meter_reading=s.meter_reading,
+                evidence_photo_url=s.evidence_photo_url,
+                observation=s.observation,
             )
             for s in result.stops
         ],

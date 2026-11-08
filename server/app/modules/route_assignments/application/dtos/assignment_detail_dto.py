@@ -20,6 +20,9 @@ class AssignmentStopDetailItemDTO:
     arrived_at: datetime | None
     completed_at: datetime | None
     route_geometry: dict[str, Any]
+    meter_reading: str | None = None
+    evidence_photo_url: str | None = None
+    observation: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

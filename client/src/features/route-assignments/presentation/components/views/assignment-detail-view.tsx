@@ -156,6 +156,8 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
       {/* 4. Card flotante inferior emergente de la parada (Framer Motion) */}
       <AssignmentDetailStopSheet
         stop={selectedStop}
+        startLatitude={assignment.startLatitude}
+        startLongitude={assignment.startLongitude}
         onClose={clearSelectedStop}
       />
 

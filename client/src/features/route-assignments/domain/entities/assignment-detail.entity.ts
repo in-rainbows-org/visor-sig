@@ -39,6 +39,9 @@ export interface AssignmentStopDetail {
   readonly completedAt: Date | null;
   readonly routeGeometry: Record<string, unknown>;
   readonly coordinates: [number, number][]; // Coordenadas [lat, lon] listas para Polyline de Leaflet
+  readonly meterReading?: string | null;
+  readonly evidencePhotoUrl?: string | null;
+  readonly observation?: string | null;
 }
 
 /**

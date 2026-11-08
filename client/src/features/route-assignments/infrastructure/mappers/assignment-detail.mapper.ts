@@ -50,6 +50,9 @@ export const AssignmentDetailMapper = {
       completedAt: dto.completed_at ? new Date(dto.completed_at) : null,
       routeGeometry: dto.route_geometry ?? {},
       coordinates: extractLeafletCoordinates(dto.route_geometry),
+      meterReading: dto.meter_reading ?? null,
+      evidencePhotoUrl: dto.evidence_photo_url ?? null,
+      observation: dto.observation ?? null,
     };
   },
 

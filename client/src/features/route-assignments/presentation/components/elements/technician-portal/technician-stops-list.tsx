@@ -30,7 +30,8 @@ function formatTime(date: Date | string | null | undefined): string {
 }
 
 function StopStatusBadge({ status }: { status: AssignmentStopStatus }) {
-  switch (status) {
+  const normalized = (status ? String(status).toUpperCase().trim() : "PENDING") as AssignmentStopStatus;
+  switch (normalized) {
     case "COMPLETED":
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border-0 shadow-none shrink-0">
@@ -38,7 +39,6 @@ function StopStatusBadge({ status }: { status: AssignmentStopStatus }) {
           <span>Completa</span>
         </span>
       );
-    case "IN_TRANSIT":
     case "ARRIVED":
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-50 text-amber-700 border-0 shadow-none shrink-0">
@@ -46,9 +46,16 @@ function StopStatusBadge({ status }: { status: AssignmentStopStatus }) {
           <span>En proceso</span>
         </span>
       );
+    case "IN_TRANSIT":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-sky-50 text-sky-700 border-0 shadow-none shrink-0">
+          <span className="size-1.5 rounded-full bg-sky-500 shrink-0" />
+          <span>En tránsito</span>
+        </span>
+      );
     case "FAILED":
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border-0 shadow-none shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-rose-50 text-rose-700 border-0 shadow-none shrink-0">
           <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
           <span>Fallida</span>
         </span>
@@ -90,13 +97,19 @@ export function TechnicianStopsList({
   const renderStopItem = (stop: AssignmentStopDetail) => {
     const isSelected = selectedStop?.id === stop.id;
 
+    let llegadaLabel = "Llegada:";
     let llegadaText = "--";
     let completadoText = "--";
 
     if (stop.status === "COMPLETED") {
       llegadaText = formatTime(stop.arrivedAt ?? stop.inTransitAt);
       completadoText = formatTime(stop.completedAt);
-    } else if (stop.status === "IN_TRANSIT" || stop.status === "ARRIVED") {
+    } else if (stop.status === "IN_TRANSIT") {
+      llegadaLabel = "Ida:";
+      llegadaText = formatTime(stop.inTransitAt);
+      completadoText = "--";
+    } else if (stop.status === "ARRIVED") {
+      llegadaLabel = "Llegada:";
       llegadaText = formatTime(stop.arrivedAt ?? stop.inTransitAt);
       completadoText = "--";
     } else if (stop.status === "FAILED") {
@@ -158,7 +171,7 @@ export function TechnicianStopsList({
             <Calendar className="size-3.5 sm:size-4 text-slate-400 shrink-0" />
             <div className="flex items-baseline gap-1.5 min-w-0">
               <span className="text-[11px] sm:text-xs text-slate-500 font-medium">
-                Llegada:
+                {llegadaLabel}
               </span>
               <span className="text-xs sm:text-[13px] font-bold text-slate-800 font-mono truncate">
                 {llegadaText}

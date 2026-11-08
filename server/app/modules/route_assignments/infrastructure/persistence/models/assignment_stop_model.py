@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Optional
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, SmallInteger, String
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Field
@@ -72,5 +72,17 @@ class AssignmentStopModel(BaseModel, table=True):
         default=None,
         sa_type=DateTime(timezone=True),
         nullable=True,
+    )
+    meter_reading: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String(50), nullable=True),
+    )
+    evidence_photo_url: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String(500), nullable=True),
+    )
+    observation: Optional[str] = Field(
+        default=None,
+        sa_column=Column(Text, nullable=True),
     )
 

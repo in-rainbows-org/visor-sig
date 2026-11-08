@@ -23,6 +23,9 @@ class AssignmentStop:
         in_transit_at: datetime | None = None,
         arrived_at: datetime | None = None,
         completed_at: datetime | None = None,
+        meter_reading: str | None = None,
+        evidence_photo_url: str | None = None,
+        observation: str | None = None,
         is_active: bool = True,
     ) -> None:
         self.id = id
@@ -36,6 +39,9 @@ class AssignmentStop:
         self.in_transit_at = in_transit_at
         self.arrived_at = arrived_at
         self.completed_at = completed_at
+        self.meter_reading = meter_reading
+        self.evidence_photo_url = evidence_photo_url
+        self.observation = observation
         self.is_active = is_active
 
     @classmethod
@@ -48,6 +54,9 @@ class AssignmentStop:
         current_status: int,
         target_status: int,
         route_geometry: dict[str, Any],
+        meter_reading: str | None = None,
+        evidence_photo_url: str | None = None,
+        observation: str | None = None,
     ) -> AssignmentStop:
         """Fábrica de negocio: genera UUID y fija estado inicial PENDING."""
         return cls(
@@ -62,6 +71,9 @@ class AssignmentStop:
             in_transit_at=None,
             arrived_at=None,
             completed_at=None,
+            meter_reading=meter_reading,
+            evidence_photo_url=evidence_photo_url,
+            observation=observation,
             is_active=True,
         )
 
@@ -75,13 +87,36 @@ class AssignmentStop:
         self.status = StopStatus.ARRIVED
         self.arrived_at = now
 
-    def mark_completed(self, now: datetime | None = None) -> None:
+    def mark_completed(
+        self,
+        now: datetime | None = None,
+        meter_reading: str | None = None,
+        evidence_photo_url: str | None = None,
+        observation: str | None = None,
+    ) -> None:
         """Marca la visita a la parada como completada con éxito."""
         self.status = StopStatus.COMPLETED
         if now is not None:
             self.completed_at = now
+        if meter_reading is not None:
+            self.meter_reading = meter_reading
+        if evidence_photo_url is not None:
+            self.evidence_photo_url = evidence_photo_url
+        if observation is not None:
+            self.observation = observation
 
-    def mark_failed(self) -> None:
+    def mark_failed(
+        self,
+        now: datetime | None = None,
+        observation: str | None = None,
+        evidence_photo_url: str | None = None,
+    ) -> None:
         """Marca la visita a la parada como fallida o no ejecutada."""
         self.status = StopStatus.FAILED
+        if now is not None:
+            self.completed_at = now
+        if observation is not None:
+            self.observation = observation
+        if evidence_photo_url is not None:
+            self.evidence_photo_url = evidence_photo_url
 

@@ -101,11 +101,7 @@ export function TechnicianFeedCard({
       <div className="flex flex-col gap-1.5 sm:gap-2 min-w-0 flex-1 justify-center">
         {/* Parte superior: Tipo de servicio */}
         <div className="flex items-center gap-2">
-          <h4
-            className={`text-base sm:text-lg font-bold tracking-tight leading-tight ${
-              isCut ? "text-rose-600" : "text-blue-600"
-            }`}
-          >
+          <h4 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">
             {serviceLabel}
           </h4>
           {item.status === "IN_PROGRESS" && (

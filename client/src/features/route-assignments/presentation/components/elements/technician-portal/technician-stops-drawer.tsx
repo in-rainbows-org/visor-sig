@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import type { AssignmentStopDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
 import { TechnicianStopsList } from "./technician-stops-list";
+import { AssignmentDetailProgress } from "../detail/assignment-detail-progress";
 
 export interface TechnicianStopsDrawerProps {
   open: boolean;
@@ -38,13 +39,6 @@ export function TechnicianStopsDrawer({
   };
 
   const effectiveTotal = totalStops ?? stops.length;
-  const effectiveCompleted =
-    completedStops ??
-    stops.filter((s) => s.status === "COMPLETED").length;
-  const percentage =
-    effectiveTotal > 0
-      ? Math.min(100, Math.round((effectiveCompleted / effectiveTotal) * 100))
-      : 0;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -61,22 +55,13 @@ export function TechnicianStopsDrawer({
         {/* Contenido scrolleable del Drawer */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-4 overscroll-contain scrollbar-thin scrollbar-thumb-slate-200">
           {/* Progreso de la asignación antes de la lista de paradas pendientes */}
-          <div className="space-y-1.5 px-0.5 pt-1">
-            <div className="flex items-center justify-between text-xs">
-              <h5 className="font-bold text-slate-800 tracking-tight">
-                Progreso de asignación
-              </h5>
-              <span className="font-semibold text-slate-500 text-[11px] sm:text-xs">
-                {effectiveCompleted} de {effectiveTotal} completadas
-              </span>
-            </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border-0 shadow-none">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-          </div>
+          <AssignmentDetailProgress
+            totalStops={effectiveTotal}
+            stops={stops}
+            completedStops={completedStops}
+            title="Progreso de asignación"
+            className="px-0.5 pt-0"
+          />
 
           {/* Listado en dos secciones: Pendientes y Finalizadas */}
           <TechnicianStopsList

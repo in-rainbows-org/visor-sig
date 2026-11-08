@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AssignmentDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import { AssignmentDetailProgress } from "../detail/assignment-detail-progress";
 
 export interface TechnicianAssignmentMobileHeaderProps {
   assignment: AssignmentDetail;
@@ -64,10 +65,6 @@ export function TechnicianAssignmentMobileHeader({
   className = "",
 }: TechnicianAssignmentMobileHeaderProps) {
   const isCut = assignment.assignmentType === "CUT";
-  const percentage =
-    assignment.totalStops > 0
-      ? Math.min(100, Math.round((assignment.completedStops / assignment.totalStops) * 100))
-      : 0;
 
   return (
     <div
@@ -129,22 +126,13 @@ export function TechnicianAssignmentMobileHeader({
       </div>
 
       {/* 3. Sección de progreso de la asignación */}
-      <div className="pt-0.5 space-y-1.5 px-2.5">
-        <div className="flex items-center justify-between text-xs">
-          <h5 className="font-bold text-slate-800 tracking-tight">
-            Progreso de asignación
-          </h5>
-          <span className="font-semibold text-slate-500 text-[11px] sm:text-xs">
-            {assignment.completedStops} de {assignment.totalStops} completadas
-          </span>
-        </div>
-        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border-0 shadow-none">
-          <div
-            className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-      </div>
+      <AssignmentDetailProgress
+        totalStops={assignment.totalStops}
+        stops={assignment.stops}
+        completedStops={assignment.completedStops}
+        title="Progreso de asignación"
+        className="px-2.5 pt-0.5"
+      />
     </div>
   );
 }

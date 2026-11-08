@@ -16,6 +16,9 @@ export const assignmentStopDetailReadSchema = z.object({
   arrived_at: z.string().datetime({ offset: true }).nullable().optional(),
   completed_at: z.string().datetime({ offset: true }).nullable().optional(),
   route_geometry: z.record(z.string(), z.unknown()).default({}),
+  meter_reading: z.string().nullable().optional(),
+  evidence_photo_url: z.string().nullable().optional(),
+  observation: z.string().nullable().optional(),
 });
 
 /**

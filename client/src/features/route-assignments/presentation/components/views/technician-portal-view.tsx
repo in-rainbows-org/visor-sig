@@ -38,40 +38,33 @@ export function TechnicianPortalView() {
           <TechnicianPortalSkeleton />
         ) : (
           <>
-            {/* SECCIÓN 1: Tarjetas superiores (En móvil apiladas 1x1, en desktop condicional 7:5 o ancho completo) */}
-            <section
-              aria-label="Asignación activa y pendientes"
-              className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch"
-            >
-              {activeAssignment ? (
-                <>
-                  <div className="lg:col-span-7 flex flex-col">
-                    <ActiveAssignmentCard
-                      assignment={activeAssignment}
-                      onNavigate={(id) => router.push(`/mis-asignaciones/${id}`)}
-                      className="h-full"
-                    />
-                  </div>
-                  <div className="lg:col-span-5 flex flex-col">
-                    <PendingSummaryCard
-                      summary={pendingSummary}
-                      className="h-full"
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="lg:col-span-12 flex flex-col">
-                  <PendingSummaryCard
-                    summary={pendingSummary}
-                    className="h-full"
-                  />
-                </div>
-              )}
-            </section>
+            {/* SECCIÓN 1: Asignación activa en progreso (si existe) */}
+            {activeAssignment && (
+              <section aria-label="Asignación activa en progreso">
+                <ActiveAssignmentCard
+                  assignment={activeAssignment}
+                  onNavigate={(id) => router.push(`/mis-asignaciones/${id}`)}
+                />
+              </section>
+            )}
 
-            {/* SECCIÓN 2: Métricas de rendimiento por asignación (Stacked Bars con datos estáticos) */}
-            <section aria-label="Métricas de rendimiento por ruta">
-              <TechnicianStackedBars barsData={MOCK_TECHNICIAN_BARS} />
+            {/* SECCIÓN 2: Asignaciones pendientes y Rendimiento (En móvil/tablet en 2 filas, en escritorio en 1 fila de 2 columnas) */}
+            <section
+              aria-label="Resumen de pendientes y rendimiento"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch"
+            >
+              <div className="flex flex-col h-full">
+                <PendingSummaryCard
+                  summary={pendingSummary}
+                  className="h-full"
+                />
+              </div>
+              <div className="flex flex-col h-full">
+                <TechnicianStackedBars
+                  barsData={MOCK_TECHNICIAN_BARS}
+                  className="h-full"
+                />
+              </div>
             </section>
 
             {/* SECCIÓN 3: Feed de Mis Asignaciones con Switch de Asignadas vs Completadas */}

@@ -22,6 +22,8 @@ export type AssignmentDetailCardProps = {
   backLabel?: string;
   className?: string;
   showMetricsCards?: boolean;
+  showScheduledDate?: boolean;
+  twoColumnTechnicianDate?: boolean;
   customStopsList?: React.ReactNode;
   children?: React.ReactNode;
 };
@@ -69,6 +71,8 @@ export function AssignmentDetailCard({
   backLabel = "Volver a asignaciones",
   className = "",
   showMetricsCards = true,
+  showScheduledDate = true,
+  twoColumnTechnicianDate = false,
   customStopsList,
   children,
 }: AssignmentDetailCardProps) {
@@ -117,6 +121,8 @@ export function AssignmentDetailCard({
             totalDistanceKm={assignment.totalDistanceKm}
             status={assignment.status}
             showMetricsCards={showMetricsCards}
+            showScheduledDate={showScheduledDate}
+            twoColumnTechnicianDate={twoColumnTechnicianDate}
           />
 
           {/* Barra de Progreso */}

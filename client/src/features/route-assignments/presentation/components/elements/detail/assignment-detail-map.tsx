@@ -14,6 +14,7 @@ import type {
   AssignmentDetailStatus,
   AssignmentStopDetail,
 } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import { cn } from "@/lib/utils";
 import { routeAssignmentRepository } from "@/features/route-assignments/infrastructure/repositories/route-assignment.repository-impl";
 import { RouteCreationZoomControls } from "../create/route-creation-zoom-controls";
 import {
@@ -42,11 +43,12 @@ function getOffsetCenter(
   lat: number,
   lng: number,
   targetZoom: number,
-  pixelOffsetLeft: number
+  pixelOffsetX: number,
+  pixelOffsetY: number = 0
 ): [number, number] {
-  if (pixelOffsetLeft === 0) return [lat, lng];
+  if (pixelOffsetX === 0 && pixelOffsetY === 0) return [lat, lng];
   const point = map.project([lat, lng], targetZoom);
-  const offsetPoint = L.point(point.x - pixelOffsetLeft, point.y);
+  const offsetPoint = L.point(point.x - pixelOffsetX, point.y + pixelOffsetY);
   const unprojected = map.unproject(offsetPoint, targetZoom);
   return [unprojected.lat, unprojected.lng];
 }
@@ -103,12 +105,15 @@ function MapController({
     }
   }, [allCoordinates, map]);
 
-  // Enfocar punto de partida cuando es seleccionado con compensación lateral hacia la derecha
+  // Enfocar punto de partida cuando es seleccionado con compensación lateral (desktop) o vertical (móvil)
   useEffect(() => {
     if (!isStartingPointSelected || !startLatitude || !startLongitude) return;
 
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
-    const pixelOffset = isDesktop ? 240 : 0;
+    const pixelOffsetX = isDesktop ? 240 : 0;
+    const mapHeight =
+      map.getSize()?.y || (typeof window !== "undefined" ? window.innerHeight : 600);
+    const pixelOffsetY = isDesktop ? 0 : Math.round(mapHeight * 0.20);
     const targetZoom = 17;
 
     try {
@@ -117,7 +122,8 @@ function MapController({
         startLatitude,
         startLongitude,
         targetZoom,
-        pixelOffset
+        pixelOffsetX,
+        pixelOffsetY
       );
       map.flyTo(center, targetZoom, {
         animate: true,
@@ -131,12 +137,16 @@ function MapController({
     }
   }, [isStartingPointSelected, startLatitude, startLongitude, map]);
 
-  // Enfocar parada seleccionada al hacer clic con compensación lateral hacia la derecha
+  // Enfocar parada seleccionada al hacer clic con compensación lateral en escritorio
+  // o compensación 20% hacia arriba en móviles para no quedar tapada por el card inferior
   useEffect(() => {
     if (!selectedStop?.latitude || !selectedStop?.longitude) return;
 
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
-    const pixelOffset = isDesktop ? 240 : 0;
+    const pixelOffsetX = isDesktop ? 240 : 0;
+    const mapHeight =
+      map.getSize()?.y || (typeof window !== "undefined" ? window.innerHeight : 600);
+    const pixelOffsetY = isDesktop ? 0 : Math.round(mapHeight * 0.20);
     const targetZoom = 17;
 
     try {
@@ -145,7 +155,8 @@ function MapController({
         selectedStop.latitude,
         selectedStop.longitude,
         targetZoom,
-        pixelOffset
+        pixelOffsetX,
+        pixelOffsetY
       );
       map.flyTo(center, targetZoom, {
         animate: true,
@@ -276,6 +287,7 @@ export type AssignmentDetailMapProps = {
   stops: readonly AssignmentStopDetail[];
   selectedStop: AssignmentStopDetail | null;
   isStartingPointSelected?: boolean;
+  hideZoomControls?: boolean;
   onSelectStop?: (stop: AssignmentStopDetail) => void;
   onSelectStartingPoint?: () => void;
   className?: string;
@@ -288,6 +300,7 @@ export function AssignmentDetailMap({
   stops,
   selectedStop,
   isStartingPointSelected = false,
+  hideZoomControls = false,
   onSelectStop,
   onSelectStartingPoint,
   className = "w-full h-full",
@@ -499,8 +512,15 @@ export function AssignmentDetailMap({
         })}
       </MapContainer>
 
-      {/* Controles Flotantes de Zoom (+ y -) idénticos al mapa de nueva asignación */}
-      <div className="absolute bottom-20 sm:bottom-24 lg:bottom-6 lg:right-6 right-4 z-[1000] pointer-events-auto">
+      {/* Controles Flotantes de Zoom (+ y -): se ocultan automáticamente cuando el card inferior de parada está abierto */}
+      <div
+        className={cn(
+          "absolute bottom-20 sm:bottom-24 lg:bottom-6 lg:right-6 right-4 z-[1000] transition-all duration-300 ease-out",
+          selectedStop || hideZoomControls
+            ? "opacity-0 pointer-events-none scale-90 translate-y-2"
+            : "opacity-100 pointer-events-auto scale-100 translate-y-0"
+        )}
+      >
         <RouteCreationZoomControls
           onZoomIn={() => zoomInRef.current()}
           onZoomOut={() => zoomOutRef.current()}

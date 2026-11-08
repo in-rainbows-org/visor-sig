@@ -144,6 +144,7 @@ export function TechnicianAssignmentDetailView({
           stops={assignment.stops}
           selectedStop={selectedStop}
           onSelectStop={handleSelectStop}
+          hideZoomControls={isStopsDrawerOpen || isStopDetailDrawerOpen}
         />
       </div>
 

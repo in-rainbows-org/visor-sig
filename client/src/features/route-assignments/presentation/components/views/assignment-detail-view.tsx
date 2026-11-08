@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft, RefreshCw, SearchX, X } from "lucide-react";
 import {
   Sheet,
@@ -14,6 +15,8 @@ import { useAssignmentDetail } from "../../hooks/use-assignment-detail";
 import { AssignmentDetailSkeleton } from "../elements/detail/assignment-detail-skeleton";
 import { AssignmentDetailCard } from "../elements/detail/assignment-detail-card";
 import { AssignmentDetailStopSheet } from "../elements/detail/assignment-detail-stop-sheet";
+import { AssignmentDetailScheduleCard } from "../elements/detail/assignment-detail-schedule-card";
+import { AssignmentDetailMobileHeader } from "../elements/detail/assignment-detail-mobile-header";
 
 // Carga dinámica exclusiva en cliente para evitar fallos de window / SSR con Leaflet
 const AssignmentDetailMapDynamic = dynamic(
@@ -132,28 +135,38 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
           stops={assignment.stops}
           selectedStop={selectedStop}
           onSelectStop={selectStop}
+          hideZoomControls={isMobileDrawerOpen}
         />
       </div>
 
-      {/* 2. Botón flotante superior izquierdo 'Volver a asignaciones' (exclusivo móviles y tablets < 1024px) */}
-      <div className="lg:hidden absolute top-[92px] left-4 z-[900] pointer-events-auto select-none">
-        <Link
-          href="/asignacion-rutas"
-          className="h-9 px-3.5 rounded-full text-xs font-semibold bg-white/95 backdrop-blur-md text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/80 shadow-md inline-flex items-center gap-1.5 transition active:scale-95 cursor-pointer select-none"
-        >
-          <ArrowLeft className="size-4 stroke-[2.5] text-slate-600" />
-          <span>Volver a asignaciones</span>
-        </Link>
-      </div>
+      {/* 2. Card superior móvil: Volver, estado, fechas operativas y progreso (se oculta suavemente al seleccionar parada) */}
+      <AnimatePresence>
+        {!selectedStop && (
+          <motion.div
+            key="assignment-detail-mobile-header"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            className="lg:hidden absolute top-[88px] inset-x-3 sm:inset-x-4 z-[900] pointer-events-auto select-none"
+          >
+            <AssignmentDetailMobileHeader assignment={assignment} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 3. Card lateral flotante izquierdo (Escritorio - Idéntico al Wizard) */}
       <AssignmentDetailCard
         assignment={assignment}
         selectedStop={selectedStop}
         onSelectStop={selectStop}
+        showScheduledDate={false}
       />
 
-      {/* 4. Card flotante inferior emergente de la parada (Framer Motion) */}
+      {/* 4. Card superior derecho flotante de fechas y horarios (Escritorio >= 1024px) */}
+      <AssignmentDetailScheduleCard assignment={assignment} />
+
+      {/* 5. Card flotante inferior emergente de la parada (Framer Motion) */}
       <AssignmentDetailStopSheet
         stop={selectedStop}
         startLatitude={assignment.startLatitude}
@@ -207,6 +220,7 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
                 setIsMobileDrawerOpen(false);
               }}
               showBackButton={false}
+              showScheduledDate={false}
               className="flex relative inset-auto w-full h-full top-auto bottom-auto left-auto rounded-none border-0 shadow-none z-0"
             />
           </div>

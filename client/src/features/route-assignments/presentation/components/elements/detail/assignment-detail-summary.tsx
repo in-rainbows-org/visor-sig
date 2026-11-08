@@ -18,6 +18,8 @@ export type AssignmentDetailSummaryProps = {
   totalDistanceKm: number;
   status: AssignmentDetailStatus;
   showMetricsCards?: boolean;
+  showScheduledDate?: boolean;
+  twoColumnTechnicianDate?: boolean;
 };
 
 function formatSummaryDate(dateStr: string | null): string {
@@ -45,61 +47,100 @@ export function AssignmentDetailSummary({
   totalStops,
   totalDistanceKm,
   showMetricsCards = true,
+  showScheduledDate = true,
+  twoColumnTechnicianDate = false,
 }: AssignmentDetailSummaryProps) {
   const isCut = assignmentType === "CUT";
 
   return (
     <div className="space-y-3 shrink-0">
-      {/* 1. Card Técnico Responsable (degradado azul oficial del wizard) */}
-      <div className="w-full bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white rounded-3xl p-3.5 flex items-center gap-3 border-0 shadow-none shrink-0">
-        <div className="relative size-11 rounded-full overflow-hidden bg-white/20 shrink-0 ring-2 ring-white/30">
-          {technicianImage ? (
-            <Image
-              src={technicianImage}
-              alt={technicianName || "Técnico"}
-              fill
-              sizes="44px"
-              unoptimized
-              className="object-cover"
-            />
-          ) : (
-            <div className="size-full flex items-center justify-center text-white">
-              <User className="size-5" />
-            </div>
+      {/* 1. Técnico asignado (solo o acompañado de fecha según showScheduledDate) */}
+      {!showScheduledDate ? (
+        <div className="w-full bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white rounded-3xl p-3.5 flex items-center gap-3 border-0 shadow-none shrink-0 min-h-[64px]">
+          <div className="relative size-11 rounded-full overflow-hidden bg-white/20 shrink-0 ring-2 ring-white/30">
+            {technicianImage ? (
+              <Image
+                src={technicianImage}
+                alt={technicianName || "Técnico"}
+                fill
+                sizes="44px"
+                unoptimized
+                className="object-cover"
+              />
+            ) : (
+              <div className="size-full flex items-center justify-center text-white">
+                <User className="size-5" />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-100 block leading-tight">
+              Técnico asignado
+            </span>
+            <h4 className="text-sm font-bold text-white break-words leading-snug mt-0.5">
+              {technicianName ?? "Técnico no asignado"}
+            </h4>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "grid gap-3 shrink-0",
+            twoColumnTechnicianDate ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
           )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-100 block">
-            Técnico asignado
-          </span>
-          <h4 className="text-sm font-bold text-white truncate">
-            {technicianName ?? "Técnico no asignado"}
-          </h4>
-        </div>
-      </div>
+        >
+          {/* Card 1: Técnico Responsable */}
+          <div className="w-full bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white rounded-3xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 border-0 shadow-none shrink-0 min-h-[64px]">
+            <div className="relative size-10 sm:size-11 rounded-full overflow-hidden bg-white/20 shrink-0 ring-2 ring-white/30">
+              {technicianImage ? (
+                <Image
+                  src={technicianImage}
+                  alt={technicianName || "Técnico"}
+                  fill
+                  sizes="44px"
+                  unoptimized
+                  className="object-cover"
+                />
+              ) : (
+                <div className="size-full flex items-center justify-center text-white">
+                  <User className="size-5" />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-100 block leading-tight">
+                Técnico asignado
+              </span>
+              <h4 className="text-xs sm:text-[13px] font-bold text-white break-words leading-snug mt-0.5">
+                {technicianName ?? "Técnico no asignado"}
+              </h4>
+            </div>
+          </div>
 
-      {/* 2. Card: Fecha de asignación */}
-      <div className="w-full bg-[#ebf3ff] rounded-3xl p-3 sm:p-3.5 flex items-center border-0 shadow-none shrink-0 gap-3">
-        <div className="relative w-12 sm:w-14 h-10 sm:h-11 shrink-0 flex items-center justify-center">
-          <Image
-            src="/assignment-route/fecha.webp"
-            alt="Fecha programada"
-            fill
-            sizes="56px"
-            priority
-            unoptimized
-            className="object-contain pointer-events-none"
-          />
+          {/* Card 2: Fecha de asignación */}
+          <div className="w-full bg-[#ebf3ff] rounded-3xl p-3 sm:p-3.5 flex items-center border-0 shadow-none shrink-0 gap-2.5 sm:gap-3 min-h-[64px]">
+            <div className="relative w-10 sm:w-12 h-10 sm:h-11 shrink-0 flex items-center justify-center">
+              <Image
+                src="/assignment-route/fecha.webp"
+                alt="Fecha programada"
+                fill
+                sizes="48px"
+                priority
+                unoptimized
+                className="object-contain pointer-events-none"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block leading-tight">
+                Fecha programada
+              </span>
+              <h4 className="text-xs sm:text-[13px] font-bold text-slate-900 break-words leading-snug mt-0.5">
+                {formatSummaryDate(scheduledDate)}
+              </h4>
+            </div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
-            Fecha programada
-          </span>
-          <h4 className="text-sm font-bold text-slate-900 truncate">
-            {formatSummaryDate(scheduledDate)}
-          </h4>
-        </div>
-      </div>
+      )}
 
       {/* 3. Card: Tipo de Servicio */}
       <div

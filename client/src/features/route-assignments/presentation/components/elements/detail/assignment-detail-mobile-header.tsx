@@ -10,6 +10,7 @@ import { AssignmentDetailProgress } from "./assignment-detail-progress";
 
 export interface AssignmentDetailMobileHeaderProps {
   assignment: AssignmentDetail;
+  headerExtra?: React.ReactNode;
   className?: string;
 }
 
@@ -79,6 +80,7 @@ function AssignmentStatusBadge({ status }: { status: AssignmentDetail["status"] 
 
 export function AssignmentDetailMobileHeader({
   assignment,
+  headerExtra,
   className = "",
 }: AssignmentDetailMobileHeaderProps) {
   return (
@@ -98,7 +100,10 @@ export function AssignmentDetailMobileHeader({
           <span>Volver a asignaciones</span>
         </Link>
 
-        <AssignmentStatusBadge status={assignment.status} />
+        <div className="flex items-center gap-2 shrink-0">
+          {headerExtra}
+          <AssignmentStatusBadge status={assignment.status} />
+        </div>
       </div>
 
       {/* 2. Sección de Fechas y Horas */}

@@ -83,12 +83,27 @@ from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_t
     SqlModelTechnicianAssignmentsReader,
 )
 
+import logging
+
+from app.modules.route_assignments.domain.entities.assignment_stop import AssignmentStop
+from app.modules.route_assignments.domain.value_objects.stop_status import StopStatus
+from app.modules.route_assignments.infrastructure.api.schemas.realtime_schemas import (
+    AssignmentCompletedPayload,
+    RealtimeEnvelope,
+    RealtimeEventType,
+    StopStatusUpdatedPayload,
+)
+from app.modules.route_assignments.infrastructure.api.websocket.assignment_connection_manager import (
+    assignment_connection_manager,
+)
 from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_repository import (
     SQLModelAssignmentRepository,
 )
 from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_stop_repository import (
     SQLModelAssignmentStopRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/route-assignments", tags=["Asignaciones y Rutas"])
 
@@ -418,6 +433,68 @@ def start_assignment(
     )
 
 
+async def _broadcast_stop_status(
+    assignment_id: UUID,
+    stop: AssignmentStop,
+    stop_repo: SQLModelAssignmentStopRepository,
+) -> None:
+    """Difunde el estado actualizado de la parada a la sala WebSocket tras persistencia exitosa."""
+    try:
+        stops = stop_repo.list_by_assignment_id(assignment_id)
+        total_stops = len(stops)
+        completed_stops_count = sum(
+            1 for s in stops if s.status in (StopStatus.COMPLETED, StopStatus.FAILED)
+        )
+        is_assignment_completed = total_stops > 0 and completed_stops_count == total_stops
+
+        payload = StopStatusUpdatedPayload(
+            stop_id=stop.id,
+            order_index=stop.order_index,
+            status=stop.status.value,
+            in_transit_at=stop.in_transit_at,
+            arrived_at=stop.arrived_at,
+            completed_at=stop.completed_at,
+            meter_reading=stop.meter_reading,
+            observation=stop.observation,
+            completed_stops_count=completed_stops_count,
+            total_stops=total_stops,
+            is_assignment_completed=is_assignment_completed,
+        )
+        envelope = RealtimeEnvelope(
+            type=RealtimeEventType.STOP_STATUS_UPDATED,
+            assignment_id=assignment_id,
+            payload=payload.model_dump(mode="json"),
+        )
+        await assignment_connection_manager.broadcast_to_room(
+            assignment_id,
+            envelope.model_dump(mode="json"),
+        )
+
+        if is_assignment_completed:
+            completed_payload = AssignmentCompletedPayload(
+                assignment_id=assignment_id,
+                completed_at=datetime.now(timezone.utc),
+                total_stops=total_stops,
+                completed_stops=completed_stops_count,
+            )
+            completed_envelope = RealtimeEnvelope(
+                type=RealtimeEventType.ASSIGNMENT_COMPLETED,
+                assignment_id=assignment_id,
+                payload=completed_payload.model_dump(mode="json"),
+            )
+            await assignment_connection_manager.broadcast_to_room(
+                assignment_id,
+                completed_envelope.model_dump(mode="json"),
+            )
+            await assignment_connection_manager.close_room(assignment_id, code=1000)
+    except Exception as exc:
+        logger.error(
+            "Fallo al emitir evento de tiempo real para asignación %s: %s",
+            assignment_id,
+            exc,
+        )
+
+
 @router.post(
     "/assignments/{assignment_id}/stops/{stop_id}/transit",
     response_model=AssignmentStopRead,
@@ -428,7 +505,7 @@ def start_assignment(
     response_model=AssignmentStopRead,
     include_in_schema=False,
 )
-def start_stop_transit(
+async def start_stop_transit(
     assignment_id: UUID,
     stop_id: UUID,
     db: DBSession,
@@ -449,6 +526,8 @@ def start_stop_transit(
         technician_id=current_user.id,
     )
     updated_stop = use_case.execute(command)
+
+    await _broadcast_stop_status(assignment_id, updated_stop, stop_repo)
 
     return AssignmentStopRead(
         id=updated_stop.id,
@@ -475,7 +554,7 @@ def start_stop_transit(
     response_model=AssignmentStopRead,
     include_in_schema=False,
 )
-def arrive_at_stop(
+async def arrive_at_stop(
     assignment_id: UUID,
     stop_id: UUID,
     db: DBSession,
@@ -496,6 +575,8 @@ def arrive_at_stop(
         technician_id=current_user.id,
     )
     updated_stop = use_case.execute(command)
+
+    await _broadcast_stop_status(assignment_id, updated_stop, stop_repo)
 
     return AssignmentStopRead(
         id=updated_stop.id,
@@ -522,7 +603,7 @@ def arrive_at_stop(
     response_model=AssignmentStopRead,
     include_in_schema=False,
 )
-def complete_stop(
+async def complete_stop(
     assignment_id: UUID,
     stop_id: UUID,
     request: CompleteStopRequest,
@@ -548,6 +629,8 @@ def complete_stop(
     )
     updated_stop = use_case.execute(command)
 
+    await _broadcast_stop_status(assignment_id, updated_stop, stop_repo)
+
     return AssignmentStopRead(
         id=updated_stop.id,
         assignment_id=updated_stop.assignment_id,
@@ -561,6 +644,7 @@ def complete_stop(
         observation=updated_stop.observation,
         evidence_photo_url=updated_stop.evidence_photo_url,
     )
+
 
 
 

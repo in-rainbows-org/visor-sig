@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, RefreshCw, SearchX } from "lucide-react";
 import type { AssignmentStopDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
 import { deriveActiveStopState } from "@/features/route-assignments/domain/entities/assignment-execution.entity";
 import { useAssignmentDetail } from "../../hooks/use-assignment-detail";
+import { useAssignmentRealtime } from "../../hooks/use-assignment-realtime";
 import { useTechnicianAssignmentExecution } from "../../hooks/use-technician-assignment-execution";
 import { AssignmentDetailSkeleton } from "../elements/detail/assignment-detail-skeleton";
 import { AssignmentDetailCard } from "../elements/detail/assignment-detail-card";
@@ -67,6 +68,13 @@ export function TechnicianAssignmentDetailView({
     assignmentId,
     refetch,
     updateAssignmentLocally,
+  });
+
+  const { technicianLocation } = useAssignmentRealtime({
+    assignmentId,
+    assignmentStatus: assignment?.status,
+    role: "TECHNICIAN",
+    enabled: Boolean(assignment),
   });
 
   const [isStopsDrawerOpen, setIsStopsDrawerOpen] = useState<boolean>(false);
@@ -163,6 +171,7 @@ export function TechnicianAssignmentDetailView({
           startLongitude={assignment.startLongitude}
           stops={assignment.stops}
           selectedStop={selectedStop}
+          technicianLocation={technicianLocation}
           hideZoomControls={isStopsDrawerOpen || isFinalizeDrawerOpen}
         />
       </div>

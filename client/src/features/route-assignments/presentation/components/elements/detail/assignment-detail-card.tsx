@@ -24,6 +24,7 @@ export type AssignmentDetailCardProps = {
   showMetricsCards?: boolean;
   showScheduledDate?: boolean;
   twoColumnTechnicianDate?: boolean;
+  headerExtra?: React.ReactNode;
   customStopsList?: React.ReactNode;
   children?: React.ReactNode;
 };
@@ -73,6 +74,7 @@ export function AssignmentDetailCard({
   showMetricsCards = true,
   showScheduledDate = true,
   twoColumnTechnicianDate = false,
+  headerExtra,
   customStopsList,
   children,
 }: AssignmentDetailCardProps) {
@@ -105,7 +107,10 @@ export function AssignmentDetailCard({
             <h3 className="text-xl font-bold text-slate-900 tracking-tight">
               Detalle de asignación
             </h3>
-            <StatusBadge status={assignment.status} />
+            <div className="flex items-center gap-2 shrink-0">
+              {headerExtra}
+              <StatusBadge status={assignment.status} />
+            </div>
           </div>
         </div>
 

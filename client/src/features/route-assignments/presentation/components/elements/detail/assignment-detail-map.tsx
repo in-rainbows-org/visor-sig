@@ -20,6 +20,7 @@ import { RouteCreationZoomControls } from "../create/route-creation-zoom-control
 import {
   getDetailStartingPinIcon,
   getDetailStopPinIcon,
+  getTechnicianVehicleIcon,
 } from "./assignment-detail-markers";
 
 const SANTA_CRUZ_DEFAULT_CENTER: [number, number] = [-17.7833, -63.1821];
@@ -302,6 +303,11 @@ export type AssignmentDetailMapProps = {
   startLongitude: number;
   stops: readonly AssignmentStopDetail[];
   selectedStop: AssignmentStopDetail | null;
+  technicianLocation?: {
+    latitude: number;
+    longitude: number;
+    heading?: number | null;
+  } | null;
   isStartingPointSelected?: boolean;
   hideZoomControls?: boolean;
   onSelectStop?: (stop: AssignmentStopDetail) => void;
@@ -315,6 +321,7 @@ export function AssignmentDetailMap({
   startLongitude,
   stops,
   selectedStop,
+  technicianLocation,
   isStartingPointSelected = false,
   hideZoomControls = false,
   onSelectStop,
@@ -559,6 +566,17 @@ export function AssignmentDetailMap({
             />
           );
         })}
+
+        {/* 4. Marcador del Vehículo del Técnico en tiempo real */}
+        {technicianLocation &&
+          typeof technicianLocation.latitude === "number" &&
+          typeof technicianLocation.longitude === "number" && (
+            <Marker
+              position={[technicianLocation.latitude, technicianLocation.longitude]}
+              icon={getTechnicianVehicleIcon(technicianLocation.heading)}
+              zIndexOffset={1000}
+            />
+          )}
       </MapContainer>
 
       {/* Controles Flotantes de Zoom (+ y -): se ocultan automáticamente cuando el card inferior de parada está abierto */}

@@ -148,3 +148,30 @@ export function getDetailStopPinIcon(
   stopIconCache.set(cacheKey, icon);
   return icon;
 }
+
+const VEHICLE_SIZE: [number, number] = [34, 63.4];
+const VEHICLE_ANCHOR: [number, number] = [17, 31.7];
+
+/**
+ * Ícono oficial del vehículo del técnico en tiempo real (/navigation-map/vehicle.webp)
+ * Admite rotación según el rumbo (*heading*) transmitido por la geolocalización.
+ */
+export function getTechnicianVehicleIcon(heading?: number | null): L.DivIcon {
+  const rotation = typeof heading === "number" && !isNaN(heading) ? heading : 0;
+  return L.divIcon({
+    className: "technician-vehicle-div-icon !bg-transparent !border-0",
+    iconSize: VEHICLE_SIZE,
+    iconAnchor: VEHICLE_ANCHOR,
+    popupAnchor: [0, -32],
+    html: `
+      <div style="position: relative; width: 34px; height: 63.4px; user-select: none; transform: rotate(${rotation}deg); transform-origin: center center; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));">
+        <img
+          src="/navigation-map/vehicle.webp"
+          alt="Vehículo del técnico"
+          style="width: 34px; height: 63.4px; display: block; pointer-events: none; object-fit: contain;"
+        />
+      </div>
+    `,
+  });
+}
+

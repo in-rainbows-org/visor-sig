@@ -12,11 +12,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAssignmentDetail } from "../../hooks/use-assignment-detail";
+import { useAssignmentRealtime } from "../../hooks/use-assignment-realtime";
 import { AssignmentDetailSkeleton } from "../elements/detail/assignment-detail-skeleton";
 import { AssignmentDetailCard } from "../elements/detail/assignment-detail-card";
 import { AssignmentDetailStopSheet } from "../elements/detail/assignment-detail-stop-sheet";
 import { AssignmentDetailScheduleCard } from "../elements/detail/assignment-detail-schedule-card";
 import { AssignmentDetailMobileHeader } from "../elements/detail/assignment-detail-mobile-header";
+import { RealtimeConnectionBadge } from "../elements/realtime/realtime-connection-badge";
 
 // Carga dinámica exclusiva en cliente para evitar fallos de window / SSR con Leaflet
 const AssignmentDetailMapDynamic = dynamic(
@@ -47,7 +49,52 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
     selectStop,
     clearSelectedStop,
     refetch,
+    updateAssignmentLocally,
   } = useAssignmentDetail(assignmentId);
+
+  const { connectionStatus, technicianLocation } = useAssignmentRealtime({
+    assignmentId,
+    assignmentStatus: assignment?.status,
+    role: "ADMIN",
+    enabled: Boolean(assignment),
+    onStopStatusUpdated: (event) => {
+      updateAssignmentLocally((prev) => {
+        const updatedStops = prev.stops.map((stop) => {
+          if (stop.id === event.stopId) {
+            return {
+              ...stop,
+              status: event.status,
+              inTransitAt: event.inTransitAt ?? stop.inTransitAt,
+              arrivedAt: event.arrivedAt ?? stop.arrivedAt,
+              completedAt: event.completedAt ?? stop.completedAt,
+              meterReading: event.meterReading ?? stop.meterReading,
+              observation: event.observation ?? stop.observation,
+            };
+          }
+          return stop;
+        });
+
+        const nextStatus = event.isAssignmentCompleted ? "COMPLETED" : prev.status;
+        const nextCompletedAt = event.isAssignmentCompleted
+          ? (event.completedAt ?? new Date())
+          : prev.completedAt;
+
+        return {
+          ...prev,
+          status: nextStatus,
+          completedAt: nextCompletedAt,
+          stops: updatedStops,
+        };
+      });
+    },
+    onAssignmentCompleted: (event) => {
+      updateAssignmentLocally((prev) => ({
+        ...prev,
+        status: "COMPLETED",
+        completedAt: event.completedAt,
+      }));
+    },
+  });
 
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
@@ -134,6 +181,7 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
           startLongitude={assignment.startLongitude}
           stops={assignment.stops}
           selectedStop={selectedStop}
+          technicianLocation={technicianLocation}
           onSelectStop={selectStop}
           hideZoomControls={isMobileDrawerOpen}
         />
@@ -150,7 +198,14 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
             transition={{ duration: 0.24, ease: "easeOut" }}
             className="lg:hidden absolute top-[88px] inset-x-3 sm:inset-x-4 z-[900] pointer-events-auto select-none"
           >
-            <AssignmentDetailMobileHeader assignment={assignment} />
+            <AssignmentDetailMobileHeader
+              assignment={assignment}
+              headerExtra={
+                assignment.status === "IN_PROGRESS" ? (
+                  <RealtimeConnectionBadge status={connectionStatus} />
+                ) : null
+              }
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -161,6 +216,11 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
         selectedStop={selectedStop}
         onSelectStop={selectStop}
         showScheduledDate={false}
+        headerExtra={
+          assignment.status === "IN_PROGRESS" ? (
+            <RealtimeConnectionBadge status={connectionStatus} />
+          ) : null
+        }
       />
 
       {/* 4. Card superior derecho flotante de fechas y horarios (Escritorio >= 1024px) */}
@@ -215,6 +275,11 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
             <AssignmentDetailCard
               assignment={assignment}
               selectedStop={selectedStop}
+              headerExtra={
+                assignment.status === "IN_PROGRESS" ? (
+                  <RealtimeConnectionBadge status={connectionStatus} />
+                ) : null
+              }
               onSelectStop={(s) => {
                 selectStop(s);
                 setIsMobileDrawerOpen(false);

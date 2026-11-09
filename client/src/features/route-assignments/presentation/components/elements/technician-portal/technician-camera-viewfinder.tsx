@@ -21,6 +21,7 @@ export function TechnicianCameraViewfinder({
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [isTargetVisible, setIsTargetVisible] = useState<boolean>(false);
+  const [capturedPreviewUrl, setCapturedPreviewUrl] = useState<string | null>(null);
 
   // Detener la cámara limpiamente y desvincular el elemento video
   const stopStream = () => {
@@ -49,6 +50,7 @@ export function TechnicianCameraViewfinder({
       stopStream();
       setIsTargetVisible(false);
       setIsCapturing(false);
+      setCapturedPreviewUrl(null);
       resetOcrState();
       return;
     }
@@ -56,6 +58,7 @@ export function TechnicianCameraViewfinder({
     let isMounted = true;
     let timerId: NodeJS.Timeout | null = null;
     setIsCapturing(false);
+    setCapturedPreviewUrl(null);
     resetOcrState();
     setIsInitializing(true);
     setHasCameraError(false);
@@ -114,6 +117,7 @@ export function TechnicianCameraViewfinder({
       if (timerId) clearTimeout(timerId);
       stopStream();
       setIsCapturing(false);
+      setCapturedPreviewUrl(null);
       resetOcrState();
     };
   }, [isOpen, resetOcrState]);
@@ -127,6 +131,9 @@ export function TechnicianCameraViewfinder({
       const width = video.videoWidth || 1280;
       const height = video.videoHeight || 720;
 
+      // Pausar inmediatamente la reproducción de video para congelar la cámara
+      video.pause();
+
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -136,12 +143,17 @@ export function TechnicianCameraViewfinder({
 
       ctx.drawImage(video, 0, 0, width, height);
 
+      // Mostrar la imagen estática capturada de forma inmediata sin latencia
+      const previewDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      setCapturedPreviewUrl(previewDataUrl);
+
       // Generar archivo de imagen original de alta resolución para evidencia legal
       const fileBlob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.85)
       );
 
       if (!fileBlob) {
+        setCapturedPreviewUrl(null);
         setIsCapturing(false);
         return;
       }
@@ -157,27 +169,27 @@ export function TechnicianCameraViewfinder({
 
       stopStream();
       setIsCapturing(false);
+      setCapturedPreviewUrl(null);
       resetOcrState();
 
       if (onCaptureComplete) {
         onCaptureComplete({
-          file,
-          detectedDigits: ocrResult.isComplete
-            ? ocrResult.digits
-            : ocrResult.digits.length > 0
-            ? ocrResult.digits
-            : null,
+          file: ocrResult.isComplete ? file : null,
+          detectedDigits: ocrResult.isComplete ? ocrResult.digits : null,
           ocrError: ocrResult.isComplete
             ? null
-            : ocrResult.error ?? "No se pudieron detectar los 6 dígitos del medidor.",
+            : ocrResult.error ?? "No se pudieron detectar los 6 dígitos del medidor. Por favor vuelve a tomar la foto enfocando bien los números dentro del marco.",
         });
       } else if (onCapture) {
-        onCapture(file);
+        if (ocrResult.isComplete) {
+          onCapture(file);
+        }
       }
 
       onClose();
     } catch (err) {
       console.error("Error al capturar imagen:", err);
+      setCapturedPreviewUrl(null);
       setIsCapturing(false);
       resetOcrState();
     }
@@ -190,7 +202,9 @@ export function TechnicianCameraViewfinder({
     try {
       setIsCapturing(true);
       const img = new Image();
-      img.src = URL.createObjectURL(file);
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      setCapturedPreviewUrl(objectUrl);
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = reject;
@@ -205,22 +219,21 @@ export function TechnicianCameraViewfinder({
         const ocrResult = await processCapture(canvas, DEFAULT_METER_ROI);
         stopStream();
         setIsCapturing(false);
+        setCapturedPreviewUrl(null);
         resetOcrState();
 
         if (onCaptureComplete) {
           onCaptureComplete({
-            file,
-            detectedDigits: ocrResult.isComplete
-              ? ocrResult.digits
-              : ocrResult.digits.length > 0
-              ? ocrResult.digits
-              : null,
+            file: ocrResult.isComplete ? file : null,
+            detectedDigits: ocrResult.isComplete ? ocrResult.digits : null,
             ocrError: ocrResult.isComplete
               ? null
-              : ocrResult.error ?? "No se pudieron detectar los 6 dígitos del medidor.",
+              : ocrResult.error ?? "No se pudieron detectar los 6 dígitos del medidor. Por favor vuelve a tomar la foto enfocando bien los números dentro del marco.",
           });
         } else if (onCapture) {
-          onCapture(file);
+          if (ocrResult.isComplete) {
+            onCapture(file);
+          }
         }
 
         onClose();
@@ -232,15 +245,14 @@ export function TechnicianCameraViewfinder({
 
     stopStream();
     setIsCapturing(false);
+    setCapturedPreviewUrl(null);
     resetOcrState();
     if (onCaptureComplete) {
       onCaptureComplete({
-        file,
+        file: null,
         detectedDigits: null,
-        ocrError: "No se pudieron leer los dígitos del medidor en la imagen seleccionada.",
+        ocrError: "No se pudieron leer los 6 dígitos del medidor en la imagen seleccionada.",
       });
-    } else if (onCapture) {
-      onCapture(file);
     }
     onClose();
   };
@@ -254,6 +266,7 @@ export function TechnicianCameraViewfinder({
         type="button"
         onClick={() => {
           stopStream();
+          setCapturedPreviewUrl(null);
           onClose();
         }}
         className="absolute top-5 right-5 z-30 size-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition active:scale-95 cursor-pointer border-0 outline-none backdrop-blur-md"
@@ -262,9 +275,9 @@ export function TechnicianCameraViewfinder({
         <X className="size-5 stroke-[2.5]" />
       </button>
 
-      {/* Visor central de video con cutout oscuro externo */}
+      {/* Visor central de video con cutout oscuro externo o imagen congelada limpia */}
       <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
-        {isInitializing && !hasCameraError && (
+        {isInitializing && !hasCameraError && !capturedPreviewUrl && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white z-10">
             <RefreshCw className="size-8 animate-spin text-sky-400" />
             <span className="text-xs font-medium text-slate-300">
@@ -301,6 +314,13 @@ export function TechnicianCameraViewfinder({
               onChange={handleNativeFallback}
             />
           </div>
+        ) : capturedPreviewUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={capturedPreviewUrl}
+            alt="Fotografía capturada del medidor"
+            className="w-full h-full object-cover"
+          />
         ) : (
           <video
             ref={videoRef}
@@ -311,8 +331,8 @@ export function TechnicianCameraViewfinder({
           />
         )}
 
-        {/* Ventana de enfoque superior con cutout: el rectángulo es transparente y el resto de la pantalla se oscurece al 55% */}
-        {!hasCameraError && !isInitializing && (
+        {/* Ventana de enfoque superior con cutout: visible sólo mientras la cámara está activa y NO se ha tomado la foto */}
+        {!hasCameraError && !isInitializing && !capturedPreviewUrl && (
           <div
             className={`absolute top-[22%] left-1/2 -translate-x-1/2 w-[86%] max-w-[340px] flex flex-col items-center pointer-events-none select-none z-20 transition-opacity duration-500 ease-out ${
               isTargetVisible ? "opacity-100" : "opacity-0"
@@ -334,22 +354,14 @@ export function TechnicianCameraViewfinder({
         )}
       </div>
 
-      {/* Barra inferior con disparador plano y simple (sin fondo, sin sombra, sin contorno) */}
+      {/* Barra inferior con disparador plano y simple (sin overlays, sin fondo, sin sombra) */}
       <div className="absolute bottom-0 inset-x-0 z-20 pb-8 pt-6 flex flex-col items-center justify-center bg-transparent">
-        {/* Notificación flotante de análisis OCR */}
-        {(isCapturing || isAnalyzing) && (
-          <div className="mb-4 px-4 py-1.5 rounded-full bg-black/80 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-2 border border-white/20 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <RefreshCw className="size-3.5 animate-spin text-sky-400" />
-            <span>Reconociendo lectura con IA...</span>
-          </div>
-        )}
-
         {!hasCameraError && (
           <button
             type="button"
             onClick={handleCapture}
             disabled={isCapturing || isAnalyzing || isInitializing}
-            className="size-18 rounded-full bg-white active:scale-90 transition-transform flex items-center justify-center cursor-pointer border-0 outline-none shadow-none disabled:opacity-60"
+            className="size-18 rounded-full bg-white active:scale-90 transition-transform flex items-center justify-center cursor-pointer border-0 outline-none shadow-none disabled:opacity-90"
             aria-label="Tomar fotografía"
           >
             {isCapturing || isAnalyzing ? (

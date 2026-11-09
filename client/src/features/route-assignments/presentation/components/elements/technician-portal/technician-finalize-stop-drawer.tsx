@@ -125,13 +125,14 @@ function FinalizeStopWizard({
     detectedDigits,
     ocrError,
   }: TechnicianCameraCapturePayload) => {
-    setEvidenceFile(file);
     setIsCameraOpen(false);
 
-    if (detectedDigits && detectedDigits.length === 6) {
+    if (detectedDigits && detectedDigits.length === 6 && file) {
+      setEvidenceFile(file);
       setMeterReading(detectedDigits);
       setOcrAlertMessage(null);
     } else {
+      setEvidenceFile(null);
       setMeterReading("");
       setOcrAlertMessage(
         ocrError ||

@@ -56,7 +56,7 @@ export interface WaterMeterOtpInputProps {
 }
 
 export interface TechnicianCameraCapturePayload {
-  readonly file: File;
+  readonly file: File | null;
   readonly detectedDigits: string | null;
   readonly ocrError?: string | null;
 }

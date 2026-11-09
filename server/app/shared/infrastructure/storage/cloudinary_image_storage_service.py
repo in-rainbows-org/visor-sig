@@ -43,12 +43,22 @@ class CloudinaryImageStorageService(ImageStorageService):
         if not file_bytes:
             raise ValidationException("El archivo de imagen provisto está vacío.")
 
+        if not (self.cloud_name and self.api_key and self.api_secret):
+            raise DomainException(
+                "Credenciales de Cloudinary incompletas o no cargadas en el servidor. "
+                "Verifica que CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET "
+                "estén definidas en application/server/.env y reinicia el servidor FastAPI."
+            )
+
         target_folder = folder or self.default_folder or "sig"
 
         try:
             upload_params: dict[str, Any] = {
                 "folder": target_folder,
                 "resource_type": "image",
+                "cloud_name": self.cloud_name,
+                "api_key": self.api_key,
+                "api_secret": self.api_secret,
             }
             if filename:
                 upload_params["public_id"] = filename.rsplit(".", 1)[0]

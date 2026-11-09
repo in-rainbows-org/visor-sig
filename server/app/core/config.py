@@ -1,5 +1,10 @@
+from pathlib import Path
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_SERVER_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_FILE = _SERVER_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -135,7 +140,9 @@ class Settings(BaseSettings):
     def is_sqlite(self) -> bool:
         return self.database_url_normalized.startswith("sqlite")
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(_ENV_FILE, ".env"), extra="ignore"
+    )
 
 
 settings = Settings()

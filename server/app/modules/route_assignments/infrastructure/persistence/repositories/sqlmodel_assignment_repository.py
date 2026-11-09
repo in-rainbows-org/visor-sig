@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 
 from app.modules.route_assignments.domain.entities.assignment import Assignment
 from app.modules.route_assignments.domain.repositories.assignment_repository import AssignmentRepository
+from app.modules.route_assignments.domain.value_objects.assignment_status import AssignmentStatus
 from app.modules.route_assignments.infrastructure.persistence.mappers.assignment_mapper import AssignmentMapper
 from app.modules.route_assignments.infrastructure.persistence.models.assignment_model import AssignmentModel
 
@@ -18,6 +19,15 @@ class SQLModelAssignmentRepository(AssignmentRepository):
     def get_by_id(self, assignment_id: UUID) -> Assignment | None:
         statement = select(AssignmentModel).where(
             AssignmentModel.id == assignment_id,
+            AssignmentModel.deleted_date.is_(None),
+        )
+        record = self.db.exec(statement).first()
+        return AssignmentMapper.to_domain(record) if record else None
+
+    def find_in_progress_by_technician(self, technician_id: str) -> Assignment | None:
+        statement = select(AssignmentModel).where(
+            AssignmentModel.technician_id == technician_id,
+            AssignmentModel.status == AssignmentStatus.IN_PROGRESS.value,
             AssignmentModel.deleted_date.is_(None),
         )
         record = self.db.exec(statement).first()

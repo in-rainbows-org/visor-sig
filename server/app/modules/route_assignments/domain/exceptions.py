@@ -1,4 +1,5 @@
 from app.shared.domain.exceptions import (
+    ConflictException,
     DomainException,
     NotFoundException,
     ValidationException,
@@ -65,3 +66,53 @@ class InvalidDateRangeException(ValidationException):
 
     code = "INVALID_DATE_RANGE"
     message = "Debe especificar tanto la fecha inicial como la fecha final del rango, o ambas deben omitirse."
+
+
+class AssignmentOwnershipException(ValidationException):
+    """La asignación no pertenece al técnico autenticado."""
+
+    code = "ASSIGNMENT_NOT_OWNED"
+    message = "La asignación indicada no pertenece al técnico autenticado."
+
+
+class AssignmentDateMismatchException(ValidationException):
+    """La asignación solo puede iniciarse en la fecha programada."""
+
+    code = "ASSIGNMENT_DATE_MISMATCH"
+    message = "La asignación solo puede iniciarse el día para el cual fue programada."
+
+
+class TechnicianActiveAssignmentConflictException(ConflictException):
+    """El técnico ya tiene una asignación activa en progreso."""
+
+    code = "TECHNICIAN_HAS_ACTIVE_ASSIGNMENT"
+    message = "El técnico ya cuenta con una asignación activa en progreso."
+
+
+class InvalidAssignmentStatusTransitionException(ConflictException):
+    """La asignación no se encuentra en estado apto para la transición solicitada."""
+
+    code = "INVALID_ASSIGNMENT_STATUS_TRANSITION"
+    message = "La asignación no se encuentra en estado apto para la transición solicitada."
+
+
+class ActiveStopConflictException(ConflictException):
+    """Ya existe una parada de la asignación en curso (en tránsito o arribada)."""
+
+    code = "ACTIVE_STOP_CONFLICT"
+    message = "Ya existe una parada en tránsito o arribada en esta asignación."
+
+
+class InvalidStopStatusTransitionException(ConflictException):
+    """La parada no se encuentra en el estado previo requerido para esta transición."""
+
+    code = "INVALID_STOP_STATUS_TRANSITION"
+    message = "La parada no se encuentra en el estado previo requerido para esta acción."
+
+
+class MissingStopObservationException(ValidationException):
+    """La observación es obligatoria cuando la parada concluye como fallida."""
+
+    code = "MISSING_STOP_OBSERVATION"
+    message = "Debe proporcionar una observación justificativa al marcar la parada como fallida."
+

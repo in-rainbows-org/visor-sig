@@ -5,15 +5,18 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, RefreshCw, SearchX } from "lucide-react";
 import type { AssignmentStopDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import { deriveActiveStopState } from "@/features/route-assignments/domain/entities/assignment-execution.entity";
 import { useAssignmentDetail } from "../../hooks/use-assignment-detail";
+import { useTechnicianAssignmentExecution } from "../../hooks/use-technician-assignment-execution";
 import { AssignmentDetailSkeleton } from "../elements/detail/assignment-detail-skeleton";
 import { AssignmentDetailCard } from "../elements/detail/assignment-detail-card";
 import { AssignmentDetailStopSheet } from "../elements/detail/assignment-detail-stop-sheet";
 import { TechnicianViewStopsButton } from "../elements/technician-portal/technician-view-stops-button";
 import { TechnicianStopsDrawer } from "../elements/technician-portal/technician-stops-drawer";
-import { TechnicianStopDetailDrawer } from "../elements/technician-portal/technician-stop-detail-drawer";
 import { TechnicianStopsList } from "../elements/technician-portal/technician-stops-list";
 import { TechnicianAssignmentMobileHeader } from "../elements/technician-portal/technician-assignment-mobile-header";
+import { TechnicianActiveStopCard } from "../elements/technician-portal/technician-active-stop-card";
+import { TechnicianFinalizeStopDrawer } from "../elements/technician-portal/technician-finalize-stop-drawer";
 
 // Carga dinámica exclusiva en cliente para evitar fallos de SSR/window con Leaflet
 const AssignmentDetailMapDynamic = dynamic(
@@ -49,15 +52,30 @@ export function TechnicianAssignmentDetailView({
     selectStop,
     clearSelectedStop,
     refetch,
+    updateAssignmentLocally,
   } = useAssignmentDetail(assignmentId);
 
-  const [isStopsDrawerOpen, setIsStopsDrawerOpen] = useState<boolean>(false);
-  const [isStopDetailDrawerOpen, setIsStopDetailDrawerOpen] = useState<boolean>(false);
+  const {
+    startAssignment,
+    startTransit,
+    openNavigation,
+    arriveAtStop,
+    completeStop,
+    isSubmitting,
+    activeAction,
+  } = useTechnicianAssignmentExecution({
+    assignmentId,
+    refetch,
+    updateAssignmentLocally,
+  });
 
-  const handleSelectStop = (stop: AssignmentStopDetail) => {
-    selectStop(stop);
-    // En móviles abre el drawer de información de la parada
-    setIsStopDetailDrawerOpen(true);
+  const [isStopsDrawerOpen, setIsStopsDrawerOpen] = useState<boolean>(false);
+  const [stopToFinalize, setStopToFinalize] = useState<AssignmentStopDetail | null>(null);
+  const [isFinalizeDrawerOpen, setIsFinalizeDrawerOpen] = useState<boolean>(false);
+
+  const handleOpenFinalize = (stop: AssignmentStopDetail) => {
+    setStopToFinalize(stop);
+    setIsFinalizeDrawerOpen(true);
   };
 
   // 1. Estado de carga inicial con Skeleton
@@ -133,6 +151,8 @@ export function TechnicianAssignmentDetailView({
   }
 
   // 4. Vista exitosa de Detalle de Asignación Móvil y Desktop
+  const activeStopState = deriveActiveStopState(assignment.stops);
+
   return (
     <div className="relative w-full h-full overflow-hidden select-none touch-none overscroll-none bg-slate-100">
       {/* A. Mapa interactivo OpenStreetMap a pantalla completa con pines dinámicos y trazos viales */}
@@ -143,20 +163,35 @@ export function TechnicianAssignmentDetailView({
           startLongitude={assignment.startLongitude}
           stops={assignment.stops}
           selectedStop={selectedStop}
-          onSelectStop={handleSelectStop}
-          hideZoomControls={isStopsDrawerOpen || isStopDetailDrawerOpen}
+          hideZoomControls={isStopsDrawerOpen || isFinalizeDrawerOpen}
         />
       </div>
 
-      {/* B. Card superior móvil: Volver, tipo de servicio, inicio de ruta y progreso */}
-      <div className="lg:hidden absolute top-[88px] inset-x-3 sm:inset-x-4 z-[900] pointer-events-auto select-none">
-        <TechnicianAssignmentMobileHeader assignment={assignment} />
+      {/* B. Contenedor móvil superior: Header principal y Card de parada activa sin colisión */}
+      <div className="lg:hidden absolute top-[88px] inset-x-3 sm:inset-x-4 z-[900] pointer-events-none select-none flex flex-col gap-3 transition-all duration-300 ease-in-out">
+        <div className="pointer-events-auto">
+          <TechnicianAssignmentMobileHeader assignment={assignment} />
+        </div>
+
+        {assignment.status === "IN_PROGRESS" && activeStopState && (
+          <div className="pointer-events-auto transition-all duration-300 ease-in-out">
+            <TechnicianActiveStopCard
+              cardState={activeStopState}
+              onStartTransit={startTransit}
+              onNavigate={openNavigation}
+              onArrive={arriveAtStop}
+              onFinalize={handleOpenFinalize}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        )}
       </div>
 
-      {/* C. Botón flotante inferior ancho 'Ver paradas' (exclusivo móvil, visible cuando los drawers están cerrados) */}
-      {!isStopsDrawerOpen && !isStopDetailDrawerOpen && (
+      {/* C. Botón flotante inferior ancho 'Comenzar' / 'Ver detalles' (exclusivo móvil, visible cuando los drawers están cerrados) */}
+      {!isStopsDrawerOpen && !isFinalizeDrawerOpen && (
         <TechnicianViewStopsButton
           totalStops={assignment.totalStops}
+          assignmentStatus={assignment.status}
           onClick={() => setIsStopsDrawerOpen(true)}
           className="lg:hidden"
         />
@@ -170,28 +205,21 @@ export function TechnicianAssignmentDetailView({
         selectedStop={selectedStop}
         totalStops={assignment.totalStops}
         completedStops={assignment.completedStops}
-        onSelectStop={(stop) => {
-          handleSelectStop(stop);
-        }}
+        scheduledDate={assignment.scheduledDate}
+        totalDistanceKm={assignment.totalDistanceKm}
+        assignmentStatus={assignment.status}
+        onStartAssignment={startAssignment}
+        isStarting={isSubmitting && activeAction === "start"}
       />
 
-      {/* E. Drawer de Detalle de la Parada seleccionada (exclusivo móvil estilo card flotante) */}
-      <div className="lg:hidden">
-        <TechnicianStopDetailDrawer
-          stop={selectedStop}
-          open={isStopDetailDrawerOpen}
-          onOpenChange={(open) => {
-            setIsStopDetailDrawerOpen(open);
-            if (!open) {
-              clearSelectedStop();
-            }
-          }}
-          onViewAllStops={() => {
-            setIsStopDetailDrawerOpen(false);
-            setIsStopsDrawerOpen(true);
-          }}
-        />
-      </div>
+      {/* H. Drawer de Finalización de Parada */}
+      <TechnicianFinalizeStopDrawer
+        open={isFinalizeDrawerOpen}
+        onOpenChange={setIsFinalizeDrawerOpen}
+        stop={stopToFinalize}
+        onCompleteStop={completeStop}
+        isSubmitting={isSubmitting && activeAction === "complete"}
+      />
 
       {/* F. Ficha técnica de parada en Escritorio (Framer Motion >= 1024px) */}
       <div className="hidden lg:block">

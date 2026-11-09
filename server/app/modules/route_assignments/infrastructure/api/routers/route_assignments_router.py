@@ -30,15 +30,34 @@ from app.modules.route_assignments.application.use_cases.create_assignment impor
     CreateAssignmentStopCommand,
     CreateAssignmentUseCase,
 )
+from app.modules.route_assignments.application.use_cases.arrive_at_stop import (
+    ArriveAtStopCommand,
+    ArriveAtStopUseCase,
+)
+from app.modules.route_assignments.application.use_cases.complete_stop import (
+    CompleteStopCommand,
+    CompleteStopUseCase,
+)
+from app.modules.route_assignments.application.use_cases.start_assignment import (
+    StartAssignmentCommand,
+    StartAssignmentUseCase,
+)
+from app.modules.route_assignments.application.use_cases.start_stop_transit import (
+    StartStopTransitCommand,
+    StartStopTransitUseCase,
+)
 from app.modules.route_assignments.infrastructure.api.schemas.assignment_schemas import (
     AssignmentDetailRead,
     AssignmentRead,
     AssignmentStopDetailRead,
+    AssignmentStopRead,
     AssignmentSummaryRead,
+    CompleteStopRequest,
     CreateAssignmentRequest,
     PaginatedAssignmentsRead,
     TechnicianOptionRead,
 )
+
 
 from app.modules.route_assignments.infrastructure.api.schemas.route_schemas import (
     CalculateRouteRead,
@@ -353,6 +372,196 @@ def get_my_assignments(
         )
         for dto in dtos
     ]
+
+
+@router.post(
+    "/assignments/{assignment_id}/start",
+    response_model=AssignmentRead,
+    summary="Iniciar jornada de asignación por el técnico",
+)
+@router.post(
+    "/{assignment_id}/start",
+    response_model=AssignmentRead,
+    include_in_schema=False,
+)
+def start_assignment(
+    assignment_id: UUID,
+    db: DBSession,
+    uow: UoWDep,
+    current_user: TechnicianUser,
+) -> AssignmentRead:
+    """Inicia la jornada de trabajo de la asignación tras validar propiedad, fecha y no concurrencia."""
+    repo = SQLModelAssignmentRepository(db)
+    use_case = StartAssignmentUseCase(assignment_repo=repo, uow=uow)
+    command = StartAssignmentCommand(
+        assignment_id=assignment_id,
+        technician_id=current_user.id,
+    )
+    started = use_case.execute(command)
+
+    record = uow.session.get(AssignmentModel, started.id)
+    created_date = record.created_date if record else datetime.now(timezone.utc)
+
+    return AssignmentRead(
+        id=started.id,
+        technician_id=started.technician_id,
+        status=started.status.value,
+        assignment_type=started.assignment_type.value,
+        scheduled_date=started.scheduled_date,
+        start_latitude=started.start_latitude,
+        start_longitude=started.start_longitude,
+        total_stops=started.total_stops,
+        total_distance_km=started.total_distance_km,
+        started_at=started.started_at,
+        completed_at=started.completed_at,
+        created_date=created_date,
+    )
+
+
+@router.post(
+    "/assignments/{assignment_id}/stops/{stop_id}/transit",
+    response_model=AssignmentStopRead,
+    summary="Iniciar traslado del técnico hacia una parada",
+)
+@router.post(
+    "/{assignment_id}/stops/{stop_id}/transit",
+    response_model=AssignmentStopRead,
+    include_in_schema=False,
+)
+def start_stop_transit(
+    assignment_id: UUID,
+    stop_id: UUID,
+    db: DBSession,
+    uow: UoWDep,
+    current_user: TechnicianUser,
+) -> AssignmentStopRead:
+    """Marca el inicio de traslado del técnico hacia la parada respetando la regla de exclusividad."""
+    assignment_repo = SQLModelAssignmentRepository(db)
+    stop_repo = SQLModelAssignmentStopRepository(db)
+    use_case = StartStopTransitUseCase(
+        assignment_repo=assignment_repo,
+        stop_repo=stop_repo,
+        uow=uow,
+    )
+    command = StartStopTransitCommand(
+        assignment_id=assignment_id,
+        stop_id=stop_id,
+        technician_id=current_user.id,
+    )
+    updated_stop = use_case.execute(command)
+
+    return AssignmentStopRead(
+        id=updated_stop.id,
+        assignment_id=updated_stop.assignment_id,
+        codigo_fijo_id=updated_stop.codigo_fijo_id,
+        order_index=updated_stop.order_index,
+        status=updated_stop.status.value,
+        in_transit_at=updated_stop.in_transit_at,
+        arrived_at=updated_stop.arrived_at,
+        completed_at=updated_stop.completed_at,
+        meter_reading=updated_stop.meter_reading,
+        observation=updated_stop.observation,
+        evidence_photo_url=updated_stop.evidence_photo_url,
+    )
+
+
+@router.post(
+    "/assignments/{assignment_id}/stops/{stop_id}/arrive",
+    response_model=AssignmentStopRead,
+    summary="Notificar llegada a la parada (Ya llegué)",
+)
+@router.post(
+    "/{assignment_id}/stops/{stop_id}/arrive",
+    response_model=AssignmentStopRead,
+    include_in_schema=False,
+)
+def arrive_at_stop(
+    assignment_id: UUID,
+    stop_id: UUID,
+    db: DBSession,
+    uow: UoWDep,
+    current_user: TechnicianUser,
+) -> AssignmentStopRead:
+    """Valida estado previo IN_TRANSIT, cambia a ARRIVED y fija arrived_at."""
+    assignment_repo = SQLModelAssignmentRepository(db)
+    stop_repo = SQLModelAssignmentStopRepository(db)
+    use_case = ArriveAtStopUseCase(
+        assignment_repo=assignment_repo,
+        stop_repo=stop_repo,
+        uow=uow,
+    )
+    command = ArriveAtStopCommand(
+        assignment_id=assignment_id,
+        stop_id=stop_id,
+        technician_id=current_user.id,
+    )
+    updated_stop = use_case.execute(command)
+
+    return AssignmentStopRead(
+        id=updated_stop.id,
+        assignment_id=updated_stop.assignment_id,
+        codigo_fijo_id=updated_stop.codigo_fijo_id,
+        order_index=updated_stop.order_index,
+        status=updated_stop.status.value,
+        in_transit_at=updated_stop.in_transit_at,
+        arrived_at=updated_stop.arrived_at,
+        completed_at=updated_stop.completed_at,
+        meter_reading=updated_stop.meter_reading,
+        observation=updated_stop.observation,
+        evidence_photo_url=updated_stop.evidence_photo_url,
+    )
+
+
+@router.post(
+    "/assignments/{assignment_id}/stops/{stop_id}/complete",
+    response_model=AssignmentStopRead,
+    summary="Concluir visita técnica a una parada",
+)
+@router.post(
+    "/{assignment_id}/stops/{stop_id}/complete",
+    response_model=AssignmentStopRead,
+    include_in_schema=False,
+)
+def complete_stop(
+    assignment_id: UUID,
+    stop_id: UUID,
+    request: CompleteStopRequest,
+    db: DBSession,
+    uow: UoWDep,
+    current_user: TechnicianUser,
+) -> AssignmentStopRead:
+    """Registra resultado COMPLETED o FAILED, estampa completed_at, persiste lectura y observaciones."""
+    assignment_repo = SQLModelAssignmentRepository(db)
+    stop_repo = SQLModelAssignmentStopRepository(db)
+    use_case = CompleteStopUseCase(
+        assignment_repo=assignment_repo,
+        stop_repo=stop_repo,
+        uow=uow,
+    )
+    command = CompleteStopCommand(
+        assignment_id=assignment_id,
+        stop_id=stop_id,
+        technician_id=current_user.id,
+        status=request.status.value,
+        observation=request.observation,
+        meter_reading=request.meter_reading,
+    )
+    updated_stop = use_case.execute(command)
+
+    return AssignmentStopRead(
+        id=updated_stop.id,
+        assignment_id=updated_stop.assignment_id,
+        codigo_fijo_id=updated_stop.codigo_fijo_id,
+        order_index=updated_stop.order_index,
+        status=updated_stop.status.value,
+        in_transit_at=updated_stop.in_transit_at,
+        arrived_at=updated_stop.arrived_at,
+        completed_at=updated_stop.completed_at,
+        meter_reading=updated_stop.meter_reading,
+        observation=updated_stop.observation,
+        evidence_photo_url=updated_stop.evidence_photo_url,
+    )
+
 
 
 

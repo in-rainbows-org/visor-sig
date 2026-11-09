@@ -1,7 +1,16 @@
 import { API_BASE_URL } from "@/features/shared/config/api.config";
-import type { ApiMaybeResult, ApiResult } from "@/features/shared/domain/types/api-results";
-import { apiRequestData, apiRequestMaybeData } from "@/features/shared/infrastructure/http/api-client";
+import type {
+  ApiActionResult,
+  ApiMaybeResult,
+  ApiResult,
+} from "@/features/shared/domain/types/api-results";
+import {
+  apiRequestData,
+  apiRequestMaybeData,
+  apiRequestStatus,
+} from "@/features/shared/infrastructure/http/api-client";
 import type { AssignmentDetail } from "../../domain/entities/assignment-detail.entity";
+import type { CompleteStopInput } from "../../domain/entities/assignment-execution.entity";
 import type {
   PaginatedRouteAssignments,
   RouteAssignmentFilter,
@@ -111,6 +120,51 @@ export class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository 
       responseSchema: assignmentDetailReadSchema,
       fallbackMessage: "No se pudo obtener el detalle de la asignación.",
       mapData: (data) => AssignmentDetailMapper.toDomain(data),
+    });
+  }
+
+  async startAssignment(assignmentId: string): Promise<ApiActionResult> {
+    const url = `${this.baseUrl}/assignments/${encodeURIComponent(assignmentId)}/start`;
+    return apiRequestStatus({
+      url,
+      method: "POST",
+      fallbackMessage: "No se pudo iniciar la asignación de ruta.",
+    });
+  }
+
+  async startStopTransit(assignmentId: string, stopId: string): Promise<ApiActionResult> {
+    const url = `${this.baseUrl}/assignments/${encodeURIComponent(assignmentId)}/stops/${encodeURIComponent(stopId)}/transit`;
+    return apiRequestStatus({
+      url,
+      method: "POST",
+      fallbackMessage: "No se pudo iniciar el traslado hacia la parada.",
+    });
+  }
+
+  async arriveAtStop(assignmentId: string, stopId: string): Promise<ApiActionResult> {
+    const url = `${this.baseUrl}/assignments/${encodeURIComponent(assignmentId)}/stops/${encodeURIComponent(stopId)}/arrive`;
+    return apiRequestStatus({
+      url,
+      method: "POST",
+      fallbackMessage: "No se pudo registrar el arribo a la parada.",
+    });
+  }
+
+  async completeStop(
+    assignmentId: string,
+    stopId: string,
+    data: CompleteStopInput
+  ): Promise<ApiActionResult> {
+    const url = `${this.baseUrl}/assignments/${encodeURIComponent(assignmentId)}/stops/${encodeURIComponent(stopId)}/complete`;
+    return apiRequestStatus({
+      url,
+      method: "POST",
+      body: {
+        status: data.status,
+        observation: data.observation ?? null,
+        meter_reading: data.meterReading ?? null,
+      },
+      fallbackMessage: "No se pudo concluir la visita a la parada.",
     });
   }
 }

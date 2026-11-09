@@ -1,18 +1,20 @@
 "use client";
 
 import React from "react";
-import { Calendar, CheckCircle2 } from "lucide-react";
+import { Calendar, CheckCircle2, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   AssignmentStopDetail,
   AssignmentStopStatus,
 } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import type { StopsFilterOption } from "@/features/route-assignments/domain/entities/assignment-execution.entity";
 
 export interface TechnicianStopsListProps {
   stops: readonly AssignmentStopDetail[];
   selectedStop: AssignmentStopDetail | null;
   onSelectStop?: (stop: AssignmentStopDetail) => void;
   showHeader?: boolean;
+  activeFilter?: StopsFilterOption;
   className?: string;
 }
 
@@ -76,6 +78,7 @@ export function TechnicianStopsList({
   selectedStop,
   onSelectStop,
   showHeader = true,
+  activeFilter,
   className = "",
 }: TechnicianStopsListProps) {
   if (stops.length === 0) {
@@ -124,20 +127,27 @@ export function TechnicianStopsList({
     return (
       <div
         key={stop.id}
-        role="button"
-        tabIndex={0}
-        onClick={() => onSelectStop?.(stop)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelectStop?.(stop);
-          }
-        }}
+        role={onSelectStop ? "button" : undefined}
+        tabIndex={onSelectStop ? 0 : undefined}
+        onClick={onSelectStop ? () => onSelectStop(stop) : undefined}
+        onKeyDown={
+          onSelectStop
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectStop(stop);
+                }
+              }
+            : undefined
+        }
         className={cn(
-          "w-full rounded-2xl p-3 sm:p-3.5 border-0 shadow-none transition-all cursor-pointer select-none space-y-2.5 text-left focus:outline-none",
+          "w-full rounded-2xl p-3 sm:p-3.5 border-0 shadow-none transition-all select-none space-y-2.5 text-left focus:outline-none",
+          onSelectStop ? "cursor-pointer" : "cursor-default",
           isSelected
             ? "bg-blue-50/90 ring-2 ring-blue-500"
-            : "bg-slate-100/70 hover:bg-slate-200/60"
+            : onSelectStop
+            ? "bg-slate-100/70 hover:bg-slate-200/60"
+            : "bg-slate-100/70"
         )}
       >
         {/* 1. Código fijo arriba con número de orden de parada */}
@@ -194,6 +204,49 @@ export function TechnicianStopsList({
       </div>
     );
   };
+
+  if (activeFilter) {
+    let filteredList: AssignmentStopDetail[] = [];
+    let emptySubtext = "";
+
+    if (activeFilter === "PENDING") {
+      filteredList = stops.filter(
+        (s) => s.status !== "COMPLETED" && s.status !== "FAILED"
+      );
+      emptySubtext = "Todas las paradas han sido concluidas.";
+    } else if (activeFilter === "FAILED") {
+      filteredList = stops.filter((s) => s.status === "FAILED");
+      emptySubtext = "No se registran visitas fallidas en esta ruta.";
+    } else if (activeFilter === "COMPLETED") {
+      filteredList = stops.filter((s) => s.status === "COMPLETED");
+      emptySubtext = "Aún no se han completado paradas con éxito.";
+    }
+
+    if (filteredList.length === 0) {
+      return (
+        <div
+          className={cn(
+            "flex flex-col items-center justify-center py-10 px-4 text-center rounded-2xl bg-slate-50 border-0 select-none",
+            className
+          )}
+        >
+          <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+            <Inbox className="size-6 stroke-[1.8]" />
+          </div>
+          <p className="text-xs font-semibold text-slate-600">
+            No hay paradas en este estado
+          </p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{emptySubtext}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cn("pt-1 space-y-2.5 shrink-0 flex flex-col", className)}>
+        {filteredList.map(renderStopItem)}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("pt-1 space-y-4 shrink-0 flex flex-col", className)}>

@@ -179,8 +179,10 @@ function MapController({
  */
 function AnimatedRoutePolyline({
   coordinates,
+  isInTransit = false,
 }: {
   coordinates: [number, number][];
+  isInTransit?: boolean;
 }) {
   const [animatedCoords, setAnimatedCoords] = useState<[number, number][]>([]);
   const animFrameRef = useRef<number | null>(null);
@@ -250,27 +252,35 @@ function AnimatedRoutePolyline({
 
   if (!coordinates || coordinates.length < 2) return null;
 
+  // Morado vibrante (#9333ea / #7c3aed) para ruta en curso IN_TRANSIT, azul corporativo (#0e4dcb) para pendientes
+  const glowColor = isInTransit ? "#7c3aed" : "#0e4dcb";
+  const mainColor = isInTransit ? "#9333ea" : "#0e4dcb";
+  const glowWeight = isInTransit ? 8 : 4;
+  const mainWeight = isInTransit ? 6 : 4.5;
+  const glowOpacity = isInTransit ? 0.35 : 0.18;
+  const mainOpacity = isInTransit ? 1.0 : 0.85;
+
   return (
     <>
       {/* 1. Silueta tenue de fondo para mostrar el corredor vial completo */}
       <Polyline
         positions={coordinates}
         pathOptions={{
-          color: "#0e4dcb",
-          weight: 4,
-          opacity: 0.18,
+          color: glowColor,
+          weight: glowWeight,
+          opacity: glowOpacity,
           lineCap: "round",
           lineJoin: "round",
         }}
       />
-      {/* 2. Trazado vial activo en avance progresivo con azul vibrante */}
+      {/* 2. Trazado vial activo en avance progresivo */}
       {animatedCoords.length >= 2 && (
         <Polyline
           positions={animatedCoords}
           pathOptions={{
-            color: "#0e4dcb",
-            weight: 5,
-            opacity: 0.9,
+            color: mainColor,
+            weight: mainWeight,
+            opacity: mainOpacity,
             lineCap: "round",
             lineJoin: "round",
           }}
@@ -279,6 +289,12 @@ function AnimatedRoutePolyline({
     </>
   );
 }
+
+type RouteLegSegment = {
+  key: string;
+  coordinates: [number, number][];
+  isInTransit: boolean;
+};
 
 export type AssignmentDetailMapProps = {
   assignmentStatus?: AssignmentDetailStatus;
@@ -317,11 +333,11 @@ export function AssignmentDetailMap({
   // - Si assignmentStatus === "IN_PROGRESS": únicamente paradas con status "PENDING" o "IN_TRANSIT"
   //   muestran su trazado geométrico. Paradas con "COMPLETED", "FAILED" o "ARRIVED" no muestran ruta.
   // - Si assignmentStatus !== "IN_PROGRESS" (ej. "ASSIGNED", etc.): se muestran todas las rutas.
-  // Agrupamos tramos contiguos para evitar unir saltos discontinuos con líneas rectas erróneas.
-  const routeSegments = useMemo(() => {
+  // - Si una parada está "IN_TRANSIT", su trazado se separa y se colorea de morado (#9333ea / #7c3aed),
+  //   mientras que las paradas pendientes permanecen en azul corporativo (#0e4dcb).
+  const routeSegments = useMemo<RouteLegSegment[]>(() => {
     const isAssignmentInProgress = assignmentStatus === "IN_PROGRESS";
-    const segments: [number, number][][] = [];
-    let currentSegment: [number, number][] = [];
+    const segments: RouteLegSegment[] = [];
 
     const hasLegGeometries = stops.some(
       (s) => s.coordinates && s.coordinates.length > 0
@@ -331,6 +347,22 @@ export function AssignmentDetailMap({
       return segments;
     }
 
+    let currentSegment: [number, number][] = [];
+    let currentIsInTransit: boolean | null = null;
+    let currentKeyPrefix = "";
+
+    const flushCurrentSegment = () => {
+      if (currentSegment.length >= 2 && currentIsInTransit !== null) {
+        segments.push({
+          key: `${currentKeyPrefix}-${currentIsInTransit ? "transit" : "pending"}-${currentSegment.length}`,
+          coordinates: currentSegment,
+          isInTransit: currentIsInTransit,
+        });
+      }
+      currentSegment = [];
+      currentIsInTransit = null;
+    };
+
     for (let i = 0; i < stops.length; i++) {
       const stop = stops[i];
       const shouldRenderRoute =
@@ -339,8 +371,17 @@ export function AssignmentDetailMap({
         stop.status === "IN_TRANSIT";
 
       if (shouldRenderRoute && stop.coordinates && stop.coordinates.length > 0) {
+        const stopIsInTransit = stop.status === "IN_TRANSIT";
+
+        // Si cambia el tipo de segmento (ej. de IN_TRANSIT a PENDING), volcamos el tramo anterior
+        if (currentIsInTransit !== null && currentIsInTransit !== stopIsInTransit) {
+          flushCurrentSegment();
+        }
+
         if (currentSegment.length === 0) {
           currentSegment = [...stop.coordinates];
+          currentIsInTransit = stopIsInTransit;
+          currentKeyPrefix = `seg-${stop.id}`;
         } else {
           const lastPoint = currentSegment[currentSegment.length - 1];
           const firstNewPoint = stop.coordinates[0];
@@ -355,16 +396,11 @@ export function AssignmentDetailMap({
           currentSegment.push(...pointsToAdd);
         }
       } else {
-        if (currentSegment.length >= 2) {
-          segments.push(currentSegment);
-        }
-        currentSegment = [];
+        flushCurrentSegment();
       }
     }
 
-    if (currentSegment.length >= 2) {
-      segments.push(currentSegment);
-    }
+    flushCurrentSegment();
 
     return segments;
   }, [stops, assignmentStatus]);
@@ -410,15 +446,27 @@ export function AssignmentDetailMap({
     };
   }, [routeSegments.length, startLatitude, startLongitude, stops, assignmentStatus]);
 
-  const activeSegments = useMemo<[number, number][][]>(() => {
+  const activeSegments = useMemo<RouteLegSegment[]>(() => {
     if (routeSegments.length > 0) {
-      return routeSegments;
+      // Ordenar para que el segmento IN_TRANSIT quede al final y Leaflet lo dibuje encima del resto
+      return [...routeSegments].sort((a, b) => {
+        if (a.isInTransit && !b.isInTransit) return 1;
+        if (!a.isInTransit && b.isInTransit) return -1;
+        return 0;
+      });
     }
     if (clientRouteCoords.length >= 2) {
-      return [clientRouteCoords];
+      const hasInTransit = stops.some((s) => s.status === "IN_TRANSIT");
+      return [
+        {
+          key: `fallback-osrm-${hasInTransit ? "in-transit" : "normal"}`,
+          coordinates: clientRouteCoords,
+          isInTransit: hasInTransit,
+        },
+      ];
     }
     return [];
-  }, [routeSegments, clientRouteCoords]);
+  }, [routeSegments, clientRouteCoords, stops]);
 
   const allCoordinates = useMemo(() => {
     const list: [number, number][] = [];
@@ -431,7 +479,7 @@ export function AssignmentDetailMap({
       }
     });
     activeSegments.forEach((segment) => {
-      segment.forEach((pt) => list.push(pt));
+      segment.coordinates.forEach((pt) => list.push(pt));
     });
     return list;
   }, [activeSegments, startLatitude, startLongitude, stops]);
@@ -475,11 +523,12 @@ export function AssignmentDetailMap({
           onRegisterZoom={handleRegisterZoom}
         />
 
-        {/* 1. Trazados Viales Animados con Avance Progresivo siguiendo calles reales */}
-        {activeSegments.map((segment, idx) => (
+        {/* 1. Trazados Viales Animados con Avance Progresivo siguiendo calles reales (morado para IN_TRANSIT, azul para pendientes) */}
+        {activeSegments.map((segment) => (
           <AnimatedRoutePolyline
-            key={`route-seg-${idx}-${segment.length}`}
-            coordinates={segment}
+            key={segment.key}
+            coordinates={segment.coordinates}
+            isInTransit={segment.isInTransit}
           />
         ))}
 

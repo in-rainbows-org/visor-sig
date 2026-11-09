@@ -49,6 +49,12 @@ class SQLModelAssignmentStopRepository(AssignmentStopRepository):
         record.target_status = stop.target_status
         record.status = stop.status.value if hasattr(stop.status, "value") else str(stop.status)
         record.route_geometry = stop.route_geometry
+        record.in_transit_at = stop.in_transit_at
+        record.arrived_at = stop.arrived_at
+        record.completed_at = stop.completed_at
+        record.meter_reading = stop.meter_reading
+        record.observation = stop.observation
+        record.evidence_photo_url = stop.evidence_photo_url
 
         if stop.is_active:
             record.deleted_date = None

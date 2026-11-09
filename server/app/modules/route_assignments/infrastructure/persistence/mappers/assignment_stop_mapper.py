@@ -22,6 +22,9 @@ class AssignmentStopMapper:
             in_transit_at=model.in_transit_at,
             arrived_at=model.arrived_at,
             completed_at=model.completed_at,
+            meter_reading=model.meter_reading,
+            evidence_photo_url=model.evidence_photo_url,
+            observation=model.observation,
             is_active=model.deleted_date is None,
         )
 
@@ -39,6 +42,9 @@ class AssignmentStopMapper:
             in_transit_at=entity.in_transit_at,
             arrived_at=entity.arrived_at,
             completed_at=entity.completed_at,
+            meter_reading=entity.meter_reading,
+            evidence_photo_url=entity.evidence_photo_url,
+            observation=entity.observation,
         )
         if not entity.is_active:
             model.deleted_date = datetime.now(timezone.utc)

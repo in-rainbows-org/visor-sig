@@ -7,7 +7,6 @@ import { ArrowRight, Check } from "lucide-react";
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 const PAD = 4;
-const SWELL = 1.03;
 const HOLD = 1500;
 const MIN_SPAN = 180;
 const MAX_SPAN = 500;
@@ -32,7 +31,7 @@ export function SlideConfirm({
   text = "Desliza para confirmar",
   confirmedText = "Asignación confirmada",
   width,
-  height = 46,
+  height = 49,
   corner,
   speed = DEFAULT_SPEED,
   className = "",
@@ -45,7 +44,6 @@ export function SlideConfirm({
 
   const [done, setDone] = useState(false);
   const [held, setHeld] = useState(false);
-  const [hot, setHot] = useState(false);
 
   const track = useRef<HTMLDivElement | null>(null);
   const grip = useRef<{ id: number; grab: number | null; moved: boolean } | null>(null);
@@ -135,16 +133,46 @@ export function SlideConfirm({
     GRIP + clamp(a - v, 0, TRAVEL)
   );
 
-  const over = useTransform(x, (v) => Math.max(0, -v));
-  const squash = useTransform(over, (o) => 1 - Math.min(0.08, o / 110));
-  const wash = useTransform(seen, (v) => v + GRIP);
+  // La barra que va progresando está a la par con la cabeza (v + GRIP) pero por detrás
+  const wash = useTransform([seen, shown], ([v, s]: number[]) =>
+    s === 0 ? span - PAD * 2 : v + GRIP
+  );
   const say = useTransform(seen, [0, TRAVEL * 0.55], [1, 0]);
   const arrow = useTransform([seen, shown], ([v, on]: number[]) =>
     on * clamp(1 - (v - TRAVEL * 0.55) / (TRAVEL * 0.4), 0, 1)
   );
 
-  const sx = useTransform(squash, (q) => q * (hot && !held && !done ? SWELL : 1));
-  const sy = useTransform(squash, (q) => (1 / q) * (hot && !held && !done ? SWELL : 1));
+  // Variant color definitions sin sombras y con degradados limpios
+  const variantStyles = {
+    emerald: {
+      track: "bg-slate-100/90 shadow-none border-0",
+      wash: "bg-[#16a34a]",
+      doneBg: "bg-[#16a34a] text-white shadow-none border-0",
+      say: "text-slate-500 font-semibold",
+      done: "text-white font-bold",
+    },
+    blue: {
+      track: "bg-slate-100/90 shadow-none border-0",
+      wash: "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6]",
+      doneBg: "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white shadow-none border-0",
+      say: "text-slate-500 font-semibold",
+      done: "text-white font-bold",
+    },
+    dark: {
+      track: "bg-slate-200 shadow-none border-0",
+      wash: "bg-slate-900",
+      doneBg: "bg-slate-900 text-white shadow-none border-0",
+      say: "text-slate-600 font-semibold",
+      done: "text-white font-bold",
+    },
+    default: {
+      track: "bg-slate-100/90 shadow-none border-0",
+      wash: "bg-slate-800",
+      doneBg: "bg-slate-800 text-white shadow-none border-0",
+      say: "text-slate-500 font-semibold",
+      done: "text-white font-bold",
+    },
+  }[variant];
 
   const local = useCallback(
     (clientX: number) => {
@@ -236,42 +264,10 @@ export function SlideConfirm({
 
   live.current = { move, up };
 
-  // Variant color definitions con degradado rico en el recorrido
-  const variantStyles = {
-    emerald: {
-      track: "bg-slate-100/90",
-      wash: "bg-[#16a34a]",
-      grip: "bg-[#16a34a] text-white shadow-md shadow-green-600/25",
-      say: "text-slate-500 font-semibold",
-      done: "text-white font-bold",
-    },
-    blue: {
-      track: "bg-slate-100/90",
-      wash: "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6]",
-      grip: "bg-gradient-to-r from-[#0e4dcb] via-[#1a66e5] to-[#2579f6] text-white shadow-md shadow-blue-600/20",
-      say: "text-slate-500 font-semibold",
-      done: "text-white",
-    },
-    dark: {
-      track: "bg-slate-200",
-      wash: "bg-slate-900",
-      grip: "bg-slate-900 text-white shadow-md",
-      say: "text-slate-600 font-semibold",
-      done: "text-white",
-    },
-    default: {
-      track: "bg-slate-100/90",
-      wash: "bg-slate-800",
-      grip: "bg-slate-800 text-white shadow-md",
-      say: "text-slate-500 font-semibold",
-      done: "text-white",
-    },
-  }[variant];
-
   return (
     <div
       ref={containerRef}
-      className={`relative select-none ${className}`}
+      className={`relative select-none shadow-none ${className}`}
       style={{
         width: typeof width === "number" ? width : "100%",
         height: H,
@@ -281,7 +277,7 @@ export function SlideConfirm({
     >
       <motion.div
         ref={track}
-        className={`relative w-full h-full select-none touch-none overflow-hidden transition-colors ${variantStyles.track} ${
+        className={`relative w-full h-full select-none touch-none overflow-hidden transition-colors shadow-none border-0 ${variantStyles.track} ${
           disabled ? "opacity-50 cursor-not-allowed" : ""
         }`}
         style={{
@@ -294,7 +290,7 @@ export function SlideConfirm({
       >
         {/* Ground covered by handle */}
         <motion.i
-          className={`absolute left-[4px] top-[4px] bottom-[4px] z-[1] pointer-events-none ${variantStyles.wash}`}
+          className={`absolute left-[4px] top-[4px] bottom-[4px] z-[1] pointer-events-none shadow-none ${variantStyles.wash}`}
           aria-hidden="true"
           style={{
             width: wash,
@@ -314,16 +310,12 @@ export function SlideConfirm({
         <motion.button
           type="button"
           disabled={disabled}
-          className={`absolute left-[4px] top-[4px] border-0 p-0 z-[2] flex items-center justify-center transition-none outline-none ${
-            variantStyles.grip
+          className={`absolute left-[4px] top-[4px] border-0 p-0 z-[2] flex items-center justify-center transition-none outline-none shadow-none ${
+            done ? variantStyles.doneBg : "bg-transparent"
           } ${held ? "cursor-grabbing" : "cursor-grab"}`}
-          onPointerEnter={() => setHot(true)}
-          onPointerLeave={() => setHot(false)}
           style={{
             height: GRIP,
             x: seen,
-            scaleX: sx,
-            scaleY: sy,
             width: wide,
             borderRadius: gripR,
             transformOrigin: "0% 50%",
@@ -331,13 +323,13 @@ export function SlideConfirm({
           transition={{ type: "spring", stiffness: 380, damping: 34, mass: 0.7 }}
           aria-label={done ? confirmedText : text}
         >
-          {/* Default Arrow */}
+          {/* Flecha blanca que va en la cabeza de la barra de progreso */}
           <motion.span
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            className="absolute inset-0 flex items-center justify-center pointer-events-none text-white"
             style={{ opacity: arrow }}
             aria-hidden="true"
           >
-            <ArrowRight className="size-4 stroke-[2.5]" />
+            <ArrowRight className="size-5 stroke-[2.8]" />
           </motion.span>
 
           {/* Confirmed State with Checkmark */}

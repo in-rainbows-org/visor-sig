@@ -1,8 +1,10 @@
 from datetime import date, datetime
+from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self
 
 from app.modules.route_assignments.domain.value_objects.assignment_type import AssignmentType
 
@@ -112,6 +114,22 @@ class AssignmentStopDetailRead(BaseModel):
     observation: str | None = None
 
 
+class AssignmentStopRead(BaseModel):
+    """Representación pública del resultado de actualización o mutación de una parada."""
+
+    id: UUID
+    assignment_id: UUID
+    codigo_fijo_id: UUID
+    order_index: int
+    status: str
+    in_transit_at: datetime | None = None
+    arrived_at: datetime | None = None
+    completed_at: datetime | None = None
+    meter_reading: str | None = None
+    observation: str | None = None
+    evidence_photo_url: str | None = None
+
+
 class AssignmentDetailRead(BaseModel):
     """Detalle integral de la asignación para supervisión y monitoreo administrativo."""
 
@@ -129,4 +147,36 @@ class AssignmentDetailRead(BaseModel):
     start_longitude: float
     completed_stops: int
     stops: list[AssignmentStopDetailRead] = Field(default_factory=list)
+
+
+class StopCompletionStatus(str, Enum):
+    """Estados admisibles para la conclusión de la visita técnica."""
+
+    SUCCESS = "SUCCESS"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class CompleteStopRequest(BaseModel):
+    """Petición para concluir la visita técnica a una parada."""
+
+    status: StopCompletionStatus = Field(
+        description="Resultado de la visita (SUCCESS, COMPLETED o FAILED)"
+    )
+    observation: str | None = Field(
+        default=None,
+        description="Observaciones técnicas (obligatorias si status es FAILED)",
+    )
+    meter_reading: str | None = Field(
+        default=None,
+        description="Lectura o número de medidor",
+    )
+
+    @model_validator(mode="after")
+    def validate_failed_observation(self) -> Self:
+        if self.status == StopCompletionStatus.FAILED:
+            if not self.observation or not self.observation.strip():
+                raise ValueError("Debe proporcionar una observación justificativa al marcar la parada como fallida.")
+        return self
+
 

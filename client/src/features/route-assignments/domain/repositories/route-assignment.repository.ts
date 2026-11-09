@@ -1,9 +1,15 @@
-import type { ApiMaybeResult, ApiResult } from "@/features/shared/domain/types/api-results";
+import type {
+  ApiActionResult,
+  ApiMaybeResult,
+  ApiResult,
+} from "@/features/shared/domain/types/api-results";
 import type { AssignmentDetail } from "../entities/assignment-detail.entity";
+import type { CompleteStopInput } from "../entities/assignment-execution.entity";
 import type {
   PaginatedRouteAssignments,
   RouteAssignmentFilter,
 } from "../entities/route-assignment.entity";
+
 import type { RouteTechnicianOption } from "../entities/route-technician.entity";
 import type { CalculatedRoute, RouteServiceType } from "../entities/route-wizard.entity";
 
@@ -68,4 +74,29 @@ export interface RouteAssignmentRepository {
    * Obtiene el detalle integral de una asignación específica por su ID.
    */
   getAssignmentDetail(id: string): Promise<ApiMaybeResult<AssignmentDetail>>;
+
+  /**
+   * Inicia formalmente la jornada de trabajo de la asignación.
+   */
+  startAssignment(assignmentId: string): Promise<ApiActionResult>;
+
+  /**
+   * Marca el inicio de traslado hacia una parada.
+   */
+  startStopTransit(assignmentId: string, stopId: string): Promise<ApiActionResult>;
+
+  /**
+   * Notifica el arribo al predio de la parada.
+   */
+  arriveAtStop(assignmentId: string, stopId: string): Promise<ApiActionResult>;
+
+  /**
+   * Concluye la visita a una parada como exitosa o fallida.
+   */
+  completeStop(
+    assignmentId: string,
+    stopId: string,
+    data: CompleteStopInput
+  ): Promise<ApiActionResult>;
 }
+

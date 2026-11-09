@@ -1,4 +1,4 @@
-import type { AssignmentStopDetail } from "./assignment-detail.entity";
+import type { AssignmentStopDetail, AssignmentStopStatus } from "./assignment-detail.entity";
 
 /**
  * Fases operativas derivadas para el card inteligente del técnico
@@ -41,12 +41,57 @@ export type StopsFilterOption = "PENDING" | "FAILED" | "COMPLETED";
 export type StopCompletionChoice = "SUCCESS" | "FAILED";
 
 /**
+ * Pasos del Wizard interactivo de finalización de parada
+ */
+export type FinalizeWizardStep = "OUTCOME" | "METER_READING" | "OBSERVATION";
+
+/**
+ * Props para el componente de overlay del medidor OTP de 6 dígitos
+ */
+export interface WaterMeterOtpInputProps {
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly disabled?: boolean;
+}
+
+/**
+ * Props para el visor de cámara en pantalla completa
+ */
+export interface TechnicianCameraViewfinderProps {
+  readonly isOpen: boolean;
+  readonly onCapture: (file: File) => void;
+  readonly onClose: () => void;
+}
+
+/**
+ * Opción de píldora para comentarios rápidos
+ */
+export interface QuickObservationOption {
+  readonly id: string;
+  readonly label: string;
+}
+
+/**
  * Payload de entrada para la conclusión de la parada
  */
 export interface CompleteStopInput {
   readonly status: StopCompletionChoice;
   readonly observation?: string | null;
   readonly meterReading?: string | null;
+  readonly evidenceFile?: File | null;
+  readonly evidencePhotoUrl?: string | null;
+}
+
+/**
+ * Resultado de parada concluida devuelto por el servidor
+ */
+export interface CompletedStopResult {
+  readonly id: string;
+  readonly status: AssignmentStopStatus;
+  readonly completedAt: Date | null;
+  readonly meterReading?: string | null;
+  readonly observation?: string | null;
+  readonly evidencePhotoUrl?: string | null;
 }
 
 /**

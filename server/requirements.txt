@@ -59,3 +59,4 @@ GeoAlchemy2>=0.17.1
 pyogrio>=0.10.0
 shapely>=2.0.7
 pyproj>=3.7.1
+cloudinary>=1.41.0

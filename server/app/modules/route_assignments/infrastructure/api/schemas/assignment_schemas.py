@@ -171,9 +171,13 @@ class CompleteStopRequest(BaseModel):
         default=None,
         description="Lectura o número de medidor",
     )
+    evidence_photo_url: str | None = Field(
+        default=None,
+        description="URL pública de la fotografía de evidencia de visita",
+    )
 
     @model_validator(mode="after")
-    def validate_failed_observation(self) -> Self:
+    def validate_stop_data(self) -> Self:
         if self.status == StopCompletionStatus.FAILED:
             if not self.observation or not self.observation.strip():
                 raise ValueError("Debe proporcionar una observación justificativa al marcar la parada como fallida.")

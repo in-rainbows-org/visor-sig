@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Request, status
 
 from app.core.config import settings
 from app.core.dependencies import Admin, CurrentUser, DBSession, Role, TechnicianUser, UoWDep
@@ -81,6 +81,12 @@ from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_a
 )
 from app.modules.route_assignments.infrastructure.persistence.readers.sqlmodel_technician_assignments_reader import (
     SqlModelTechnicianAssignmentsReader,
+)
+from app.modules.layers.infrastructure.persistence.repositories.sqlmodel_codigo_fijo_repository import (
+    SqlModelCodigoFijoRepository,
+)
+from app.shared.infrastructure.storage.cloudinary_image_storage_service import (
+    CloudinaryImageStorageService,
 )
 
 import logging
@@ -456,6 +462,7 @@ async def _broadcast_stop_status(
             completed_at=stop.completed_at,
             meter_reading=stop.meter_reading,
             observation=stop.observation,
+            evidence_photo_url=stop.evidence_photo_url,
             completed_stops_count=completed_stops_count,
             total_stops=total_stops,
             is_assignment_completed=is_assignment_completed,
@@ -606,26 +613,62 @@ async def arrive_at_stop(
 async def complete_stop(
     assignment_id: UUID,
     stop_id: UUID,
-    request: CompleteStopRequest,
+    request: Request,
     db: DBSession,
     uow: UoWDep,
     current_user: TechnicianUser,
 ) -> AssignmentStopRead:
-    """Registra resultado COMPLETED o FAILED, estampa completed_at, persiste lectura y observaciones."""
+    """Registra resultado COMPLETED o FAILED, estampa completed_at, persiste lectura, foto en Cloudinary y observaciones."""
+    content_type = request.headers.get("content-type", "")
+
+    image_bytes: bytes | None = None
+    image_filename: str | None = None
+    evidence_photo_url: str | None = None
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        status_val = str(form.get("status") or "").strip()
+        obs_val = form.get("observation")
+        observation = str(obs_val).strip() if obs_val is not None and str(obs_val).strip() else None
+        mr_val = form.get("meter_reading")
+        meter_reading = str(mr_val).strip() if mr_val is not None and str(mr_val).strip() else None
+        ep_val = form.get("evidence_photo_url")
+        evidence_photo_url = str(ep_val).strip() if ep_val is not None and str(ep_val).strip() else None
+
+        file_obj = form.get("file") or form.get("evidence_file")
+        if hasattr(file_obj, "read"):
+            image_bytes = await file_obj.read()
+            image_filename = getattr(file_obj, "filename", None)
+    else:
+        body = await request.json()
+        req = CompleteStopRequest.model_validate(body)
+        status_val = req.status.value
+        observation = req.observation
+        meter_reading = req.meter_reading
+        evidence_photo_url = req.evidence_photo_url
+
     assignment_repo = SQLModelAssignmentRepository(db)
     stop_repo = SQLModelAssignmentStopRepository(db)
+    codigo_fijo_repo = SqlModelCodigoFijoRepository(db)
+    image_storage = CloudinaryImageStorageService()
+
     use_case = CompleteStopUseCase(
         assignment_repo=assignment_repo,
         stop_repo=stop_repo,
         uow=uow,
+        codigo_fijo_repo=codigo_fijo_repo,
+        image_storage=image_storage,
     )
     command = CompleteStopCommand(
         assignment_id=assignment_id,
         stop_id=stop_id,
         technician_id=current_user.id,
-        status=request.status.value,
-        observation=request.observation,
-        meter_reading=request.meter_reading,
+        status=status_val,
+        observation=observation,
+        meter_reading=meter_reading,
+        image_bytes=image_bytes,
+        image_filename=image_filename,
+        evidence_photo_url=evidence_photo_url,
     )
     updated_stop = use_case.execute(command)
 

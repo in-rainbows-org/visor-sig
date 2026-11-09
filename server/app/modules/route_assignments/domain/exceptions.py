@@ -116,3 +116,17 @@ class MissingStopObservationException(ValidationException):
     code = "MISSING_STOP_OBSERVATION"
     message = "Debe proporcionar una observación justificativa al marcar la parada como fallida."
 
+
+class MissingMeterReadingException(ValidationException):
+    """La lectura del medidor es obligatoria cuando la parada concluye como exitosa."""
+
+    code = "MISSING_METER_READING"
+    message = "Debe proporcionar la lectura del medidor al marcar la parada como exitosa."
+
+
+class MissingEvidencePhotoException(ValidationException):
+    """La fotografía de evidencia es obligatoria cuando la parada concluye como exitosa."""
+
+    code = "MISSING_EVIDENCE_PHOTO"
+    message = "Debe adjuntar la fotografía de evidencia al marcar la parada como exitosa."
+

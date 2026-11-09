@@ -198,16 +198,18 @@ export function useTechnicianAssignmentExecution({
         }
 
         // 1. Actualización local inmediata libre de parpadeos
-        const newStopStatus = data.status === "SUCCESS" ? "COMPLETED" : "FAILED";
+        const completedData = res.data;
+        const newStopStatus = completedData?.status ?? (data.status === "SUCCESS" ? "COMPLETED" : "FAILED");
         updateAssignmentLocally?.((prev) => {
           const updatedStops = prev.stops.map((s) =>
             s.id === stopId
               ? {
                   ...s,
                   status: newStopStatus as AssignmentStopDetail["status"],
-                  completedAt: new Date(),
-                  meterReading: data.meterReading ?? s.meterReading,
-                  observation: data.observation ?? s.observation,
+                  completedAt: completedData?.completedAt ?? new Date(),
+                  meterReading: completedData?.meterReading ?? data.meterReading ?? s.meterReading,
+                  observation: completedData?.observation ?? data.observation ?? s.observation,
+                  evidencePhotoUrl: completedData?.evidencePhotoUrl ?? s.evidencePhotoUrl,
                 }
               : s
           );

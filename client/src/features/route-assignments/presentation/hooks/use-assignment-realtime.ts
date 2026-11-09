@@ -205,6 +205,7 @@ export function useAssignmentRealtime({
                   completedAt: p.completed_at ? new Date(p.completed_at) : null,
                   meterReading: p.meter_reading ?? null,
                   observation: p.observation ?? null,
+                  evidencePhotoUrl: p.evidence_photo_url ?? null,
                   completedStopsCount: p.completed_stops_count,
                   totalStops: p.total_stops,
                   isAssignmentCompleted: Boolean(p.is_assignment_completed),

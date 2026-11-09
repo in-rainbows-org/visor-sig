@@ -114,3 +114,59 @@ def test_websocket_location_ping_broadcasts_technician_location(client):
             assert broadcast["payload"]["longitude"] == -63.1821
             assert broadcast["payload"]["heading"] == 180.0
             assert broadcast["payload"]["speed"] == 12.5
+
+
+@pytest.mark.anyio
+async def test_broadcast_stop_status_includes_evidence_photo_url():
+    """Valida que _broadcast_stop_status emita el envelope con evidence_photo_url hacia la sala."""
+    from unittest.mock import AsyncMock
+    from app.modules.route_assignments.domain.entities.assignment_stop import AssignmentStop
+    from app.modules.route_assignments.domain.value_objects.stop_status import StopStatus
+    from app.modules.route_assignments.infrastructure.api.routers.route_assignments_router import (
+        _broadcast_stop_status,
+    )
+    from app.modules.route_assignments.infrastructure.persistence.repositories.sqlmodel_assignment_stop_repository import (
+        SQLModelAssignmentStopRepository,
+    )
+
+    assignment_id = uuid4()
+    stop = AssignmentStop(
+        id=uuid4(),
+        assignment_id=assignment_id,
+        codigo_fijo_id=uuid4(),
+        order_index=1,
+        current_status=1,
+        target_status=3,
+        status=StopStatus.COMPLETED,
+        completed_at=datetime.now(timezone.utc),
+        meter_reading="12345",
+        observation="Trabajo completado",
+        evidence_photo_url="https://res.cloudinary.com/demo/image/upload/v1/sig/evidence.jpg",
+        route_geometry={},
+    )
+
+    mock_stop_repo = MagicMock(spec=SQLModelAssignmentStopRepository)
+    mock_stop_repo.list_by_assignment_id.return_value = [stop]
+
+    with patch(
+        "app.modules.route_assignments.infrastructure.api.routers.route_assignments_router.assignment_connection_manager"
+    ) as mock_manager:
+        mock_manager.broadcast_to_room = AsyncMock()
+
+        await _broadcast_stop_status(assignment_id, stop, mock_stop_repo)
+
+        assert mock_manager.broadcast_to_room.call_count >= 1
+        call_args = mock_manager.broadcast_to_room.call_args_list[0]
+        broadcasted_room = call_args[0][0]
+        broadcasted_envelope = call_args[0][1]
+
+        assert broadcasted_room == assignment_id
+        assert broadcasted_envelope["type"] == "STOP_STATUS_UPDATED"
+        payload = broadcasted_envelope["payload"]
+        assert payload["stop_id"] == str(stop.id)
+        assert payload["meter_reading"] == "12345"
+        assert payload["observation"] == "Trabajo completado"
+        assert (
+            payload["evidence_photo_url"]
+            == "https://res.cloudinary.com/demo/image/upload/v1/sig/evidence.jpg"
+        )

@@ -63,6 +63,12 @@ class Settings(BaseSettings):
         default=10.0, gt=0, env="GOOGLE_ROUTES_TIMEOUT_SECONDS"
     )
 
+    # ── Cloudinary ────────────────────────────────────────────────────────────
+    CLOUDINARY_CLOUD_NAME: str = Field(default="", env="CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY: str = Field(default="", env="CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET: str = Field(default="", env="CLOUDINARY_API_SECRET")
+    CLOUDINARY_FOLDER: str = Field(default="sig", env="CLOUDINARY_FOLDER")
+
 
     # ── Better Auth: Configuración de Roles y JWKS ────────────────────────────
     # Si en el frontend tienes instalado el plugin de 'admin', déjalo en True.

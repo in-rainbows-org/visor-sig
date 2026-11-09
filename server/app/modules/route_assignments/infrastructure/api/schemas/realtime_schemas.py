@@ -61,6 +61,7 @@ class StopStatusUpdatedPayload(BaseModel):
     completed_at: datetime | None = None
     meter_reading: str | None = None
     observation: str | None = None
+    evidence_photo_url: str | None = None
     completed_stops_count: int
     total_stops: int
     is_assignment_completed: bool

@@ -11,6 +11,10 @@ class CodigoFijoRepository(ABC):
     """
 
     @abstractmethod
+    def get_by_id(self, id: uuid.UUID) -> CodigoFijo | None:
+        """Busca un código fijo por su identificador UUID."""
+
+    @abstractmethod
     def find_by_fixed_code(self, fixed_code: int) -> CodigoFijo | None:
         """Busca un código fijo por su código numérico identificador."""
 

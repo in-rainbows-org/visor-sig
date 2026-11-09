@@ -4,7 +4,7 @@ import type {
   ApiResult,
 } from "@/features/shared/domain/types/api-results";
 import type { AssignmentDetail } from "../entities/assignment-detail.entity";
-import type { CompleteStopInput } from "../entities/assignment-execution.entity";
+import type { CompleteStopInput, CompletedStopResult } from "../entities/assignment-execution.entity";
 import type {
   PaginatedRouteAssignments,
   RouteAssignmentFilter,
@@ -97,6 +97,6 @@ export interface RouteAssignmentRepository {
     assignmentId: string,
     stopId: string,
     data: CompleteStopInput
-  ): Promise<ApiActionResult>;
+  ): Promise<ApiResult<CompletedStopResult>>;
 }
 

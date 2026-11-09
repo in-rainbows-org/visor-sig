@@ -53,6 +53,7 @@ export interface RawStopStatusUpdatedPayload {
   readonly completed_at?: string | null;
   readonly meter_reading?: string | null;
   readonly observation?: string | null;
+  readonly evidence_photo_url?: string | null;
   readonly completed_stops_count: number;
   readonly total_stops: number;
   readonly is_assignment_completed: boolean;
@@ -91,6 +92,7 @@ export interface StopStatusUpdatedEvent {
   readonly completedAt: Date | null;
   readonly meterReading: string | null;
   readonly observation: string | null;
+  readonly evidencePhotoUrl: string | null;
   readonly completedStopsCount: number;
   readonly totalStops: number;
   readonly isAssignmentCompleted: boolean;

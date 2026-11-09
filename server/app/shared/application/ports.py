@@ -46,6 +46,20 @@ class Repository(Protocol[T, ID]):
         ...
 
 
+class ImageStorageService(Protocol):
+    """Contrato base para almacenamiento y subida de imágenes a la nube (sin prefijo I)."""
+
+    def upload_image(
+        self,
+        file_bytes: bytes,
+        filename: str | None = None,
+        folder: str = "sig",
+    ) -> str:
+        """Sube los bytes de la imagen a la carpeta designada y retorna su URL segura."""
+        ...
+
+
 # Alias de compatibilidad
 IUnitOfWork = UnitOfWork
 IRepository = Repository
+IImageStorageService = ImageStorageService

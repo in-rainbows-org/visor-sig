@@ -43,3 +43,22 @@ export const assignmentDetailReadSchema = z.object({
 
 export type AssignmentStopDetailReadDTO = z.infer<typeof assignmentStopDetailReadSchema>;
 export type AssignmentDetailReadDTO = z.infer<typeof assignmentDetailReadSchema>;
+
+/**
+ * Esquema de respuesta al concluir una parada técnica
+ */
+export const completedAssignmentStopReadSchema = z.object({
+  id: z.string().uuid(),
+  assignment_id: z.string().uuid(),
+  codigo_fijo_id: z.string().uuid(),
+  order_index: z.number().int(),
+  status: z.enum(["PENDING", "IN_TRANSIT", "ARRIVED", "COMPLETED", "FAILED"]),
+  in_transit_at: z.string().nullable().optional(),
+  arrived_at: z.string().nullable().optional(),
+  completed_at: z.string().nullable().optional(),
+  meter_reading: z.string().nullable().optional(),
+  observation: z.string().nullable().optional(),
+  evidence_photo_url: z.string().nullable().optional(),
+});
+
+export type CompletedAssignmentStopReadDTO = z.infer<typeof completedAssignmentStopReadSchema>;

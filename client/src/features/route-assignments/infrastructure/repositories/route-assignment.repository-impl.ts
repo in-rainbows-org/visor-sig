@@ -6,11 +6,13 @@ import type {
 } from "@/features/shared/domain/types/api-results";
 import {
   apiRequestData,
+  apiRequestFormData,
+  apiRequestFormStatus,
   apiRequestMaybeData,
   apiRequestStatus,
 } from "@/features/shared/infrastructure/http/api-client";
 import type { AssignmentDetail } from "../../domain/entities/assignment-detail.entity";
-import type { CompleteStopInput } from "../../domain/entities/assignment-execution.entity";
+import type { CompleteStopInput, CompletedStopResult } from "../../domain/entities/assignment-execution.entity";
 import type {
   PaginatedRouteAssignments,
   RouteAssignmentFilter,
@@ -25,7 +27,10 @@ import type {
 } from "../../domain/repositories/route-assignment.repository";
 import { AssignmentDetailMapper } from "../mappers/assignment-detail.mapper";
 import { routeAssignmentMapper } from "../mappers/route-assignment.mapper";
-import { assignmentDetailReadSchema } from "../schemas/assignment-detail.schemas";
+import {
+  assignmentDetailReadSchema,
+  completedAssignmentStopReadSchema,
+} from "../schemas/assignment-detail.schemas";
 import {
   calculateRouteReadSchema,
   createdAssignmentReadSchema,
@@ -154,17 +159,38 @@ export class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository 
     assignmentId: string,
     stopId: string,
     data: CompleteStopInput
-  ): Promise<ApiActionResult> {
+  ): Promise<ApiResult<CompletedStopResult>> {
     const url = `${this.baseUrl}/assignments/${encodeURIComponent(assignmentId)}/stops/${encodeURIComponent(stopId)}/complete`;
-    return apiRequestStatus({
+
+    const formData = new FormData();
+    formData.append("status", data.status);
+    if (data.observation && data.observation.trim()) {
+      formData.append("observation", data.observation.trim());
+    }
+    if (data.meterReading && data.meterReading.trim()) {
+      formData.append("meter_reading", data.meterReading.trim());
+    }
+    if (data.evidenceFile) {
+      formData.append("file", data.evidenceFile);
+    }
+    if (data.evidencePhotoUrl && data.evidencePhotoUrl.trim()) {
+      formData.append("evidence_photo_url", data.evidencePhotoUrl.trim());
+    }
+
+    return apiRequestFormData({
       url,
       method: "POST",
-      body: {
-        status: data.status,
-        observation: data.observation ?? null,
-        meter_reading: data.meterReading ?? null,
-      },
+      body: formData,
+      responseSchema: completedAssignmentStopReadSchema,
       fallbackMessage: "No se pudo concluir la visita a la parada.",
+      mapData: (dto): CompletedStopResult => ({
+        id: dto.id,
+        status: dto.status,
+        completedAt: dto.completed_at ? new Date(dto.completed_at) : new Date(),
+        meterReading: dto.meter_reading ?? null,
+        observation: dto.observation ?? null,
+        evidencePhotoUrl: dto.evidence_photo_url ?? null,
+      }),
     });
   }
 }

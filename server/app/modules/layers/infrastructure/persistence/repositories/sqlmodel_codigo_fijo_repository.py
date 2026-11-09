@@ -20,6 +20,17 @@ class SqlModelCodigoFijoRepository(CodigoFijoRepository):
     def __init__(self, session: Session) -> None:
         self.session = session
 
+    def get_by_id(self, id: uuid.UUID) -> CodigoFijo | None:
+        statement = (
+            select(CodigoFijoModel)
+            .where(CodigoFijoModel.id == id)
+            .where(CodigoFijoModel.deleted_date.is_(None))
+        )
+        record = self.session.exec(statement).first()
+        if record is None:
+            return None
+        return self._to_domain(record)
+
     def find_by_fixed_code(self, fixed_code: int) -> CodigoFijo | None:
         statement = (
             select(CodigoFijoModel)

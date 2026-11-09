@@ -2,7 +2,15 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { ChevronRight, ChevronLeft, Camera, RotateCcw, X } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Camera,
+  RotateCcw,
+  X,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Drawer,
@@ -18,7 +26,9 @@ import type {
   CompleteStopInput,
   StopCompletionChoice,
   FinalizeWizardStep,
+  TechnicianCameraCapturePayload,
 } from "@/features/route-assignments/domain/entities/assignment-execution.entity";
+import { useMeterOcr } from "@/features/route-assignments/presentation/hooks/use-meter-ocr";
 import { TechnicianCameraViewfinder } from "./technician-camera-viewfinder";
 import { WaterMeterOtpInput } from "./water-meter-otp-input";
 import { QuickObservationPills } from "./quick-observation-pills";
@@ -50,12 +60,14 @@ function FinalizeStopWizard({
   onClose,
   isSubmitting,
 }: FinalizeStopWizardProps) {
+  const { preloadModel, isInitializing: isOcrInitializing } = useMeterOcr();
   const [step, setStep] = useState<FinalizeWizardStep>("OUTCOME");
   const [choice, setChoice] = useState<StopCompletionChoice | null>(null);
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [meterReading, setMeterReading] = useState<string>("");
   const [observation, setObservation] = useState<string>("");
   const [isCameraOpen, setIsCameraOpen] = useState<boolean>(false);
+  const [ocrAlertMessage, setOcrAlertMessage] = useState<string | null>(null);
 
   const isFailed = choice === "FAILED";
 
@@ -101,17 +113,43 @@ function FinalizeStopWizard({
     }
   };
 
+  const handleOpenCamera = async () => {
+    setOcrAlertMessage(null);
+    // Pre-descarga o carga el modelo en WASM si aún no está montado
+    await preloadModel();
+    setIsCameraOpen(true);
+  };
+
+  const handleCaptureComplete = ({
+    file,
+    detectedDigits,
+    ocrError,
+  }: TechnicianCameraCapturePayload) => {
+    setEvidenceFile(file);
+    setIsCameraOpen(false);
+
+    if (detectedDigits && detectedDigits.length === 6) {
+      setMeterReading(detectedDigits);
+      setOcrAlertMessage(null);
+    } else {
+      setMeterReading("");
+      setOcrAlertMessage(
+        ocrError ||
+          "No se pudieron detectar los 6 dígitos del medidor. Por favor vuelve a tomar la foto enfocando bien los números dentro del marco."
+      );
+    }
+  };
+
   return (
     <>
-      {/* Visor de cámara a pantalla completa */}
-      <TechnicianCameraViewfinder
-        isOpen={isCameraOpen}
-        onCapture={(file) => {
-          setEvidenceFile(file);
-          setIsCameraOpen(false);
-        }}
-        onClose={() => setIsCameraOpen(false)}
-      />
+      {/* Visor de cámara a pantalla completa con soporte OCR (montado únicamente cuando está abierto) */}
+      {isCameraOpen && (
+        <TechnicianCameraViewfinder
+          isOpen={isCameraOpen}
+          onCaptureComplete={handleCaptureComplete}
+          onClose={() => setIsCameraOpen(false)}
+        />
+      )}
 
       <div className="w-full pt-1 shrink-0" />
 
@@ -248,10 +286,16 @@ function FinalizeStopWizard({
               <div className="pt-1">
                 <button
                   type="button"
-                  onClick={() => setIsCameraOpen(true)}
-                  className="w-full h-11 sm:h-12 rounded-full bg-[#0e4dcb] hover:bg-[#0c40a8] active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border-0 outline-none shadow-none transition-all cursor-pointer"
+                  onClick={handleOpenCamera}
+                  disabled={isOcrInitializing}
+                  className="w-full h-11 sm:h-12 rounded-full bg-[#0e4dcb] hover:bg-[#0c40a8] active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border-0 outline-none shadow-none transition-all cursor-pointer disabled:opacity-75 disabled:cursor-wait"
                 >
-                  {evidenceFile ? (
+                  {isOcrInitializing ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin text-white" />
+                      <span>Cargando modelo IA...</span>
+                    </>
+                  ) : evidenceFile ? (
                     <>
                       <RotateCcw className="size-4 stroke-[2.5]" />
                       <span>Volver a tomar foto</span>
@@ -263,6 +307,7 @@ function FinalizeStopWizard({
                     </>
                   )}
                 </button>
+
                 {evidenceFile && (
                   <div className="flex justify-center mt-2 select-none">
                     <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 shadow-xs">
@@ -270,13 +315,35 @@ function FinalizeStopWizard({
                     </span>
                   </div>
                 )}
+
+                {/* Alerta amigable si la IA no detectó los 6 dígitos */}
+                {ocrAlertMessage && (
+                  <div className="mt-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 animate-in fade-in duration-200 select-none">
+                    <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-0.5">
+                      <p className="font-semibold text-amber-950">Lectura no completada por IA</p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        {ocrAlertMessage}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOcrAlertMessage(null)}
+                      className="text-amber-600 hover:text-amber-900 transition p-0.5 cursor-pointer border-0 bg-transparent"
+                      aria-label="Cerrar advertencia"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Medidor OTP interactivo */}
+              {/* Medidor OTP de sólo lectura (autocompletado exclusivamente por IA) */}
               <div className="pt-1">
                 <WaterMeterOtpInput
                   value={meterReading}
                   onChange={setMeterReading}
+                  readOnly={true}
                 />
               </div>
             </motion.div>

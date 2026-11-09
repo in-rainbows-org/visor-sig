@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "allowImportingTsExtensions": true,
+    "types": ["@webgpu/types"]
   },
   "include": [
     "next-env.d.ts",

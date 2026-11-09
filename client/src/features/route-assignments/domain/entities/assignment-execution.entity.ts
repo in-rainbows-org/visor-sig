@@ -52,6 +52,13 @@ export interface WaterMeterOtpInputProps {
   readonly value: string;
   readonly onChange: (value: string) => void;
   readonly disabled?: boolean;
+  readonly readOnly?: boolean;
+}
+
+export interface TechnicianCameraCapturePayload {
+  readonly file: File;
+  readonly detectedDigits: string | null;
+  readonly ocrError?: string | null;
 }
 
 /**
@@ -59,7 +66,8 @@ export interface WaterMeterOtpInputProps {
  */
 export interface TechnicianCameraViewfinderProps {
   readonly isOpen: boolean;
-  readonly onCapture: (file: File) => void;
+  readonly onCaptureComplete?: (data: TechnicianCameraCapturePayload) => void;
+  readonly onCapture?: (file: File) => void;
   readonly onClose: () => void;
 }
 

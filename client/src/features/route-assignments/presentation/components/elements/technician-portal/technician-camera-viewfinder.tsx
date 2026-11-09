@@ -3,12 +3,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, RefreshCw, AlertCircle } from "lucide-react";
 import type { TechnicianCameraViewfinderProps } from "@/features/route-assignments/domain/entities/assignment-execution.entity";
+import { useMeterOcr, DEFAULT_METER_ROI } from "@/features/route-assignments/presentation/hooks/use-meter-ocr";
 
 export function TechnicianCameraViewfinder({
   isOpen,
   onCapture,
+  onCaptureComplete,
   onClose,
 }: TechnicianCameraViewfinderProps) {
+  const { processCapture, isAnalyzing, resetOcrState } = useMeterOcr();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -19,7 +22,7 @@ export function TechnicianCameraViewfinder({
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [isTargetVisible, setIsTargetVisible] = useState<boolean>(false);
 
-  // Detener la cámara limpiamente
+  // Detener la cámara limpiamente y desvincular el elemento video
   const stopStream = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
@@ -31,17 +34,29 @@ export function TechnicianCameraViewfinder({
       });
       streamRef.current = null;
     }
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      } catch {
+        // ignore
+      }
+    }
   };
 
   useEffect(() => {
     if (!isOpen) {
       stopStream();
       setIsTargetVisible(false);
+      setIsCapturing(false);
+      resetOcrState();
       return;
     }
 
     let isMounted = true;
     let timerId: NodeJS.Timeout | null = null;
+    setIsCapturing(false);
+    resetOcrState();
     setIsInitializing(true);
     setHasCameraError(false);
     setErrorMessage("");
@@ -74,12 +89,12 @@ export function TechnicianCameraViewfinder({
         }
         setIsInitializing(false);
 
-        // Después de 1.4 segundos de inicializada, oscurecer y mostrar el marco de enfoque
+        // A exactamente 1.0 segundo de inicializada, oscurecer alrededor y mostrar ventana de enfoque
         timerId = setTimeout(() => {
           if (isMounted) {
             setIsTargetVisible(true);
           }
-        }, 1400);
+        }, 1000);
       } catch (err: unknown) {
         if (!isMounted) return;
         setIsInitializing(false);
@@ -98,10 +113,12 @@ export function TechnicianCameraViewfinder({
       isMounted = false;
       if (timerId) clearTimeout(timerId);
       stopStream();
+      setIsCapturing(false);
+      resetOcrState();
     };
-  }, [isOpen]);
+  }, [isOpen, resetOcrState]);
 
-  const handleCapture = () => {
+  const handleCapture = async () => {
     if (!videoRef.current || isCapturing) return;
 
     try {
@@ -119,37 +136,113 @@ export function TechnicianCameraViewfinder({
 
       ctx.drawImage(video, 0, 0, width, height);
 
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            setIsCapturing(false);
-            return;
-          }
-          const file = new File(
-            [blob],
-            `meter-reading-${Date.now()}.jpg`,
-            { type: "image/jpeg" }
-          );
-          stopStream();
-          onCapture(file);
-          onClose();
-        },
-        "image/jpeg",
-        0.85
+      // Generar archivo de imagen original de alta resolución para evidencia legal
+      const fileBlob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.85)
       );
+
+      if (!fileBlob) {
+        setIsCapturing(false);
+        return;
+      }
+
+      const file = new File(
+        [fileBlob],
+        `meter-reading-${Date.now()}.jpg`,
+        { type: "image/jpeg" }
+      );
+
+      // Ejecutar inferencia OCR sobre la región de interés (ROI)
+      const ocrResult = await processCapture(canvas, DEFAULT_METER_ROI);
+
+      stopStream();
+      setIsCapturing(false);
+      resetOcrState();
+
+      if (onCaptureComplete) {
+        onCaptureComplete({
+          file,
+          detectedDigits: ocrResult.isComplete
+            ? ocrResult.digits
+            : ocrResult.digits.length > 0
+            ? ocrResult.digits
+            : null,
+          ocrError: ocrResult.isComplete
+            ? null
+            : ocrResult.error ?? "No se pudieron detectar los 6 dígitos del medidor.",
+        });
+      } else if (onCapture) {
+        onCapture(file);
+      }
+
+      onClose();
     } catch (err) {
       console.error("Error al capturar imagen:", err);
       setIsCapturing(false);
+      resetOcrState();
     }
   };
 
-  const handleNativeFallback = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNativeFallback = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      stopStream();
-      onCapture(file);
-      onClose();
+    if (!file) return;
+
+    try {
+      setIsCapturing(true);
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const ocrResult = await processCapture(canvas, DEFAULT_METER_ROI);
+        stopStream();
+        setIsCapturing(false);
+        resetOcrState();
+
+        if (onCaptureComplete) {
+          onCaptureComplete({
+            file,
+            detectedDigits: ocrResult.isComplete
+              ? ocrResult.digits
+              : ocrResult.digits.length > 0
+              ? ocrResult.digits
+              : null,
+            ocrError: ocrResult.isComplete
+              ? null
+              : ocrResult.error ?? "No se pudieron detectar los 6 dígitos del medidor.",
+          });
+        } else if (onCapture) {
+          onCapture(file);
+        }
+
+        onClose();
+        return;
+      }
+    } catch (err) {
+      console.error("Error en fallback nativo de cámara:", err);
     }
+
+    stopStream();
+    setIsCapturing(false);
+    resetOcrState();
+    if (onCaptureComplete) {
+      onCaptureComplete({
+        file,
+        detectedDigits: null,
+        ocrError: "No se pudieron leer los dígitos del medidor en la imagen seleccionada.",
+      });
+    } else if (onCapture) {
+      onCapture(file);
+    }
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -169,7 +262,7 @@ export function TechnicianCameraViewfinder({
         <X className="size-5 stroke-[2.5]" />
       </button>
 
-      {/* Visor central de video */}
+      {/* Visor central de video con cutout oscuro externo */}
       <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
         {isInitializing && !hasCameraError && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white z-10">
@@ -218,62 +311,50 @@ export function TechnicianCameraViewfinder({
           />
         )}
 
-        {/* Capa de oscurecimiento sutil que aparece a los ~1.4s */}
+        {/* Ventana de enfoque superior con cutout: el rectángulo es transparente y el resto de la pantalla se oscurece al 55% */}
         {!hasCameraError && !isInitializing && (
           <div
-            className={`absolute inset-0 bg-black/45 pointer-events-none transition-opacity duration-700 ease-out z-10 ${
+            className={`absolute top-[22%] left-1/2 -translate-x-1/2 w-[86%] max-w-[340px] flex flex-col items-center pointer-events-none select-none z-20 transition-opacity duration-500 ease-out ${
               isTargetVisible ? "opacity-100" : "opacity-0"
             }`}
-          />
-        )}
-
-        {/* Rectángulo de enfoque en la parte superior (no centrado) con esquinas sutiles */}
-        {!hasCameraError && !isInitializing && (
-          <div
-            className={`absolute top-[22%] left-1/2 -translate-x-1/2 w-[86%] max-w-[340px] flex flex-col items-center gap-3 pointer-events-none select-none z-20 transition-all duration-700 ease-out ${
-              isTargetVisible
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-95"
-            }`}
           >
-            {/* Marco de enfoque con esquinas definidas */}
-            <div className="relative w-full h-32 sm:h-36 rounded-2xl border border-white/30 backdrop-brightness-110">
-              {/* Esquina superior izquierda */}
-              <div className="absolute -top-[2px] -left-[2px] size-5 border-t-3 border-l-3 border-white rounded-tl-xl" />
-              {/* Esquina superior derecha */}
-              <div className="absolute -top-[2px] -right-[2px] size-5 border-t-3 border-r-3 border-white rounded-tr-xl" />
-              {/* Esquina inferior izquierda */}
-              <div className="absolute -bottom-[2px] -left-[2px] size-5 border-b-3 border-l-3 border-white rounded-bl-xl" />
-              {/* Esquina inferior derecha */}
-              <div className="absolute -bottom-[2px] -right-[2px] size-5 border-b-3 border-r-3 border-white rounded-br-xl" />
-
-              {/* Guía central punteada tenue */}
-              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 border-t border-dashed border-white/25" />
-            </div>
+            {/* Rectángulo de enfoque limpio, sin esquinas toscas, con sombra de oscurecimiento exterior */}
+            <div
+              className="relative w-full h-32 sm:h-36 rounded-2xl border-2 border-white/70"
+              style={{
+                boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.55)",
+              }}
+            />
 
             {/* Texto inferior de indicación */}
-            <p className="text-white text-xs sm:text-[13px] font-semibold text-center drop-shadow-md px-2 leading-snug">
+            <p className="mt-3 text-white/95 text-xs sm:text-[13px] font-medium text-center drop-shadow-md px-2 leading-snug">
               Enfoca aquí los números del medidor de agua
             </p>
           </div>
         )}
       </div>
 
-      {/* Barra inferior con disparador */}
-      <div className="absolute bottom-0 inset-x-0 z-20 pb-8 pt-6 flex items-center justify-center bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+      {/* Barra inferior con disparador plano y simple (sin fondo, sin sombra, sin contorno) */}
+      <div className="absolute bottom-0 inset-x-0 z-20 pb-8 pt-6 flex flex-col items-center justify-center bg-transparent">
+        {/* Notificación flotante de análisis OCR */}
+        {(isCapturing || isAnalyzing) && (
+          <div className="mb-4 px-4 py-1.5 rounded-full bg-black/80 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-2 border border-white/20 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <RefreshCw className="size-3.5 animate-spin text-sky-400" />
+            <span>Reconociendo lectura con IA...</span>
+          </div>
+        )}
+
         {!hasCameraError && (
           <button
             type="button"
             onClick={handleCapture}
-            disabled={isCapturing || isInitializing}
-            className="size-20 rounded-full border-4 border-white/80 bg-white/95 shadow-2xl active:scale-90 transition-transform flex items-center justify-center cursor-pointer outline-none disabled:opacity-50"
+            disabled={isCapturing || isAnalyzing || isInitializing}
+            className="size-18 rounded-full bg-white active:scale-90 transition-transform flex items-center justify-center cursor-pointer border-0 outline-none shadow-none disabled:opacity-60"
             aria-label="Tomar fotografía"
           >
-            <div className="size-16 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center">
-              {isCapturing && (
-                <RefreshCw className="size-6 text-slate-500 animate-spin" />
-              )}
-            </div>
+            {isCapturing || isAnalyzing ? (
+              <RefreshCw className="size-7 text-slate-700 animate-spin" />
+            ) : null}
           </button>
         )}
       </div>

@@ -8,14 +8,16 @@ export function WaterMeterOtpInput({
   value,
   onChange,
   disabled = false,
+  readOnly = false,
 }: WaterMeterOtpInputProps) {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const isInputDisabled = disabled || readOnly;
 
   // Convert incoming value (up to 6 chars) into an array of 6 slots
   const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
 
   const handleInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return;
+    if (isInputDisabled) return;
     const rawVal = e.target.value;
     // Extract only digits
     const cleanDigit = rawVal.replace(/\D/g, "").slice(-1);
@@ -33,7 +35,7 @@ export function WaterMeterOtpInput({
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (disabled) return;
+    if (isInputDisabled) return;
 
     if (e.key === "Backspace") {
       if (!digits[index] && index > 0) {
@@ -59,7 +61,7 @@ export function WaterMeterOtpInput({
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    if (disabled) return;
+    if (isInputDisabled) return;
     e.preventDefault();
     const pasted = e.clipboardData.getData("text");
     const clean = pasted.replace(/\D/g, "").slice(0, 6);
@@ -83,7 +85,7 @@ export function WaterMeterOtpInput({
           priority
         />
 
-        {/* Capa de 6 inputs transparentes superpuestos sobre las casillas */}
+        {/* Capa de 6 casillas transparentes superpuestas */}
         <div
           className="absolute grid grid-cols-6 items-center justify-items-center gap-[1.5%]"
           style={{
@@ -93,26 +95,36 @@ export function WaterMeterOtpInput({
             height: "18.2%",
           }}
         >
-          {digits.map((digit, idx) => (
-            <input
-              key={idx}
-              ref={(el) => {
-                inputRefs.current[idx] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={1}
-              value={digit}
-              disabled={disabled}
-              onChange={(e) => handleInputChange(idx, e)}
-              onKeyDown={(e) => handleKeyDown(idx, e)}
-              onPaste={handlePaste}
-              onFocus={(e) => e.target.select()}
-              className="w-full h-full text-center font-mono font-black text-slate-900 text-2xl sm:text-3xl leading-tight bg-transparent border-0 outline-none ring-0 shadow-none focus:outline-none focus:ring-0 p-0 m-0 cursor-text caret-black disabled:opacity-40"
-              aria-label={`Dígito ${idx + 1} del medidor`}
-            />
-          ))}
+          {digits.map((digit, idx) =>
+            readOnly ? (
+              <div
+                key={idx}
+                className="w-full h-full flex items-center justify-center font-mono font-black text-slate-900 text-2xl sm:text-3xl leading-none select-none pointer-events-none cursor-default"
+                aria-label={`Dígito ${idx + 1} del medidor: ${digit || "vacío"}`}
+              >
+                {digit}
+              </div>
+            ) : (
+              <input
+                key={idx}
+                ref={(el) => {
+                  inputRefs.current[idx] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={1}
+                value={digit}
+                disabled={disabled}
+                onChange={(e) => handleInputChange(idx, e)}
+                onKeyDown={(e) => handleKeyDown(idx, e)}
+                onPaste={handlePaste}
+                onFocus={(e) => e.target.select()}
+                className="w-full h-full text-center font-mono font-black text-slate-900 text-2xl sm:text-3xl leading-tight bg-transparent border-0 outline-none ring-0 shadow-none focus:outline-none focus:ring-0 p-0 m-0 cursor-text caret-black disabled:opacity-40"
+                aria-label={`Dígito ${idx + 1} del medidor`}
+              />
+            )
+          )}
         </div>
       </div>
     </div>

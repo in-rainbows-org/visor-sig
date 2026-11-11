@@ -6,13 +6,59 @@ import {
 } from "../../domain/services/meter-ocr.service";
 
 /**
+ * Nombres canónicos de las 12 clases del modelo YOLOv8 de medidores:
+ * 0: meter   (cuerpo completo del medidor)
+ * 1: window  (ventana / marco del dial de dígitos)
+ * 2..11: '0'..'9' (dígitos numéricos individuales)
+ */
+const CLASS_NAMES = [
+  "meter",
+  "window",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+] as const;
+
+interface YoloDetection {
+  readonly classId: number;
+  readonly className: string;
+  readonly confidence: number;
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
+  readonly xCenter: number;
+  readonly yCenter: number;
+}
+
+interface PreprocessedImage {
+  readonly tensor: ort.Tensor;
+  readonly scale: number;
+  readonly padX: number;
+  readonly padY: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+interface ExtractedReading {
+  readonly window: YoloDetection | null;
+  readonly cleanDigits: readonly YoloDetection[];
+  readonly digits6: string;
+  readonly isComplete: boolean;
+  readonly confidence: number;
+  readonly rawText: string;
+}
+
+/**
  * Servicio de detección de dígitos en medidores de agua utilizando
  * el modelo YOLOv8-Nano especializado ejecutado localmente con ONNX Runtime Web.
- *
- * Mapeo de clases del modelo:
- *  0: meter
- *  1: window
- *  2..11: dígitos numéricos '0' al '9'
  */
 export class YoloMeterOcrService implements MeterOcrService {
   private static instance: YoloMeterOcrService | null = null;
@@ -23,6 +69,8 @@ export class YoloMeterOcrService implements MeterOcrService {
   private readonly MODEL_URL = "/models/water_meter_yolov8n.onnx";
   private readonly CACHE_NAME = "water-meter-yolo-model-v1";
   private readonly INPUT_SIZE = 640;
+  private readonly CANDIDATE_THRESHOLD = 0.03; // Umbral calibrado de candidatos YOLOv8
+  private readonly NMS_IOU_THRESHOLD = 0.45;
 
   private constructor() {
     if (typeof window !== "undefined") {
@@ -45,8 +93,7 @@ export class YoloMeterOcrService implements MeterOcrService {
   }
 
   /**
-   * Carga el modelo desde la caché local del navegador (CacheStorage) o lo descarga
-   * y guarda en caché para garantizar funcionamiento 100% offline.
+   * Carga el modelo desde CacheStorage o lo descarga de red garantizando soporte 100% offline.
    */
   public async ensureLoaded(): Promise<boolean> {
     if (typeof window === "undefined") {
@@ -65,7 +112,7 @@ export class YoloMeterOcrService implements MeterOcrService {
       try {
         let modelBuffer: ArrayBuffer | null = null;
 
-        // 1. Intentar leer desde CacheStorage para garantizar soporte offline
+        // 1. Intentar leer desde CacheStorage para funcionamiento offline
         if ("caches" in window) {
           try {
             const cache = await caches.open(this.CACHE_NAME);
@@ -93,7 +140,7 @@ export class YoloMeterOcrService implements MeterOcrService {
           modelBuffer = await res.arrayBuffer();
         }
 
-        // 3. Crear sesión ONNX con aceleración WebGPU o fallback a WASM SIMD
+        // 3. Crear sesión ONNX con WebGPU o fallback a WASM SIMD
         this.session = await ort.InferenceSession.create(modelBuffer, {
           executionProviders: ["webgpu", "wasm"],
           graphOptimizationLevel: "all",
@@ -115,7 +162,10 @@ export class YoloMeterOcrService implements MeterOcrService {
   }
 
   /**
-   * Ejecuta la detección sobre la imagen del medidor y extrae los dígitos ordenados de izq a der.
+   * Ejecuta la detección inteligente sobre la captura de cámara:
+   * 1. Inferencia principal sobre la imagen completa (contexto de medidor + ventana).
+   * 2. Si la imagen completa no detecta 6 dígitos, ejecuta inferencia sobre la ROI enfocada.
+   * 3. Filtra dígitos dentro de la ventana de lectura y selecciona los 6 dígitos canónicos.
    */
   public async recognizeMeterReading(
     sourceCanvas: HTMLCanvasElement,
@@ -134,49 +184,40 @@ export class YoloMeterOcrService implements MeterOcrService {
         };
       }
 
-      // 1. Recortar la región de interés (ROI) enfocada por el usuario
-      const croppedCanvas = cropAndPreprocessRoi(sourceCanvas, roi);
+      // Paso 1: Inferencia sobre la imagen completa (permite a YOLO detectar el marco del medidor y dial)
+      const fullResult = await this.runInferenceOnCanvas(sourceCanvas);
 
-      // 2. Preprocesar canvas a tensor YOLO [1, 3, 640, 640]
-      const inputTensor = this.preprocessCanvasToTensor(croppedCanvas);
-
-      // 3. Ejecutar inferencia ONNX
-      const feeds: Record<string, ort.Tensor> = {};
-      const inputName = this.session.inputNames[0] || "images";
-      feeds[inputName] = inputTensor;
-
-      const outputMap = await this.session.run(feeds);
-      const outputName = this.session.outputNames[0] || "output0";
-      const outputTensor = outputMap[outputName];
-
-      if (!outputTensor) {
-        throw new Error("El modelo no devolvió ningún tensor de salida.");
+      if (fullResult.isComplete) {
+        return {
+          success: true,
+          rawText: fullResult.rawText,
+          digits: fullResult.digits6,
+          isComplete: true,
+          confidence: Math.round(fullResult.confidence * 100) / 100,
+          error: null,
+        };
       }
 
-      // 4. Parsear las predicciones YOLO y filtrar los dígitos
-      const digits = this.parseAndFilterDigits(
-        outputTensor.data as Float32Array,
-        0.25, // Score threshold
-        0.40  // NMS IoU threshold
-      );
+      // Paso 2: Fallback sobre el recorte de la región de interés (ROI)
+      const croppedCanvas = cropAndPreprocessRoi(sourceCanvas, roi);
+      const cropResult = await this.runInferenceOnCanvas(croppedCanvas);
 
-      const digitsString = digits.map((d) => d.digit).join("");
-      const isComplete = digitsString.length >= 6;
-      const normalizedDigits = digitsString.slice(0, 6);
-      const avgConfidence =
-        digits.length > 0
-          ? digits.reduce((sum, d) => sum + d.score, 0) / digits.length
-          : 0;
+      // Elegir el mejor resultado entre el marco completo y el recorte ROI
+      const best =
+        cropResult.digits6.length > fullResult.digits6.length ||
+        (cropResult.isComplete && !fullResult.isComplete)
+          ? cropResult
+          : fullResult;
 
       return {
-        success: isComplete,
-        rawText: digitsString,
-        digits: normalizedDigits,
-        isComplete,
-        confidence: Math.round(avgConfidence * 100) / 100,
-        error: isComplete
+        success: best.isComplete,
+        rawText: best.rawText,
+        digits: best.digits6,
+        isComplete: best.isComplete,
+        confidence: Math.round(best.confidence * 100) / 100,
+        error: best.isComplete
           ? null
-          : `Se detectaron ${digitsString.length} dígitos de los 6 requeridos.`,
+          : `Se detectaron ${best.digits6.length} dígitos de los 6 requeridos del medidor. Enfoca los números dentro del marco o ingresa la lectura manualmente.`,
       };
     } catch (error) {
       const message =
@@ -196,9 +237,46 @@ export class YoloMeterOcrService implements MeterOcrService {
   }
 
   /**
-   * Prepara un Float32Array con formato CHW [1, 3, 640, 640] y normalización 0..1
+   * Ejecuta la inferencia ONNX sobre un canvas y procesa las detecciones.
    */
-  private preprocessCanvasToTensor(source: HTMLCanvasElement): ort.Tensor {
+  private async runInferenceOnCanvas(canvas: HTMLCanvasElement): Promise<ExtractedReading> {
+    if (!this.session) {
+      throw new Error("Sesión ONNX no disponible.");
+    }
+
+    const preprocessed = this.preprocessCanvasToTensor(canvas);
+    const feeds: Record<string, ort.Tensor> = {};
+    const inputName = this.session.inputNames[0] || "images";
+    feeds[inputName] = preprocessed.tensor;
+
+    const outputMap = await this.session.run(feeds);
+    const outputName = this.session.outputNames[0] || "output0";
+    const outputTensor = outputMap[outputName];
+
+    if (!outputTensor) {
+      throw new Error("El modelo no devolvió ningún tensor de salida.");
+    }
+
+    const detections = this.decodeOutput(
+      outputTensor.data as Float32Array,
+      preprocessed.width,
+      preprocessed.height,
+      preprocessed.padX,
+      preprocessed.padY,
+      preprocessed.scale,
+      this.CANDIDATE_THRESHOLD
+    );
+
+    return this.extractDigits(detections);
+  }
+
+  /**
+   * Preprocesa el canvas aplicando letterboxing estándar Ultralytics:
+   * - Mantiene relación de aspecto
+   * - Relleno neutro gris rgb(114, 114, 114)
+   * - Normalización RGB en rango [0, 1] y layout CHW [1, 3, 640, 640]
+   */
+  private preprocessCanvasToTensor(source: HTMLCanvasElement): PreprocessedImage {
     const targetW = this.INPUT_SIZE;
     const targetH = this.INPUT_SIZE;
 
@@ -208,11 +286,11 @@ export class YoloMeterOcrService implements MeterOcrService {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("No se pudo obtener el contexto 2D para preprocesamiento.");
 
-    // Fondo negro
-    ctx.fillStyle = "#000000";
+    // Fondo gris neutro oficial de Ultralytics YOLOv8 (114, 114, 114)
+    ctx.fillStyle = "rgb(114, 114, 114)";
     ctx.fillRect(0, 0, targetW, targetH);
 
-    // Letterboxing centrado para conservar la relación de aspecto
+    // Letterboxing centrado
     const scale = Math.min(targetW / source.width, targetH / source.height);
     const drawW = Math.round(source.width * scale);
     const drawH = Math.round(source.height * scale);
@@ -229,105 +307,209 @@ export class YoloMeterOcrService implements MeterOcrService {
     for (let i = 0; i < totalPixels; i++) {
       floatData[i] = pixels[i * 4] / 255.0; // R
       floatData[totalPixels + i] = pixels[i * 4 + 1] / 255.0; // G
-      floatData[totalPixels * 2 + i] = pixels[i * 4 + 2] / 255.0; // B
+      floatData[2 * totalPixels + i] = pixels[i * 4 + 2] / 255.0; // B
     }
 
-    return new ort.Tensor("float32", floatData, [1, 3, targetH, targetW]);
+    return {
+      tensor: new ort.Tensor("float32", floatData, [1, 3, targetH, targetW]),
+      scale,
+      padX,
+      padY,
+      width: source.width,
+      height: source.height,
+    };
   }
 
   /**
-   * Parsea el tensor YOLOv8 de forma [1, 16, 8400], aplica NMS y ordena de izquierda a derecha.
+   * Decodifica la salida YOLOv8 [1, 16, 8400]:
+   * - Evalúa las 12 clases simultáneamente para evitar falsos positivos
+   * - Proyecta coordenadas a la escala original
+   * - Aplica NMS consciente de clase
    */
-  private parseAndFilterDigits(
+  private decodeOutput(
     data: Float32Array,
-    scoreThreshold: number,
-    iouThreshold: number
-  ): Array<{ digit: string; score: number; x: number }> {
-    const numAnchors = 8400;
-    const rawDetections: Array<{
-      digit: string;
-      score: number;
-      x: number;
-      y: number;
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-    }> = [];
+    origWidth: number,
+    origHeight: number,
+    padX: number,
+    padY: number,
+    scale: number,
+    candidateThreshold: number
+  ): YoloDetection[] {
+    const boxCount = 8400;
+    const numClasses = CLASS_NAMES.length; // 12
+    const detections: YoloDetection[] = [];
 
-    for (let i = 0; i < numAnchors; i++) {
-      // Clases 2 a 11 corresponden a dígitos '0' a '9' (canales 6 a 15)
-      let bestDigitScore = -1;
-      let bestDigitClass = -1;
+    for (let i = 0; i < boxCount; i++) {
+      let bestScore = -Infinity;
+      let bestClass = 0;
 
-      for (let c = 2; c <= 11; c++) {
-        const score = data[(4 + c) * numAnchors + i];
-        if (score > bestDigitScore) {
-          bestDigitScore = score;
-          bestDigitClass = c;
+      // Evalúa TODAS las clases (0..11) para evitar que meter o window compitan como dígitos
+      for (let c = 0; c < numClasses; c++) {
+        const score = data[(4 + c) * boxCount + i];
+        if (score > bestScore) {
+          bestScore = score;
+          bestClass = c;
         }
       }
 
-      if (bestDigitScore >= scoreThreshold) {
-        const xc = data[0 * numAnchors + i];
-        const yc = data[1 * numAnchors + i];
-        const w = data[2 * numAnchors + i];
-        const h = data[3 * numAnchors + i];
+      if (bestScore < candidateThreshold) continue;
 
-        const x1 = xc - w / 2;
-        const y1 = yc - h / 2;
-        const x2 = xc + w / 2;
-        const y2 = yc + h / 2;
+      const xc = data[i];
+      const yc = data[boxCount + i];
+      const w = data[2 * boxCount + i];
+      const h = data[3 * boxCount + i];
 
-        rawDetections.push({
-          digit: String(bestDigitClass - 2),
-          score: bestDigitScore,
-          x: xc,
-          y: yc,
-          x1,
-          y1,
-          x2,
-          y2,
-        });
+      const x1 = Math.max(0, (xc - w / 2 - padX) / scale);
+      const y1 = Math.max(0, (yc - h / 2 - padY) / scale);
+      const x2 = Math.min(origWidth, (xc + w / 2 - padX) / scale);
+      const y2 = Math.min(origHeight, (yc + h / 2 - padY) / scale);
+
+      if (x2 <= x1 || y2 <= y1) continue;
+
+      detections.push({
+        classId: bestClass,
+        className: CLASS_NAMES[bestClass],
+        confidence: bestScore,
+        x1,
+        y1,
+        x2,
+        y2,
+        xCenter: (x1 + x2) / 2,
+        yCenter: (y1 + y2) / 2,
+      });
+    }
+
+    return this.classAwareNms(detections, this.NMS_IOU_THRESHOLD);
+  }
+
+  /**
+   * Non-Maximum Suppression (NMS) consciente de clase
+   */
+  private classAwareNms(detections: YoloDetection[], iouThreshold: number): YoloDetection[] {
+    const sorted = [...detections].sort((a, b) => b.confidence - a.confidence);
+    const kept: YoloDetection[] = [];
+
+    for (const det of sorted) {
+      const overlaps = kept.some(
+        (existing) =>
+          existing.classId === det.classId && this.boxIou(existing, det) >= iouThreshold
+      );
+      if (!overlaps) {
+        kept.push(det);
       }
     }
 
-    // 1. Ordenar por score descendente para NMS
-    rawDetections.sort((a, b) => b.score - a.score);
+    return kept;
+  }
 
-    // 2. Non-Maximum Suppression (NMS)
-    const filtered: typeof rawDetections = [];
-    while (rawDetections.length > 0) {
-      const best = rawDetections.shift()!;
-      filtered.push(best);
+  /**
+   * Elimina detecciones duplicadas en la misma posición espacial entre dígitos
+   */
+  private removeDuplicateDigits(
+    digits: YoloDetection[],
+    iouThreshold = 0.40
+  ): YoloDetection[] {
+    const sorted = [...digits].sort((a, b) => b.confidence - a.confidence);
+    const kept: YoloDetection[] = [];
 
-      for (let j = rawDetections.length - 1; j >= 0; j--) {
-        const cur = rawDetections[j];
-        const xx1 = Math.max(best.x1, cur.x1);
-        const yy1 = Math.max(best.y1, cur.y1);
-        const xx2 = Math.min(best.x2, cur.x2);
-        const yy2 = Math.min(best.y2, cur.y2);
+    for (const det of sorted) {
+      if (kept.every((old) => this.boxIou(det, old) < iouThreshold)) {
+        kept.push(det);
+      }
+    }
 
-        const interArea = Math.max(0, xx2 - xx1) * Math.max(0, yy2 - yy1);
-        const a1 = (best.x2 - best.x1) * (best.y2 - best.y1);
-        const a2 = (cur.x2 - cur.x1) * (cur.y2 - cur.y1);
-        const unionArea = a1 + a2 - interArea;
+    return kept.sort((a, b) => a.xCenter - b.xCenter);
+  }
 
-        const iou = unionArea > 0 ? interArea / unionArea : 0;
-        if (iou > iouThreshold) {
-          rawDetections.splice(j, 1);
+  /**
+   * Procesa la jerarquía de detecciones:
+   * 1. Encuentra la mejor ventana del medidor ('window')
+   * 2. Filtra únicamente los dígitos dentro de dicha ventana (aislando suciedad y números de serie externos)
+   * 3. Ordena de izquierda a derecha y normaliza a 6 dígitos
+   */
+  private extractDigits(detections: YoloDetection[]): ExtractedReading {
+    const windows = detections.filter(
+      (d) => d.className === "window" && d.confidence >= 0.05
+    );
+    const bestWindow =
+      windows.sort((a, b) => b.confidence - a.confidence)[0] || null;
+
+    let digitCandidates = detections.filter(
+      (d) => d.classId >= 2 && d.classId <= 11
+    );
+
+    // Si se detectó la ventana de lectura, filtrar dígitos contenidos en ella
+    if (bestWindow) {
+      const insideWindow = digitCandidates.filter(
+        (d) => this.overlapRatio(d, bestWindow) >= 0.35
+      );
+      if (insideWindow.length >= 3) {
+        digitCandidates = insideWindow;
+      }
+    }
+
+    const cleanDigits = this.removeDuplicateDigits(digitCandidates, 0.40);
+    const rawText = cleanDigits.map((d) => d.className).join("");
+
+    // Normalizar a exactamente 6 dígitos
+    let digits6 = "";
+    if (cleanDigits.length === 6) {
+      digits6 = rawText;
+    } else if (cleanDigits.length > 6) {
+      // Si hay más de 6 dígitos detectados (p. ej. medidores con 7 u 8 casillas con decimales),
+      // seleccionamos la subsecuencia continua de 6 dígitos con mayor confianza promedio
+      let bestAvg = -1;
+      let bestIdx = 0;
+      for (let i = 0; i <= cleanDigits.length - 6; i++) {
+        const sub = cleanDigits.slice(i, i + 6);
+        const avg = sub.reduce((acc, d) => acc + d.confidence, 0) / 6;
+        if (avg > bestAvg) {
+          bestAvg = avg;
+          bestIdx = i;
         }
       }
+      digits6 = cleanDigits
+        .slice(bestIdx, bestIdx + 6)
+        .map((d) => d.className)
+        .join("");
+    } else {
+      digits6 = rawText;
     }
 
-    // 3. Ordenar horizontalmente de izquierda a derecha (por posición X)
-    filtered.sort((a, b) => a.x - b.x);
+    const avgConf =
+      cleanDigits.length > 0
+        ? cleanDigits.reduce((acc, d) => acc + d.confidence, 0) / cleanDigits.length
+        : 0;
 
-    return filtered.map((d) => ({
-      digit: d.digit,
-      score: d.score,
-      x: d.x,
-    }));
+    return {
+      window: bestWindow,
+      cleanDigits,
+      digits6,
+      isComplete: digits6.length === 6,
+      confidence: avgConf,
+      rawText,
+    };
+  }
+
+  private boxIou(a: YoloDetection, b: YoloDetection): number {
+    const iw = Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1));
+    const ih = Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+    const inter = iw * ih;
+    const areaA = Math.max(0, a.x2 - a.x1) * Math.max(0, a.y2 - a.y1);
+    const areaB = Math.max(0, b.x2 - b.x1) * Math.max(0, b.y2 - b.y1);
+    const union = areaA + areaB - inter;
+    return union > 0 ? inter / union : 0;
+  }
+
+  private overlapRatio(box: YoloDetection, container: YoloDetection, margin = 4): number {
+    const cx1 = container.x1 - margin;
+    const cy1 = container.y1 - margin;
+    const cx2 = container.x2 + margin;
+    const cy2 = container.y2 + margin;
+    const iw = Math.max(0, Math.min(box.x2, cx2) - Math.max(box.x1, cx1));
+    const ih = Math.max(0, Math.min(box.y2, cy2) - Math.max(box.y1, cy1));
+    const boxArea = Math.max(0, box.x2 - box.x1) * Math.max(0, box.y2 - box.y1);
+    return boxArea > 0 ? (iw * ih) / boxArea : 0;
   }
 
   public async dispose(): Promise<void> {

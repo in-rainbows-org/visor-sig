@@ -127,11 +127,20 @@ function FinalizeStopWizard({
   }: TechnicianCameraCapturePayload) => {
     setIsCameraOpen(false);
 
+    console.log("[Drawer] 📥 handleCaptureComplete recibido:", {
+      detectedDigits,
+      longitud: detectedDigits?.length ?? 0,
+      tieneArchivo: !!file,
+      error: ocrError,
+    });
+
     if (detectedDigits && detectedDigits.length === 6 && file) {
+      console.log(`[Drawer] ✅ Asignando lectura de 6 dígitos al OTP input: "${detectedDigits}"`);
       setEvidenceFile(file);
       setMeterReading(detectedDigits);
       setOcrAlertMessage(null);
     } else {
+      console.warn(`[Drawer] ⚠️ Lectura incompleta (${detectedDigits?.length ?? 0}/6 dígitos). Mostrando alerta.`);
       setEvidenceFile(null);
       setMeterReading("");
       setOcrAlertMessage(

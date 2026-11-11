@@ -131,6 +131,8 @@ export function TechnicianCameraViewfinder({
       const width = video.videoWidth || 1280;
       const height = video.videoHeight || 720;
 
+      console.log(`%c[Camera] 📸 Fotograma capturado: ${width}x${height}px`, "color: #3b82f6; font-weight: bold;");
+
       // Pausar inmediatamente la reproducción de video para congelar la cámara
       video.pause();
 
@@ -164,8 +166,10 @@ export function TechnicianCameraViewfinder({
         { type: "image/jpeg" }
       );
 
-      // Ejecutar inferencia OCR sobre la región de interés (ROI)
+      // Ejecutar inferencia OCR sobre la captura
+      console.log("[Camera] 🤖 Enviando fotograma a modelo YOLOv8 local...");
       const ocrResult = await processCapture(canvas, DEFAULT_METER_ROI);
+      console.log("[Camera] 🏁 Resultado de inferencia recibido:", ocrResult);
 
       stopStream();
       setIsCapturing(false);
@@ -188,7 +192,7 @@ export function TechnicianCameraViewfinder({
 
       onClose();
     } catch (err) {
-      console.error("Error al capturar imagen:", err);
+      console.error("[Camera] ❌ Error al capturar imagen:", err);
       setCapturedPreviewUrl(null);
       setIsCapturing(false);
       resetOcrState();

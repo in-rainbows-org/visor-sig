@@ -54,6 +54,8 @@ interface ExtractedReading {
   readonly isComplete: boolean;
   readonly confidence: number;
   readonly rawText: string;
+  readonly elapsedMs: number;
+  readonly allDetections: readonly YoloDetection[];
 }
 
 /**
@@ -67,16 +69,25 @@ export class YoloMeterOcrService implements MeterOcrService {
   private isModelReady = false;
 
   private readonly MODEL_URL = "/models/water_meter_yolov8n.onnx";
-  private readonly CACHE_NAME = "water-meter-yolo-model-v1";
+  private readonly CACHE_NAME = "water-meter-yolo-model-v2";
   private readonly INPUT_SIZE = 640;
-  private readonly CANDIDATE_THRESHOLD = 0.03; // Umbral calibrado de candidatos YOLOv8
+  private readonly CANDIDATE_THRESHOLD = 0.08; // Umbral robusto de candidato (evita ruido)
   private readonly NMS_IOU_THRESHOLD = 0.45;
 
   private constructor() {
     if (typeof window !== "undefined") {
       ort.env.wasm.wasmPaths = "/ort-wasm/";
-      if (typeof navigator !== "undefined" && navigator.hardwareConcurrency) {
+      // Solo habilitar multithreading si crossOriginIsolated es verdadero (SharedArrayBuffer)
+      const canMultiThread =
+        typeof crossOriginIsolated !== "undefined" &&
+        crossOriginIsolated &&
+        typeof SharedArrayBuffer !== "undefined";
+
+      if (canMultiThread && navigator.hardwareConcurrency) {
         ort.env.wasm.numThreads = Math.min(navigator.hardwareConcurrency, 4);
+      } else {
+        // En navegadores móviles estándar sin cabeceras COOP/COEP, forzar 1 hilo para evitar advertencias
+        ort.env.wasm.numThreads = 1;
       }
     }
   }
@@ -110,7 +121,9 @@ export class YoloMeterOcrService implements MeterOcrService {
 
     this.loadPromise = (async () => {
       try {
+        console.log("%c[YOLO-OCR] 🔄 Inicializando modelo ONNX local (WASM Engine)...", "color: #3b82f6; font-weight: bold;");
         let modelBuffer: ArrayBuffer | null = null;
+        let sourceOrigin = "RED";
 
         // 1. Intentar leer desde CacheStorage para funcionamiento offline
         if ("caches" in window) {
@@ -119,7 +132,9 @@ export class YoloMeterOcrService implements MeterOcrService {
             const cachedResponse = await cache.match(this.MODEL_URL);
             if (cachedResponse) {
               modelBuffer = await cachedResponse.arrayBuffer();
+              sourceOrigin = "CACHE_STORAGE";
             } else {
+              console.log("[YOLO-OCR] Descargando pesos del modelo:", this.MODEL_URL);
               const netResponse = await fetch(this.MODEL_URL);
               if (netResponse.ok) {
                 await cache.put(this.MODEL_URL, netResponse.clone());
@@ -127,7 +142,7 @@ export class YoloMeterOcrService implements MeterOcrService {
               }
             }
           } catch (cacheErr) {
-            console.warn("No se pudo acceder a CacheStorage, usando fetch directo:", cacheErr);
+            console.warn("[YOLO-OCR] No se pudo acceder a CacheStorage, usando fetch directo:", cacheErr);
           }
         }
 
@@ -140,16 +155,31 @@ export class YoloMeterOcrService implements MeterOcrService {
           modelBuffer = await res.arrayBuffer();
         }
 
-        // 3. Crear sesión ONNX con WebGPU o fallback a WASM SIMD
+        console.log(
+          `%c[YOLO-OCR] 📦 Binario cargado desde ${sourceOrigin} (${(modelBuffer.byteLength / 1024 / 1024).toFixed(2)} MB)`,
+          "color: #10b981;"
+        );
+
+        // 3. Crear sesión ONNX EXCLUSIVAMENTE con WASM CPU
+        // NOTA IMPORTANTE: En navegadores móviles (Android Chrome), WebGPU tiene fallos conocidos
+        // de precisión de subgrupos en shaders que devuelven 0.5 constante. Usar exclusivamente 'wasm'
+        // garantiza ejecución bit-exact y determinista en todos los dispositivos.
+        const startInit = performance.now();
         this.session = await ort.InferenceSession.create(modelBuffer, {
-          executionProviders: ["webgpu", "wasm"],
+          executionProviders: ["wasm"],
           graphOptimizationLevel: "all",
         });
+
+        const initTime = Math.round(performance.now() - startInit);
+        console.log(
+          `%c[YOLO-OCR] ✅ Sesión ONNX WASM lista en ${initTime}ms. Entradas: [${this.session.inputNames.join(", ")}], Salidas: [${this.session.outputNames.join(", ")}]`,
+          "color: #10b981; font-weight: bold;"
+        );
 
         this.isModelReady = true;
         return true;
       } catch (error) {
-        console.error("Error al inicializar sesión YOLOv8 con onnxruntime-web:", error);
+        console.error("%c[YOLO-OCR] ❌ Error fatal al inicializar sesión YOLOv8 con onnxruntime-web:", "color: #ef4444; font-weight: bold;", error);
         this.session = null;
         this.isModelReady = false;
         return false;
@@ -184,10 +214,31 @@ export class YoloMeterOcrService implements MeterOcrService {
         };
       }
 
+      console.group("%c[YOLO-OCR] 📸 Ejecutando reconocimiento en captura", "color: #6366f1; font-weight: bold;");
+      console.log(`[YOLO-OCR] Dimensiones de imagen recibida: ${sourceCanvas.width}x${sourceCanvas.height}px`);
+
       // Paso 1: Inferencia sobre la imagen completa (permite a YOLO detectar el marco del medidor y dial)
-      const fullResult = await this.runInferenceOnCanvas(sourceCanvas);
+      console.log("[YOLO-OCR] 🔍 Pasada 1: Inferencia sobre imagen COMPLETA...");
+      const fullResult = await this.runInferenceOnCanvas(sourceCanvas, "Pasada 1 (Completa)");
+
+      console.log(
+        `[YOLO-OCR] 📊 Pasada 1 completada en ${fullResult.elapsedMs}ms:`,
+        {
+          ventanaDetectada: fullResult.window ? `${fullResult.window.className} (${(fullResult.window.confidence * 100).toFixed(1)}%)` : "No detectada",
+          totalDígitosRaw: fullResult.cleanDigits.length,
+          dígitosSecuencia: fullResult.rawText,
+          candidato6Dígitos: fullResult.digits6,
+          esCompleto: fullResult.isComplete,
+        }
+      );
 
       if (fullResult.isComplete) {
+        console.log(
+          `%c[YOLO-OCR] 🎉 ÉXITO en Pasada 1: Se extrajeron los 6 dígitos canónicos: "${fullResult.digits6}" (Confianza promedio: ${(fullResult.confidence * 100).toFixed(1)}%)`,
+          "color: #10b981; font-weight: bold;"
+        );
+        console.groupEnd();
+        this.exposeDebugGlobals(fullResult);
         return {
           success: true,
           rawText: fullResult.rawText,
@@ -199,8 +250,21 @@ export class YoloMeterOcrService implements MeterOcrService {
       }
 
       // Paso 2: Fallback sobre el recorte de la región de interés (ROI)
+      console.log("[YOLO-OCR] ⚠️ Pasada 1 no obtuvo 6 dígitos. Ejecutando Pasada 2 sobre recorte ROI enfocado...");
       const croppedCanvas = cropAndPreprocessRoi(sourceCanvas, roi);
-      const cropResult = await this.runInferenceOnCanvas(croppedCanvas);
+      console.log(`[YOLO-OCR] Dimensiones ROI recortada: ${croppedCanvas.width}x${croppedCanvas.height}px`);
+      const cropResult = await this.runInferenceOnCanvas(croppedCanvas, "Pasada 2 (ROI Recorte)");
+
+      console.log(
+        `[YOLO-OCR] 📊 Pasada 2 completada en ${cropResult.elapsedMs}ms:`,
+        {
+          ventanaDetectada: cropResult.window ? `${cropResult.window.className} (${(cropResult.window.confidence * 100).toFixed(1)}%)` : "No detectada",
+          totalDígitosRaw: cropResult.cleanDigits.length,
+          dígitosSecuencia: cropResult.rawText,
+          candidato6Dígitos: cropResult.digits6,
+          esCompleto: cropResult.isComplete,
+        }
+      );
 
       // Elegir el mejor resultado entre el marco completo y el recorte ROI
       const best =
@@ -208,6 +272,14 @@ export class YoloMeterOcrService implements MeterOcrService {
         (cropResult.isComplete && !fullResult.isComplete)
           ? cropResult
           : fullResult;
+
+      console.log(
+        `%c[YOLO-OCR] 🏁 Decisión final seleccionada: "${best.digits6}" (isComplete: ${best.isComplete}, dígitos: ${best.digits6.length}/6)`,
+        best.isComplete ? "color: #10b981; font-weight: bold;" : "color: #f59e0b; font-weight: bold;"
+      );
+      console.groupEnd();
+
+      this.exposeDebugGlobals(best);
 
       return {
         success: best.isComplete,
@@ -217,14 +289,15 @@ export class YoloMeterOcrService implements MeterOcrService {
         confidence: Math.round(best.confidence * 100) / 100,
         error: best.isComplete
           ? null
-          : `Se detectaron ${best.digits6.length} dígitos de los 6 requeridos del medidor. Enfoca los números dentro del marco o ingresa la lectura manualmente.`,
+          : `Se detectaron ${best.digits6.length} dígitos de los 6 requeridos del medidor. Enfoca bien los números dentro del marco o ingresa la lectura manualmente.`,
       };
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Error inesperado durante la detección de dígitos.";
-      console.error("Error en inferencia YOLO de medidor:", error);
+      console.error("%c[YOLO-OCR] ❌ Error en proceso recognizeMeterReading:", "color: #ef4444; font-weight: bold;", error);
+      console.groupEnd();
       return {
         success: false,
         rawText: "",
@@ -239,17 +312,21 @@ export class YoloMeterOcrService implements MeterOcrService {
   /**
    * Ejecuta la inferencia ONNX sobre un canvas y procesa las detecciones.
    */
-  private async runInferenceOnCanvas(canvas: HTMLCanvasElement): Promise<ExtractedReading> {
+  private async runInferenceOnCanvas(canvas: HTMLCanvasElement, label: string): Promise<ExtractedReading> {
     if (!this.session) {
       throw new Error("Sesión ONNX no disponible.");
     }
 
+    const t0 = performance.now();
     const preprocessed = this.preprocessCanvasToTensor(canvas);
     const feeds: Record<string, ort.Tensor> = {};
     const inputName = this.session.inputNames[0] || "images";
     feeds[inputName] = preprocessed.tensor;
 
+    const tInferStart = performance.now();
     const outputMap = await this.session.run(feeds);
+    const inferDuration = Math.round(performance.now() - tInferStart);
+
     const outputName = this.session.outputNames[0] || "output0";
     const outputTensor = outputMap[outputName];
 
@@ -258,7 +335,7 @@ export class YoloMeterOcrService implements MeterOcrService {
     }
 
     const detections = this.decodeOutput(
-      outputTensor.data as Float32Array,
+      outputTensor,
       preprocessed.width,
       preprocessed.height,
       preprocessed.padX,
@@ -267,7 +344,18 @@ export class YoloMeterOcrService implements MeterOcrService {
       this.CANDIDATE_THRESHOLD
     );
 
-    return this.extractDigits(detections);
+    const extracted = this.extractDigits(detections);
+    const totalElapsed = Math.round(performance.now() - t0);
+
+    console.log(
+      `[YOLO-OCR] ⚡ ${label} - Inferencia modelo: ${inferDuration}ms, Tiempo total: ${totalElapsed}ms, Detecciones totales: ${detections.length}`
+    );
+
+    return {
+      ...extracted,
+      elapsedMs: totalElapsed,
+      allDetections: detections,
+    };
   }
 
   /**
@@ -321,13 +409,12 @@ export class YoloMeterOcrService implements MeterOcrService {
   }
 
   /**
-   * Decodifica la salida YOLOv8 [1, 16, 8400]:
-   * - Evalúa las 12 clases simultáneamente para evitar falsos positivos
-   * - Proyecta coordenadas a la escala original
-   * - Aplica NMS consciente de clase
+   * Decodifica la salida YOLOv8 soportando de forma dinámica tanto
+   * layout channels-first [1, 16, 8400] como anchor-first [1, 8400, 16].
+   * Descarta anclajes planos (fallos de shader donde todas las clases dan 0.5).
    */
   private decodeOutput(
-    data: Float32Array,
+    outputTensor: ort.Tensor,
     origWidth: number,
     origHeight: number,
     padX: number,
@@ -335,29 +422,48 @@ export class YoloMeterOcrService implements MeterOcrService {
     scale: number,
     candidateThreshold: number
   ): YoloDetection[] {
-    const boxCount = 8400;
+    const data = outputTensor.data as Float32Array;
+    const dims = outputTensor.dims;
     const numClasses = CLASS_NAMES.length; // 12
+
+    // Detección dinámica de dimensiones
+    const isChannelsFirst = dims[1] === 16 || dims[1] === numClasses + 4;
+    const boxCount = isChannelsFirst ? dims[2] : dims[1];
+
+    console.log(`[YOLO-OCR] 📐 Tensor dims: [${dims.join(", ")}] -> layout: ${isChannelsFirst ? "CHANNELS_FIRST [1, 16, 8400]" : "ANCHOR_FIRST [1, 8400, 16]"}, Cajas: ${boxCount}`);
+
     const detections: YoloDetection[] = [];
 
     for (let i = 0; i < boxCount; i++) {
-      let bestScore = -Infinity;
+      // Función helper para leer el canal `ch` del anclaje `i` de forma transparente
+      const getVal = (ch: number): number => {
+        return isChannelsFirst ? data[ch * boxCount + i] : data[i * (numClasses + 4) + ch];
+      };
+
+      // 1. Extraer puntajes de las 12 clases y verificar que no sea una distribución plana (ej. 0.500)
+      let minScore = Infinity;
+      let maxScore = -Infinity;
       let bestClass = 0;
 
-      // Evalúa TODAS las clases (0..11) para evitar que meter o window compitan como dígitos
       for (let c = 0; c < numClasses; c++) {
-        const score = data[(4 + c) * boxCount + i];
-        if (score > bestScore) {
-          bestScore = score;
+        const score = getVal(4 + c);
+        if (score < minScore) minScore = score;
+        if (score > maxScore) {
+          maxScore = score;
           bestClass = c;
         }
       }
 
-      if (bestScore < candidateThreshold) continue;
+      // Si la diferencia entre la clase máxima y mínima es insignificante (< 0.05),
+      // significa que el anclaje tiene valores planos/corruptos (como el fallo de 0.5), por lo que se descarta
+      if (maxScore - minScore < 0.05) continue;
 
-      const xc = data[i];
-      const yc = data[boxCount + i];
-      const w = data[2 * boxCount + i];
-      const h = data[3 * boxCount + i];
+      if (maxScore < candidateThreshold) continue;
+
+      const xc = getVal(0);
+      const yc = getVal(1);
+      const w = getVal(2);
+      const h = getVal(3);
 
       const x1 = Math.max(0, (xc - w / 2 - padX) / scale);
       const y1 = Math.max(0, (yc - h / 2 - padY) / scale);
@@ -369,7 +475,7 @@ export class YoloMeterOcrService implements MeterOcrService {
       detections.push({
         classId: bestClass,
         className: CLASS_NAMES[bestClass],
-        confidence: bestScore,
+        confidence: maxScore,
         x1,
         y1,
         x2,
@@ -379,7 +485,18 @@ export class YoloMeterOcrService implements MeterOcrService {
       });
     }
 
-    return this.classAwareNms(detections, this.NMS_IOU_THRESHOLD);
+    const nmsDetections = this.classAwareNms(detections, this.NMS_IOU_THRESHOLD);
+
+    if (nmsDetections.length > 0) {
+      console.log(
+        `[YOLO-OCR] 🎯 Detecciones NMS válidas (${nmsDetections.length}):`,
+        nmsDetections.slice(0, 10).map((d) => `${d.className} (${(d.confidence * 100).toFixed(1)}%)`)
+      );
+    } else {
+      console.log("[YOLO-OCR] ⚠️ Ninguna detección superó el umbral de confianza.");
+    }
+
+    return nmsDetections;
   }
 
   /**
@@ -427,7 +544,7 @@ export class YoloMeterOcrService implements MeterOcrService {
    * 2. Filtra únicamente los dígitos dentro de dicha ventana (aislando suciedad y números de serie externos)
    * 3. Ordena de izquierda a derecha y normaliza a 6 dígitos
    */
-  private extractDigits(detections: YoloDetection[]): ExtractedReading {
+  private extractDigits(detections: YoloDetection[]): Omit<ExtractedReading, "elapsedMs" | "allDetections"> {
     const windows = detections.filter(
       (d) => d.className === "window" && d.confidence >= 0.05
     );
@@ -438,10 +555,17 @@ export class YoloMeterOcrService implements MeterOcrService {
       (d) => d.classId >= 2 && d.classId <= 11
     );
 
+    console.log(
+      `[YOLO-OCR] 🪟 Ventana de lectura: ${bestWindow ? `Detectada con ${(bestWindow.confidence * 100).toFixed(1)}% de confianza` : "No encontrada (usando búsqueda directa)"}`
+    );
+
     // Si se detectó la ventana de lectura, filtrar dígitos contenidos en ella
     if (bestWindow) {
       const insideWindow = digitCandidates.filter(
         (d) => this.overlapRatio(d, bestWindow) >= 0.35
+      );
+      console.log(
+        `[YOLO-OCR] 🔢 Dígitos dentro de ventana: ${insideWindow.length} de ${digitCandidates.length} candidatos totales`
       );
       if (insideWindow.length >= 3) {
         digitCandidates = insideWindow;
@@ -450,6 +574,10 @@ export class YoloMeterOcrService implements MeterOcrService {
 
     const cleanDigits = this.removeDuplicateDigits(digitCandidates, 0.40);
     const rawText = cleanDigits.map((d) => d.className).join("");
+
+    console.log(
+      `[YOLO-OCR] 🔢 Dígitos limpios ordenados (Izq -> Der): [${cleanDigits.map((d) => `${d.className}@${Math.round(d.xCenter)}px`).join(", ")}] -> Raw: "${rawText}"`
+    );
 
     // Normalizar a exactamente 6 dígitos
     let digits6 = "";
@@ -472,8 +600,10 @@ export class YoloMeterOcrService implements MeterOcrService {
         .slice(bestIdx, bestIdx + 6)
         .map((d) => d.className)
         .join("");
+      console.log(`[YOLO-OCR] ✂️ Normalizado a 6 dígitos continuos óptimos (índice ${bestIdx}..${bestIdx + 6}): "${digits6}"`);
     } else {
       digits6 = rawText;
+      console.log(`[YOLO-OCR] ⚠️ Se detectaron ${cleanDigits.length} dígitos (se requieren 6): "${digits6}"`);
     }
 
     const avgConf =
@@ -510,6 +640,20 @@ export class YoloMeterOcrService implements MeterOcrService {
     const ih = Math.max(0, Math.min(box.y2, cy2) - Math.max(box.y1, cy1));
     const boxArea = Math.max(0, box.x2 - box.x1) * Math.max(0, box.y2 - box.y1);
     return boxArea > 0 ? (iw * ih) / boxArea : 0;
+  }
+
+  private exposeDebugGlobals(result: ExtractedReading): void {
+    if (typeof window !== "undefined") {
+      (window as unknown as Record<string, unknown>).__YOLO_OCR_LAST_RESULT__ = {
+        digits6: result.digits6,
+        isComplete: result.isComplete,
+        confidence: result.confidence,
+        rawText: result.rawText,
+        cleanDigits: result.cleanDigits,
+        window: result.window,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 
   public async dispose(): Promise<void> {

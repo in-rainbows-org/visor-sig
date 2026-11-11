@@ -41,10 +41,10 @@ export function cropAndPreprocessRoi(
   sourceCanvas: HTMLCanvasElement,
   roi: RoiCropBounds
 ): HTMLCanvasElement {
-  const sx = Math.floor(sourceCanvas.width * roi.leftPercent);
-  const sy = Math.floor(sourceCanvas.height * roi.topPercent);
-  const sw = Math.floor(sourceCanvas.width * roi.widthPercent);
-  const sh = Math.floor(sourceCanvas.height * roi.heightPercent);
+  const sx = Math.max(0, Math.floor(sourceCanvas.width * roi.leftPercent));
+  const sy = Math.max(0, Math.floor(sourceCanvas.height * roi.topPercent));
+  const sw = Math.min(sourceCanvas.width - sx, Math.floor(sourceCanvas.width * roi.widthPercent));
+  const sh = Math.min(sourceCanvas.height - sy, Math.floor(sourceCanvas.height * roi.heightPercent));
 
   const cropped = document.createElement("canvas");
   cropped.width = Math.max(sw, 320);
@@ -53,8 +53,7 @@ export function cropAndPreprocessRoi(
   const ctx = cropped.getContext("2d");
   if (!ctx) return sourceCanvas;
 
-  // Filtro de realce de dígitos para OCR
-  ctx.filter = "contrast(1.45) brightness(1.05) grayscale(1)";
+  // Dibuja el recorte preservando colores RGB naturales (vital para detectar números rojos y fondos negros)
   ctx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, cropped.width, cropped.height);
 
   return cropped;

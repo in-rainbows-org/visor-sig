@@ -7,7 +7,7 @@ import type {
   OcrProcessingState,
   RoiCropBounds,
 } from "../../domain/entities/meter-ocr.entity";
-import { runonwebMeterOcrService } from "../../infrastructure/services/runonweb-meter-ocr.service";
+import { yoloMeterOcrService } from "../../infrastructure/services/yolo-meter-ocr.service";
 
 /**
  * Coordenadas relativas por defecto correspondientes a la guía de enfoque del visor de cámara
@@ -21,7 +21,7 @@ export const DEFAULT_METER_ROI: RoiCropBounds = {
 
 export function useMeterOcr() {
   const [modelStatus, setModelStatus] = useState<OcrModelStatus>(
-    runonwebMeterOcrService.isReady() ? "READY" : "UNLOADED"
+    yoloMeterOcrService.isReady() ? "READY" : "UNLOADED"
   );
   const [processingState, setProcessingState] =
     useState<OcrProcessingState>("IDLE");
@@ -32,7 +32,7 @@ export function useMeterOcr() {
    * Si no está en caché, descarga los pesos mostrando estado INITIALIZING.
    */
   const preloadModel = useCallback(async (): Promise<boolean> => {
-    if (runonwebMeterOcrService.isReady()) {
+    if (yoloMeterOcrService.isReady()) {
       setModelStatus("READY");
       return true;
     }
@@ -40,7 +40,7 @@ export function useMeterOcr() {
     setModelStatus("INITIALIZING");
     setErrorMessage(null);
 
-    const loaded = await runonwebMeterOcrService.ensureLoaded();
+    const loaded = await yoloMeterOcrService.ensureLoaded();
     if (loaded) {
       setModelStatus("READY");
       return true;
@@ -65,7 +65,7 @@ export function useMeterOcr() {
       setErrorMessage(null);
 
       try {
-        const result = await runonwebMeterOcrService.recognizeMeterReading(
+        const result = await yoloMeterOcrService.recognizeMeterReading(
           sourceCanvas,
           roi
         );

@@ -81,11 +81,11 @@ export function AssignmentDetailCard({
   return (
     <div
       className={cn(
-        "hidden lg:flex absolute lg:left-[96px] lg:w-[468px] top-[93px] bottom-4 z-[1000] pointer-events-auto flex-col bg-white rounded-2xl border-0 shadow-none overflow-hidden transition-all duration-300 select-none",
+        "hidden lg:flex absolute lg:left-[88px] xl:left-[96px] lg:w-[390px] xl:w-[428px] 2xl:w-[468px] top-[93px] bottom-4 z-[1000] pointer-events-auto flex-col bg-white rounded-2xl border-0 shadow-none overflow-hidden transition-all duration-300 select-none",
         className
       )}
     >
-      <div className="flex flex-col h-full min-h-0 justify-between px-6 pt-4 pb-6 sm:pb-4 overflow-hidden">
+      <div className="flex flex-col h-full min-h-0 justify-between px-4 xl:px-5 2xl:px-6 pt-4 pb-6 sm:pb-4 overflow-hidden">
         {/* 1. Cabecera fija superior con botón volver y título con badge */}
         <div className="pb-3 shrink-0 border-b border-slate-100/80">
           {showBackButton && (

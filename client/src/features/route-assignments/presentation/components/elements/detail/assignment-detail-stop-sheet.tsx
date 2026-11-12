@@ -110,7 +110,7 @@ export function AssignmentDetailStopSheet({
               opacity: 0,
               transition: { duration: 0.18, ease: "easeIn" },
             }}
-            className="absolute bottom-20 left-4 right-4 lg:bottom-4 lg:left-[584px] lg:right-auto lg:w-max lg:max-w-[calc(100vw-616px)] xl:max-w-[1150px] 2xl:max-w-[1260px] z-[1000] pointer-events-auto bg-white rounded-3xl p-4 sm:p-5 border-0 shadow-xl select-none transition-all max-h-[85vh] overflow-y-auto lg:overflow-visible"
+            className="absolute bottom-20 left-4 right-4 lg:bottom-4 lg:left-[494px] xl:left-[540px] 2xl:left-[584px] lg:right-4 2xl:right-6 lg:w-auto lg:max-w-[calc(100vw-510px)] xl:max-w-[calc(100vw-556px)] 2xl:max-w-[min(1240px,calc(100vw-608px))] z-[1000] pointer-events-auto bg-white rounded-3xl p-4 lg:p-3.5 xl:p-4 2xl:p-5 border-0 shadow-xl select-none transition-all max-h-[85vh] overflow-y-auto xl:overflow-visible"
           >
             {isStartingPointSelected ? (
               /* Detalle horizontal de Punto de Partida */
@@ -155,12 +155,12 @@ export function AssignmentDetailStopSheet({
             ) : stop && statusConfig ? (
               <div>
                 {/* ======================================================== */}
-                {/* 1. ESTRUCTURA PARA ESCRITORIO (3 Columnas con extensión) */}
+                {/* 1A. ESTRUCTURA DESKTOP AMPLIO (>= 1280px: 3 Columnas Fluidas) */}
                 {/* ======================================================== */}
-                <div className="hidden lg:flex items-center gap-4 xl:gap-5 w-full">
+                <div className="hidden xl:flex items-center gap-3 2xl:gap-5 w-full min-w-0">
                   {/* COLUMNA 1 (Izquierda): Imagen + Info con texto wrap */}
-                  <div className="flex items-center gap-3 shrink-0 w-[240px] xl:w-[270px] min-w-0">
-                    <div className="relative size-18 xl:size-20 shrink-0 flex items-center justify-center rounded-2xl bg-slate-50 overflow-hidden border border-slate-100 p-1">
+                  <div className="flex items-center gap-2.5 2xl:gap-3 shrink-0 w-[195px] 2xl:w-[250px] min-w-0">
+                    <div className="relative size-16 2xl:size-20 shrink-0 flex items-center justify-center rounded-2xl bg-slate-50 overflow-hidden border border-slate-100 p-1">
                       <Image
                         src={statusConfig.asset}
                         alt={statusConfig.label}
@@ -172,76 +172,76 @@ export function AssignmentDetailStopSheet({
                       />
                     </div>
 
-                    <div className="min-w-0 flex-1 space-y-1">
+                    <div className="min-w-0 flex-1 space-y-0.5 2xl:space-y-1">
                       <div>
-                        <span className="text-[11px] font-semibold text-slate-400 block leading-tight">
+                        <span className="text-[10px] 2xl:text-[11px] font-semibold text-slate-400 block leading-tight">
                           Estado actual
                         </span>
-                        <h4 className="text-sm xl:text-base font-bold text-[#0e4dcb] leading-snug break-words">
+                        <h4 className="text-xs 2xl:text-base font-bold text-[#0e4dcb] leading-snug break-words">
                           {statusConfig.label}
                         </h4>
                       </div>
 
-                      <div className="text-xs xl:text-[13px] font-semibold text-slate-700 leading-tight">
+                      <div className="text-[11px] 2xl:text-[13px] font-semibold text-slate-700 leading-tight truncate">
                         Código Fijo: <span className="font-mono text-slate-900 font-bold">{stop.fixedCode ?? "S/C"}</span>
                       </div>
 
-                      <div className="text-xs xl:text-[13px] text-slate-500 font-medium leading-snug break-words">
+                      <div className="text-[11px] 2xl:text-[13px] text-slate-500 font-medium leading-snug line-clamp-2 break-words">
                         {stop.name || "Sin titular registrado"}
                       </div>
                     </div>
                   </div>
 
                   {/* Divisor vertical 1 */}
-                  <div className="w-px h-22 xl:h-24 bg-slate-200/80 shrink-0" />
+                  <div className="w-px h-20 2xl:h-24 bg-slate-200/80 shrink-0" />
 
-                  {/* COLUMNA 2 (Centro): Tiempos de visita y Lectura de medidor (20% más ancha) */}
-                  <div className="flex flex-col justify-center gap-2 shrink-0 w-[265px] xl:w-[285px] bg-slate-50/80 rounded-2xl p-3 border border-slate-100">
+                  {/* COLUMNA 2 (Centro): Tiempos de visita y Lectura de medidor */}
+                  <div className="flex flex-col justify-center gap-1.5 2xl:gap-2 shrink-0 w-[225px] 2xl:w-[270px] bg-slate-50/80 rounded-2xl p-2.5 2xl:p-3 border border-slate-100">
                     {/* Hora de llegada o de ida */}
-                    <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px]">
+                    <div className="flex items-center justify-between gap-2 text-xs 2xl:text-[13px]">
                       <span className="text-slate-600 font-medium inline-flex items-center gap-1.5 truncate">
-                        <Calendar className="size-4 text-slate-400 shrink-0" />
+                        <Calendar className="size-3.5 2xl:size-4 text-slate-400 shrink-0" />
                         {salidaOLlegadaLabel}:
                       </span>
-                      <span className="font-bold text-slate-900 font-mono text-sm shrink-0">
+                      <span className="font-bold text-slate-900 font-mono text-xs 2xl:text-sm shrink-0">
                         {salidaOLlegadaHora}
                       </span>
                     </div>
 
                     {/* Hora de finalización */}
-                    <div className="flex items-center justify-between gap-2 text-xs sm:text-[13px]">
+                    <div className="flex items-center justify-between gap-2 text-xs 2xl:text-[13px]">
                       <span className="text-slate-600 font-medium inline-flex items-center gap-1.5 truncate">
-                        <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="size-3.5 2xl:size-4 text-emerald-600 shrink-0" />
                         Hora de finalización:
                       </span>
-                      <span className="font-bold text-slate-900 font-mono text-sm shrink-0">
+                      <span className="font-bold text-slate-900 font-mono text-xs 2xl:text-sm shrink-0">
                         {finalizacionHora}
                       </span>
                     </div>
 
                     {/* Lectura de medidor */}
-                    <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-2 text-xs sm:text-[13px]">
+                    <div className="pt-1.5 2xl:pt-2 border-t border-slate-200/70 flex items-center justify-between gap-2 text-xs 2xl:text-[13px]">
                       <span className="text-slate-700 font-semibold inline-flex items-center gap-1.5 truncate">
-                        <Gauge className="size-4 text-blue-600 shrink-0" />
+                        <Gauge className="size-3.5 2xl:size-4 text-blue-600 shrink-0" />
                         Lectura de medidor:
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs sm:text-sm font-bold font-mono shrink-0">
+                      <span className="inline-flex items-center px-2 2xl:px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs 2xl:text-sm font-bold font-mono shrink-0">
                         {stop.meterReading || "--"}
                       </span>
                     </div>
                   </div>
 
                   {/* Divisor vertical 2 */}
-                  <div className="w-px h-22 xl:h-24 bg-slate-200/80 shrink-0" />
+                  <div className="w-px h-20 2xl:h-24 bg-slate-200/80 shrink-0" />
 
-                  {/* COLUMNA 3 (Derecha): Imagen de evidencia y Campo exclusivo de Observación (+10% más a la derecha) */}
-                  <div className="flex items-center gap-3.5 shrink-0 min-w-0">
+                  {/* COLUMNA 3 (Derecha): Imagen de evidencia y Campo elástico de Observación */}
+                  <div className="flex items-center gap-2.5 2xl:gap-3.5 flex-1 min-w-0">
                     {/* Imagen de evidencia */}
                     {stop.evidencePhotoUrl ? (
                       <button
                         type="button"
                         onClick={() => setIsLightboxOpen(true)}
-                        className="relative size-20 xl:size-22 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e4dcb] transition active:scale-95 shadow-xs"
+                        className="relative size-18 2xl:size-22 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e4dcb] transition active:scale-95 shadow-xs"
                         title="Hacer clic para ampliar imagen"
                       >
                         <Image
@@ -257,20 +257,131 @@ export function AssignmentDetailStopSheet({
                         </div>
                       </button>
                     ) : (
-                      <div className="size-20 xl:size-22 shrink-0 rounded-2xl bg-slate-100/90 border border-slate-200/70 flex flex-col items-center justify-center p-1.5 text-center select-none shadow-xs">
-                        <ImageOff className="size-5 text-slate-400 shrink-0 mb-1" />
-                        <span className="text-[10px] xl:text-[11px] font-semibold text-slate-400 leading-tight">
+                      <div className="size-18 2xl:size-22 shrink-0 rounded-2xl bg-slate-100/90 border border-slate-200/70 flex flex-col items-center justify-center p-1.5 text-center select-none shadow-xs">
+                        <ImageOff className="size-4.5 2xl:size-5 text-slate-400 shrink-0 mb-1" />
+                        <span className="text-[10px] 2xl:text-[11px] font-semibold text-slate-400 leading-tight">
                           Sin imagen aún
                         </span>
                       </div>
                     )}
 
-                    {/* Campo exclusivo para Observación (expandido y reservado hacia la derecha) */}
-                    <div className="w-[310px] xl:w-[420px] 2xl:w-[490px] shrink-0 h-20 xl:h-22 overflow-y-auto rounded-2xl bg-slate-50/80 border border-slate-100 p-2.5 xl:p-3 text-left">
-                      <span className="text-[10px] xl:text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                    {/* Campo elástico para Observación (se adapta al espacio disponible sin desbordar) */}
+                    <div className="flex-1 min-w-[120px] h-18 2xl:h-22 overflow-y-auto rounded-2xl bg-slate-50/80 border border-slate-100 p-2.5 2xl:p-3 text-left">
+                      <span className="text-[10px] 2xl:text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                         Observación
                       </span>
-                      <p className="text-xs xl:text-[13px] text-slate-700 leading-snug whitespace-pre-wrap break-words">
+                      <p className="text-xs 2xl:text-[13px] text-slate-700 leading-snug whitespace-pre-wrap break-words">
+                        {stop.observation || "Sin observaciones registradas."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ======================================================== */}
+                {/* 1B. ESTRUCTURA LAPTOP COMPACTA (1024px - 1279px: 2 Filas) */}
+                {/* ======================================================== */}
+                <div className="hidden lg:flex xl:hidden flex-col gap-3 w-full min-w-0">
+                  {/* Fila Superior: Estado + Tiempos y Medidor */}
+                  <div className="flex items-center gap-3 w-full min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className="relative size-14 shrink-0 flex items-center justify-center rounded-2xl bg-slate-50 overflow-hidden border border-slate-100 p-1">
+                        <Image
+                          src={statusConfig.asset}
+                          alt={statusConfig.label}
+                          fill
+                          sizes="64px"
+                          priority
+                          unoptimized
+                          className="object-contain"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <span className="text-[10px] font-semibold text-slate-400 block leading-tight">
+                          Estado actual
+                        </span>
+                        <h4 className="text-xs font-bold text-[#0e4dcb] leading-snug truncate">
+                          {statusConfig.label}
+                        </h4>
+                        <div className="text-[11px] font-semibold text-slate-700 leading-tight truncate">
+                          Código Fijo: <span className="font-mono text-slate-900 font-bold">{stop.fixedCode ?? "S/C"}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium truncate leading-tight">
+                          {stop.name || "Sin titular registrado"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-px h-16 bg-slate-200/80 shrink-0" />
+
+                    <div className="flex flex-col justify-center gap-1 shrink-0 w-[220px] bg-slate-50/80 rounded-2xl p-2.5 border border-slate-100">
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="text-slate-600 font-medium inline-flex items-center gap-1 truncate">
+                          <Calendar className="size-3.5 text-slate-400 shrink-0" />
+                          {salidaOLlegadaLabel}:
+                        </span>
+                        <span className="font-bold text-slate-900 font-mono text-xs shrink-0">
+                          {salidaOLlegadaHora}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="text-slate-600 font-medium inline-flex items-center gap-1 truncate">
+                          <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                          Finalización:
+                        </span>
+                        <span className="font-bold text-slate-900 font-mono text-xs shrink-0">
+                          {finalizacionHora}
+                        </span>
+                      </div>
+
+                      <div className="pt-1 border-t border-slate-200/70 flex items-center justify-between gap-2 text-[11px]">
+                        <span className="text-slate-700 font-semibold inline-flex items-center gap-1 truncate">
+                          <Gauge className="size-3.5 text-blue-600 shrink-0" />
+                          Medidor:
+                        </span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold font-mono shrink-0">
+                          {stop.meterReading || "--"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fila Inferior: Imagen de evidencia + Observación completa */}
+                  <div className="flex items-center gap-2.5 pt-2.5 border-t border-slate-100 w-full min-w-0">
+                    {stop.evidencePhotoUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsLightboxOpen(true)}
+                        className="relative size-16 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e4dcb] transition active:scale-95 shadow-xs"
+                        title="Hacer clic para ampliar imagen"
+                      >
+                        <Image
+                          src={stop.evidencePhotoUrl}
+                          alt="Evidencia fotográfica"
+                          fill
+                          sizes="64px"
+                          unoptimized
+                          className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Eye className="size-4 text-white drop-shadow" />
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="size-16 shrink-0 rounded-2xl bg-slate-100/90 border border-slate-200/70 flex flex-col items-center justify-center p-1 text-center select-none shadow-xs">
+                        <ImageOff className="size-4 text-slate-400 shrink-0 mb-0.5" />
+                        <span className="text-[9px] font-semibold text-slate-400 leading-tight">
+                          Sin imagen
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0 h-16 overflow-y-auto rounded-2xl bg-slate-50/80 border border-slate-100 p-2.5 text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                        Observación
+                      </span>
+                      <p className="text-xs text-slate-700 leading-snug whitespace-pre-wrap break-words">
                         {stop.observation || "Sin observaciones registradas."}
                       </p>
                     </div>

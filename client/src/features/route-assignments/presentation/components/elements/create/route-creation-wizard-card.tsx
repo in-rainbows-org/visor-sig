@@ -41,7 +41,7 @@ export function RouteCreationWizardCard() {
 
   return (
     <div
-      className="hidden lg:flex absolute lg:left-[96px] lg:w-[468px] top-[93px] bottom-4 z-[1000] pointer-events-auto flex-col bg-white rounded-2xl border-0 shadow-none overflow-hidden transition-all duration-300"
+      className="hidden lg:flex absolute lg:left-[88px] xl:left-[96px] lg:w-[390px] xl:w-[428px] 2xl:w-[468px] top-[93px] bottom-4 z-[1000] pointer-events-auto flex-col bg-white rounded-2xl border-0 shadow-none overflow-hidden transition-all duration-300"
     >
       {/* 1. Indicador de Progreso Superior */}
       <WizardProgressHeader currentStep={currentStep} />

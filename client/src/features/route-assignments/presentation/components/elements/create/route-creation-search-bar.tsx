@@ -73,7 +73,7 @@ export function RouteCreationSearchBar({
     <div
       ref={containerRef}
       className={cn(
-        "hidden lg:flex absolute lg:top-[93px] lg:right-6 z-[1000] lg:w-[560px] max-w-[calc(100vw-1.5rem)] bg-white shadow-md shadow-slate-900/10 border border-slate-200/60 overflow-hidden rounded-[28px] transition-[box-shadow] duration-200 flex-col select-none",
+        "hidden lg:flex absolute lg:top-[93px] lg:right-4 xl:right-6 z-[1000] lg:w-[440px] xl:w-[500px] 2xl:w-[560px] max-w-[calc(100vw-1.5rem)] lg:max-w-[calc(100vw-510px)] xl:max-w-[calc(100vw-560px)] bg-white shadow-md shadow-slate-900/10 border border-slate-200/60 overflow-hidden rounded-[28px] transition-[box-shadow,width] duration-200 flex-col select-none",
         className
       )}
     >

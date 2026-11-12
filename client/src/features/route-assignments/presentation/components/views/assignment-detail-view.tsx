@@ -288,7 +288,7 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
               }}
               showBackButton={false}
               showScheduledDate={false}
-              className="flex relative inset-auto w-full h-full top-auto bottom-auto left-auto rounded-none border-0 shadow-none z-0"
+              className="flex relative inset-auto w-full lg:w-full xl:w-full 2xl:w-full h-full top-auto bottom-auto left-auto lg:left-auto xl:left-auto rounded-none border-0 shadow-none z-0"
             />
           </div>
         </SheetContent>

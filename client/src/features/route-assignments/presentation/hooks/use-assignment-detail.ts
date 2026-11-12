@@ -12,7 +12,7 @@ export function useAssignmentDetail(assignmentId: string) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState<boolean>(false);
-  const [selectedStop, setSelectedStop] = useState<AssignmentStopDetail | null>(null);
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const hasLoadedRef = useRef<boolean>(false);
 
   const fetchDetail = useCallback(
@@ -81,12 +81,16 @@ export function useAssignmentDetail(assignmentId: string) {
     []
   );
 
+  const selectedStop = selectedStopId
+    ? assignment?.stops.find((stop) => stop.id === selectedStopId) ?? null
+    : null;
+
   const selectStop = useCallback((stop: AssignmentStopDetail) => {
-    setSelectedStop((current) => (current?.id === stop.id ? null : stop));
+    setSelectedStopId((current) => (current === stop.id ? null : stop.id));
   }, []);
 
   const clearSelectedStop = useCallback(() => {
-    setSelectedStop(null);
+    setSelectedStopId(null);
   }, []);
 
   const refetch = useCallback(

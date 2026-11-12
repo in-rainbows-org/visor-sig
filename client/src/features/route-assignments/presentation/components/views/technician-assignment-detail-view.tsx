@@ -166,6 +166,7 @@ export function TechnicianAssignmentDetailView({
       {/* A. Mapa interactivo OpenStreetMap a pantalla completa con pines dinámicos y trazos viales */}
       <div className="absolute inset-0 w-full h-full z-0">
         <AssignmentDetailMapDynamic
+          assignmentId={assignment.id}
           assignmentStatus={assignment.status}
           startLatitude={assignment.startLatitude}
           startLongitude={assignment.startLongitude}

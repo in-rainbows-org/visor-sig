@@ -69,6 +69,7 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
               completedAt: event.completedAt ?? stop.completedAt,
               meterReading: event.meterReading ?? stop.meterReading,
               observation: event.observation ?? stop.observation,
+              evidencePhotoUrl: event.evidencePhotoUrl ?? stop.evidencePhotoUrl,
             };
           }
           return stop;
@@ -176,6 +177,7 @@ export function AssignmentDetailView({ assignmentId }: AssignmentDetailViewProps
       {/* 1. Mapa de fondo interactivo OpenStreetMap a pantalla completa */}
       <div className="absolute inset-0 w-full h-full z-0">
         <AssignmentDetailMapDynamic
+          assignmentId={assignment.id}
           assignmentStatus={assignment.status}
           startLatitude={assignment.startLatitude}
           startLongitude={assignment.startLongitude}

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { CircleAlert } from "lucide-react";
 import {
   MapContainer,
   TileLayer,
@@ -14,6 +15,8 @@ import type {
   AssignmentDetailStatus,
   AssignmentStopDetail,
 } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import type { TechnicianLocation } from "@/features/route-assignments/domain/entities/realtime-tracking.entity";
+import type { TrackingSignal } from "@/features/route-assignments/domain/entities/vehicle-motion.entity";
 import { cn } from "@/lib/utils";
 import { routeAssignmentRepository } from "@/features/route-assignments/infrastructure/repositories/route-assignment.repository-impl";
 import { RouteCreationZoomControls } from "../create/route-creation-zoom-controls";
@@ -22,6 +25,7 @@ import {
   getDetailStopPinIcon,
   getTechnicianVehicleIcon,
 } from "./assignment-detail-markers";
+import { AssignmentRouteProgress } from "./assignment-route-progress";
 
 const SANTA_CRUZ_DEFAULT_CENTER: [number, number] = [-17.7833, -63.1821];
 const SANTA_CRUZ_DEFAULT_ZOOM = 13;
@@ -298,16 +302,13 @@ type RouteLegSegment = {
 };
 
 export type AssignmentDetailMapProps = {
+  assignmentId: string;
   assignmentStatus?: AssignmentDetailStatus;
   startLatitude: number;
   startLongitude: number;
   stops: readonly AssignmentStopDetail[];
   selectedStop: AssignmentStopDetail | null;
-  technicianLocation?: {
-    latitude: number;
-    longitude: number;
-    heading?: number | null;
-  } | null;
+  technicianLocation?: TechnicianLocation | null;
   isStartingPointSelected?: boolean;
   hideZoomControls?: boolean;
   onSelectStop?: (stop: AssignmentStopDetail) => void;
@@ -316,6 +317,7 @@ export type AssignmentDetailMapProps = {
 };
 
 export function AssignmentDetailMap({
+  assignmentId,
   assignmentStatus,
   startLatitude,
   startLongitude,
@@ -330,6 +332,17 @@ export function AssignmentDetailMap({
 }: AssignmentDetailMapProps) {
   const zoomInRef = useRef<() => void>(() => {});
   const zoomOutRef = useRef<() => void>(() => {});
+  const [trackingSignalState, setTrackingSignalState] = useState<{
+    assignmentId: string;
+    signal: TrackingSignal;
+  }>({ assignmentId, signal: "waiting" });
+  const trackingSignal = trackingSignalState.assignmentId === assignmentId
+    ? trackingSignalState.signal
+    : "waiting";
+
+  const handleTrackingSignal = useCallback((signal: TrackingSignal) => {
+    setTrackingSignalState({ assignmentId, signal });
+  }, [assignmentId]);
 
   const handleRegisterZoom = (zIn: () => void, zOut: () => void) => {
     zoomInRef.current = zIn;
@@ -379,6 +392,18 @@ export function AssignmentDetailMap({
 
       if (shouldRenderRoute && stop.coordinates && stop.coordinates.length > 0) {
         const stopIsInTransit = stop.status === "IN_TRANSIT";
+
+        if (stopIsInTransit) {
+          flushCurrentSegment();
+          if (stop.coordinates.length >= 2) {
+            segments.push({
+              key: `seg-${stop.id}-transit-${stop.coordinates.length}`,
+              coordinates: [...stop.coordinates],
+              isInTransit: true,
+            });
+          }
+          continue;
+        }
 
         // Si cambia el tipo de segmento (ej. de IN_TRANSIT a PENDING), volcamos el tramo anterior
         if (currentIsInTransit !== null && currentIsInTransit !== stopIsInTransit) {
@@ -475,6 +500,15 @@ export function AssignmentDetailMap({
     return [];
   }, [routeSegments, clientRouteCoords, stops]);
 
+  const activeTransitStop = useMemo(
+    () => assignmentStatus === "IN_PROGRESS"
+      ? [...stops]
+        .filter((stop) => stop.status === "IN_TRANSIT")
+        .sort((first, second) => first.orderIndex - second.orderIndex)[0] ?? null
+      : null,
+    [assignmentStatus, stops]
+  );
+
   const allCoordinates = useMemo(() => {
     const list: [number, number][] = [];
     if (startLatitude && startLongitude) {
@@ -531,13 +565,36 @@ export function AssignmentDetailMap({
         />
 
         {/* 1. Trazados Viales Animados con Avance Progresivo siguiendo calles reales (morado para IN_TRANSIT, azul para pendientes) */}
-        {activeSegments.map((segment) => (
-          <AnimatedRoutePolyline
-            key={segment.key}
-            coordinates={segment.coordinates}
-            isInTransit={segment.isInTransit}
-          />
-        ))}
+        {activeSegments.map((segment) => {
+          const activeTransitKeyPrefix = activeTransitStop && activeTransitStop.coordinates.length >= 2
+            ? `seg-${activeTransitStop.id}-transit-`
+            : null;
+          const isTrackedStopLeg = Boolean(
+            activeTransitKeyPrefix && segment.isInTransit &&
+            segment.key.startsWith(activeTransitKeyPrefix)
+          );
+          if (isTrackedStopLeg) return null;
+          return (
+            <AnimatedRoutePolyline
+              key={segment.key}
+              coordinates={segment.coordinates}
+              isInTransit={segment.isInTransit}
+            />
+          );
+        })}
+
+        {assignmentStatus === "IN_PROGRESS" &&
+          (technicianLocation || activeTransitStop) && (
+            <AssignmentRouteProgress
+              key={assignmentId}
+              assignmentId={assignmentId}
+              activeStopId={activeTransitStop?.id ?? null}
+              activeStopOrderIndex={activeTransitStop?.orderIndex ?? null}
+              routeCoordinates={activeTransitStop?.coordinates ?? null}
+              technicianLocation={technicianLocation ?? null}
+              onSignalChange={handleTrackingSignal}
+            />
+          )}
 
         {/* 2. Marcador del Punto de Partida interactivo */}
         {startLatitude && startLongitude && (
@@ -568,7 +625,7 @@ export function AssignmentDetailMap({
         })}
 
         {/* 4. Marcador del Vehículo del Técnico en tiempo real */}
-        {technicianLocation &&
+        {assignmentStatus !== "IN_PROGRESS" && technicianLocation &&
           typeof technicianLocation.latitude === "number" &&
           typeof technicianLocation.longitude === "number" && (
             <Marker
@@ -578,6 +635,22 @@ export function AssignmentDetailMap({
             />
           )}
       </MapContainer>
+
+      {assignmentStatus === "IN_PROGRESS" &&
+        (trackingSignal === "stale" || trackingSignal === "off-route") && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none absolute top-3 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-200 bg-white/95 px-3 py-2 text-xs font-medium text-amber-900 shadow-md backdrop-blur-sm"
+        >
+          <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
+          <span>
+            {trackingSignal === "stale"
+              ? "Ubicación desactualizada"
+              : "Ubicación fuera de la ruta planificada"}
+          </span>
+        </div>
+      )}
 
       {/* Controles Flotantes de Zoom (+ y -): se ocultan automáticamente cuando el card inferior de parada está abierto */}
       <div

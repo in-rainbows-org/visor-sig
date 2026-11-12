@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import Image from "next/image";
 import "leaflet/dist/leaflet.css";
 import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sileo";
 import { appFontVariables } from "@/styles/fonts";
+import splash from "./pwa-splash.module.css";
 
 export const metadata: Metadata = {
   title: "VisorSIG",
@@ -50,6 +52,10 @@ export default function RootLayout({
       )}
     >
       <body className="h-full h-[100dvh] w-full overflow-hidden flex flex-col overscroll-none">
+        <div className={splash.splash} aria-hidden="true">
+          <Image className={splash.logo} src="/assets/icon.png" alt="" width={338} height={338} priority unoptimized />
+          <span className={splash.title}>VisorSIG</span>
+        </div>
         {children}
         <Toaster
           position="top-center"

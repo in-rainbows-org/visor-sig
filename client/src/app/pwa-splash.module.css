@@ -1,0 +1,44 @@
+.splash {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, #16baf8 0%, #0466f5 48%, #0434f1 100%);
+    color: #fff;
+    pointer-events: none;
+    animation: dismiss-splash 200ms ease-out 1s forwards;
+  }
+
+  .logo {
+    width: min(42vw, 180px);
+    height: auto;
+  }
+
+  .title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .splash {
+      animation-duration: 1ms;
+    }
+  }
+}
+
+@keyframes dismiss-splash {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

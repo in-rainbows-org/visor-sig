@@ -7,8 +7,20 @@ import { appFontVariables } from "@/styles/fonts";
 
 export const metadata: Metadata = {
   title: "VisorSIG",
-  description:
-    "Scaffold de Next.js con Better Auth, shadcn/ui y Clean Architecture",
+  description: "Visor geográfico de instalaciones de agua de Santa Cruz de la Sierra.",
+  applicationName: "VisorSIG",
+  appleWebApp: {
+    capable: true,
+    title: "VisorSIG",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -17,7 +29,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  themeColor: "#087cf0",
 };
 
 export default function RootLayout({
@@ -27,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={cn(
         "h-full",
         "h-[100dvh]",

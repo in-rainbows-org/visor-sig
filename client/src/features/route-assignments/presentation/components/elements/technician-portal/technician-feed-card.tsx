@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Calendar, CheckCircle2, ChevronRight, Home, Route } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronRight, CloudOff, Home, Route } from "lucide-react";
 import type { TechnicianFeedItem } from "../../../../domain/entities/technician-dashboard.entity";
 
 export type FeedTab = "ASSIGNED" | "COMPLETED";
@@ -100,13 +100,19 @@ export function TechnicianFeedCard({
       {/* 2. Centro: Estructura vertical (Tipo servicio superior, fecha centro, badges inferior) */}
       <div className="flex flex-col gap-1.5 sm:gap-2 min-w-0 flex-1 justify-center">
         {/* Parte superior: Tipo de servicio */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h4 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">
             {serviceLabel}
           </h4>
           {item.status === "IN_PROGRESS" && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
               En progreso
+            </span>
+          )}
+          {(item.pendingSyncCount ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px] font-bold">
+              <CloudOff className="size-3 shrink-0" />
+              <span>{item.pendingSyncCount} por sincronizar</span>
             </span>
           )}
         </div>

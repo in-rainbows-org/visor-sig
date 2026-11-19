@@ -127,17 +127,19 @@ def test_complete_stop_assignment_not_owned():
         use_case.execute(command)
 
 
-def test_complete_stop_assignment_not_in_progress():
+def test_complete_stop_assignment_completed_with_pending_stop_raises():
     assignment_repo = MagicMock(spec=AssignmentRepository)
     stop_repo = MagicMock(spec=AssignmentStopRepository)
     uow = MagicMock(spec=UnitOfWork)
-    assignment = make_assignment(status=AssignmentStatus.ASSIGNED)
+    assignment = make_assignment(status=AssignmentStatus.COMPLETED)
+    stop = make_stop(assignment.id, status=StopStatus.PENDING)
     assignment_repo.get_by_id.return_value = assignment
+    stop_repo.get_by_id.return_value = stop
 
     use_case = CompleteStopUseCase(assignment_repo, stop_repo, uow)
     command = CompleteStopCommand(
         assignment_id=assignment.id,
-        stop_id=uuid4(),
+        stop_id=stop.id,
         technician_id="tech-123",
         status="SUCCESS",
     )
@@ -166,14 +168,16 @@ def test_complete_stop_stop_not_found():
         use_case.execute(command)
 
 
-def test_complete_stop_not_arrived():
+def test_complete_stop_from_in_transit_without_arrived_succeeds():
     assignment_repo = MagicMock(spec=AssignmentRepository)
     stop_repo = MagicMock(spec=AssignmentStopRepository)
     uow = MagicMock(spec=UnitOfWork)
     assignment = make_assignment()
     stop = make_stop(assignment.id, status=StopStatus.IN_TRANSIT)
+    other_stop = make_stop(assignment.id, order_index=2, status=StopStatus.PENDING)
     assignment_repo.get_by_id.return_value = assignment
     stop_repo.get_by_id.return_value = stop
+    stop_repo.list_by_assignment_id.return_value = [stop, other_stop]
 
     use_case = CompleteStopUseCase(assignment_repo, stop_repo, uow)
     command = CompleteStopCommand(
@@ -181,10 +185,15 @@ def test_complete_stop_not_arrived():
         stop_id=stop.id,
         technician_id="tech-123",
         status="SUCCESS",
+        meter_reading="123456",
+        evidence_photo_url="https://res.cloudinary.com/test/sig/photo.jpg",
     )
 
-    with pytest.raises(InvalidStopStatusTransitionException):
-        use_case.execute(command)
+    result = use_case.execute(command)
+    assert result.status == StopStatus.COMPLETED
+    assert result.in_transit_at is not None
+    assert result.arrived_at is not None
+    assert result.completed_at is not None
 
 
 def test_complete_stop_failed_without_observation_raises():

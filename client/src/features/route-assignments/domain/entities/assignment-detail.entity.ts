@@ -42,6 +42,7 @@ export interface AssignmentStopDetail {
   readonly meterReading?: string | null;
   readonly evidencePhotoUrl?: string | null;
   readonly observation?: string | null;
+  readonly pendingSync?: boolean;
 }
 
 /**
@@ -62,4 +63,5 @@ export interface AssignmentDetail {
   readonly startLongitude: number;
   readonly completedStops: number;
   readonly stops: readonly AssignmentStopDetail[];
+  readonly pendingSyncCount?: number;
 }

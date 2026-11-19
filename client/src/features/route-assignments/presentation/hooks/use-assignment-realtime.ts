@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { API_BASE_URL } from "@/features/shared/config/api.config";
 import type {
   AssignmentCompletedEvent,
@@ -55,6 +55,24 @@ function resolveWebSocketUrl(assignmentId: string, role: string): string {
   return `${base}/api/route-assignments/assignments/${assignmentId}/ws?role=${encodeURIComponent(role)}`;
 }
 
+function subscribeOnlineStatus(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
+function getOnlineSnapshot(): boolean {
+  return typeof navigator !== "undefined" ? navigator.onLine : true;
+}
+
+function getServerOnlineSnapshot(): boolean {
+  return true;
+}
+
 export function useAssignmentRealtime({
   assignmentId,
   assignmentStatus,
@@ -67,6 +85,11 @@ export function useAssignmentRealtime({
   const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("DISCONNECTED");
   const [technicianLocation, setTechnicianLocation] = useState<TechnicianLocation | null>(null);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const isOnline = useSyncExternalStore(
+    subscribeOnlineStatus,
+    getOnlineSnapshot,
+    getServerOnlineSnapshot
+  );
 
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -138,9 +161,10 @@ export function useAssignmentRealtime({
   );
 
   useEffect(() => {
-    // Solo conectarse si está habilitado, la asignación está en progreso y estamos en el navegador
+    // Solo conectarse si está habilitado, con red activa, la asignación está en progreso y estamos en el navegador
     const isEligible =
       enabled &&
+      isOnline &&
       assignmentStatus === "IN_PROGRESS" &&
       !isCompleted &&
       Boolean(assignmentId) &&
@@ -152,7 +176,9 @@ export function useAssignmentRealtime({
         socketRef.current.close(1000, "Not in progress or disabled");
         socketRef.current = null;
       }
-      setConnectionStatus("DISCONNECTED");
+      queueMicrotask(() => {
+        setConnectionStatus("DISCONNECTED");
+      });
       return;
     }
 
@@ -345,7 +371,7 @@ export function useAssignmentRealtime({
         socketRef.current = null;
       }
     };
-  }, [assignmentId, assignmentStatus, role, enabled, isCompleted, sendLocationPing]);
+  }, [assignmentId, assignmentStatus, role, enabled, isOnline, isCompleted, sendLocationPing]);
 
   return {
     connectionStatus,

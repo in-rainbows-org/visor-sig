@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, RefreshCw, SearchX } from "lucide-react";
 import type { AssignmentStopDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
 import { deriveActiveStopState } from "@/features/route-assignments/domain/entities/assignment-execution.entity";
 import { useAssignmentDetail } from "../../hooks/use-assignment-detail";
 import { useAssignmentRealtime } from "../../hooks/use-assignment-realtime";
 import { useTechnicianAssignmentExecution } from "../../hooks/use-technician-assignment-execution";
+import { useOfflineSync } from "../../hooks/use-offline-sync";
 import { AssignmentDetailSkeleton } from "../elements/detail/assignment-detail-skeleton";
 import { AssignmentDetailCard } from "../elements/detail/assignment-detail-card";
 import { AssignmentDetailStopSheet } from "../elements/detail/assignment-detail-stop-sheet";
@@ -44,6 +46,12 @@ export type TechnicianAssignmentDetailViewProps = {
 export function TechnicianAssignmentDetailView({
   assignmentId,
 }: TechnicianAssignmentDetailViewProps) {
+  const params = useParams<{ id?: string }>();
+  const resolvedAssignmentId =
+    typeof params?.id === "string" && params.id ? params.id : assignmentId;
+
+  const syncState = useOfflineSync();
+
   const {
     assignment,
     isLoading,
@@ -54,7 +62,7 @@ export function TechnicianAssignmentDetailView({
     clearSelectedStop,
     refetch,
     updateAssignmentLocally,
-  } = useAssignmentDetail(assignmentId);
+  } = useAssignmentDetail(resolvedAssignmentId);
 
   const {
     startAssignment,
@@ -65,13 +73,13 @@ export function TechnicianAssignmentDetailView({
     isSubmitting,
     activeAction,
   } = useTechnicianAssignmentExecution({
-    assignmentId,
+    assignmentId: resolvedAssignmentId,
     refetch,
     updateAssignmentLocally,
   });
 
   const { technicianLocation } = useAssignmentRealtime({
-    assignmentId,
+    assignmentId: resolvedAssignmentId,
     assignmentStatus: assignment?.status,
     role: "TECHNICIAN",
     enabled: Boolean(assignment),
@@ -180,7 +188,10 @@ export function TechnicianAssignmentDetailView({
       {/* B. Contenedor móvil superior: Header principal y Card de parada activa sin colisión */}
       <div className="lg:hidden absolute top-[88px] inset-x-3 sm:inset-x-4 z-[900] pointer-events-none select-none flex flex-col gap-3 transition-all duration-300 ease-in-out">
         <div className="pointer-events-auto">
-          <TechnicianAssignmentMobileHeader assignment={assignment} />
+          <TechnicianAssignmentMobileHeader
+            assignment={assignment}
+            syncState={syncState}
+          />
         </div>
 
         {assignment.status === "IN_PROGRESS" && activeStopState && (

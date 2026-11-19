@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { ArrowRight, CalendarClock } from "lucide-react";
+import { ArrowRight, CalendarClock, CloudOff } from "lucide-react";
 import type { ActiveAssignmentProgress } from "../../../../domain/entities/technician-dashboard.entity";
 
 export interface ActiveAssignmentCardProps {
@@ -92,11 +92,17 @@ export function ActiveAssignmentCard({
         {/* Bloque central de texto: únicamente badge, tipo de servicio y fecha/hora */}
         <div className="space-y-1 min-w-0 flex-1">
           {/* Badge "En progreso" con play icon */}
-          <div>
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#dbeafe] text-[#1e40af] text-[11px] sm:text-xs font-bold shadow-none">
               <span className="text-[9px]">▶</span>
               <span>En progreso</span>
             </span>
+            {(assignment.pendingSyncCount ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] sm:text-[11px] font-bold shadow-none">
+                <CloudOff className="size-3 shrink-0" />
+                <span>{assignment.pendingSyncCount} por sincronizar</span>
+              </span>
+            )}
           </div>
 
           {/* Titular del servicio (sin truncate para que haga wrap natural si es necesario) */}

@@ -78,7 +78,7 @@ export interface RouteAssignmentRepository {
   /**
    * Inicia formalmente la jornada de trabajo de la asignación.
    */
-  startAssignment(assignmentId: string): Promise<ApiActionResult>;
+  startAssignment(assignmentId: string, startedAt?: Date | string | null): Promise<ApiActionResult>;
 
   /**
    * Marca el inicio de traslado hacia una parada.

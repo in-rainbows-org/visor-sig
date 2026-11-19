@@ -88,6 +88,9 @@ export interface CompleteStopInput {
   readonly meterReading?: string | null;
   readonly evidenceFile?: File | null;
   readonly evidencePhotoUrl?: string | null;
+  readonly inTransitAt?: Date | string | null;
+  readonly arrivedAt?: Date | string | null;
+  readonly completedAt?: Date | string | null;
 }
 
 /**

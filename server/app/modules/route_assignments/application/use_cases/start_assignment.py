@@ -30,6 +30,7 @@ class StartAssignmentCommand:
 
     assignment_id: UUID
     technician_id: str
+    started_at: datetime | None = None
 
 
 class StartAssignmentUseCase:
@@ -53,22 +54,33 @@ class StartAssignmentUseCase:
         if assignment.technician_id != command.technician_id:
             raise AssignmentOwnershipException()
 
+        # Idempotencia para sincronización offline: si ya fue iniciada o completada, retornar sin error
+        if assignment.status in (AssignmentStatus.IN_PROGRESS, AssignmentStatus.COMPLETED):
+            return assignment
+
         if assignment.status != AssignmentStatus.ASSIGNED:
             raise InvalidAssignmentStatusTransitionException(
                 f"La asignación se encuentra en estado '{assignment.status.value}', solo puede iniciarse si está 'ASSIGNED'."
             )
 
-        today_local = datetime.now(self.tz).date()
-        if assignment.scheduled_date != today_local:
+        reference_dt = command.started_at if command.started_at is not None else datetime.now(self.tz)
+        if reference_dt.tzinfo is None:
+            reference_dt = reference_dt.replace(tzinfo=timezone.utc)
+        reference_local_date = reference_dt.astimezone(self.tz).date()
+
+        if command.started_at is None and assignment.scheduled_date != reference_local_date:
             raise AssignmentDateMismatchException(
-                f"La asignación está programada para '{assignment.scheduled_date}', hoy es '{today_local}'."
+                f"La asignación está programada para '{assignment.scheduled_date}', hoy es '{reference_local_date}'."
             )
 
         active_assignment = self.assignment_repo.find_in_progress_by_technician(command.technician_id)
         if active_assignment is not None and active_assignment.id != assignment.id:
             raise TechnicianActiveAssignmentConflictException()
 
-        now = datetime.now(timezone.utc)
+        now = command.started_at or datetime.now(timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+
         assignment.start(now=now)
         self.assignment_repo.save(assignment)
         self.uow.commit()

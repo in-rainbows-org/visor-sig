@@ -70,7 +70,7 @@ def test_start_assignment_not_owned():
         use_case.execute(command)
 
 
-def test_start_assignment_invalid_status():
+def test_start_assignment_idempotent_when_in_progress():
     repo = MagicMock(spec=AssignmentRepository)
     uow = MagicMock(spec=UnitOfWork)
     assignment = make_assignment(status=AssignmentStatus.IN_PROGRESS)
@@ -79,8 +79,23 @@ def test_start_assignment_invalid_status():
     use_case = StartAssignmentUseCase(repo, uow)
     command = StartAssignmentCommand(assignment_id=assignment.id, technician_id="tech-123")
 
-    with pytest.raises(InvalidAssignmentStatusTransitionException):
-        use_case.execute(command)
+    result = use_case.execute(command)
+    assert result.status == AssignmentStatus.IN_PROGRESS
+    uow.commit.assert_not_called()
+
+
+def test_start_assignment_idempotent_when_completed():
+    repo = MagicMock(spec=AssignmentRepository)
+    uow = MagicMock(spec=UnitOfWork)
+    assignment = make_assignment(status=AssignmentStatus.COMPLETED)
+    repo.get_by_id.return_value = assignment
+
+    use_case = StartAssignmentUseCase(repo, uow)
+    command = StartAssignmentCommand(assignment_id=assignment.id, technician_id="tech-123")
+
+    result = use_case.execute(command)
+    assert result.status == AssignmentStatus.COMPLETED
+    uow.commit.assert_not_called()
 
 
 def test_start_assignment_date_mismatch():

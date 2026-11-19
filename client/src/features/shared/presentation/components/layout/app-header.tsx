@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/features/shared/presentation/components/elements/brand-logo";
 import { authClient } from "@/lib/auth-client";
+import { technicianSessionCache } from "@/features/route-assignments/infrastructure/offline/technician-session-cache";
+import { technicianOfflineDb } from "@/features/route-assignments/infrastructure/offline/technician-offline-db";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Popover,
@@ -23,16 +25,23 @@ export function AppHeader({ className }: AppHeaderProps) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const [profileOpen, setProfileOpen] = useState(false);
+  const cachedSession = useSyncExternalStore(
+    technicianSessionCache.subscribe,
+    technicianSessionCache.get,
+    technicianSessionCache.getServerSnapshot
+  );
 
-  const userName = session?.user?.name || "Usuario";
-  const userEmail = session?.user?.email || "";
-  const userImage = session?.user?.image;
+  const userName = session?.user?.name || cachedSession?.name || "Usuario";
+  const userEmail = session?.user?.email || cachedSession?.email || "";
+  const userImage = session?.user?.image ?? cachedSession?.image ?? undefined;
 
   const handleSignOut = async () => {
     try {
       setProfileOpen(false);
       await recordLogoutAuditAction();
       clearJWT();
+      technicianSessionCache.clear();
+      await technicianOfflineDb.clearAllCaches();
       const { error } = await authClient.signOut();
       if (error) {
         appToast.error(

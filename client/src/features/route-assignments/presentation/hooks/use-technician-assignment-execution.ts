@@ -7,6 +7,11 @@ import type {
   AssignmentStopDetail,
 } from "../../domain/entities/assignment-detail.entity";
 import type { CompleteStopInput } from "../../domain/entities/assignment-execution.entity";
+import {
+  isNetworkOrTransientError,
+  offlineSyncQueue,
+} from "../../infrastructure/offline/offline-sync-queue";
+import { technicianOfflineDb } from "../../infrastructure/offline/technician-offline-db";
 import { routeAssignmentRepository } from "../../infrastructure/repositories/route-assignment.repository-impl";
 
 export type ExecutionActionType = "start" | "transit" | "arrive" | "complete";
@@ -35,43 +40,88 @@ export function useTechnicianAssignmentExecution({
     setActionError(null);
   }, []);
 
+  const applyLocalStart = useCallback(
+    async (startedAt: Date, queueOffline: boolean) => {
+      if (queueOffline) {
+        await technicianOfflineDb.enqueueSyncItem({
+          actionType: "START_ASSIGNMENT",
+          assignmentId,
+          stopId: null,
+          payload: {
+            startedAt: startedAt.toISOString(),
+          },
+        });
+        await offlineSyncQueue.refreshPendingCount();
+      }
+
+      updateAssignmentLocally?.((prev) => ({
+        ...prev,
+        status: "IN_PROGRESS",
+        startedAt: prev.startedAt ?? startedAt,
+        pendingSyncCount: queueOffline
+          ? (prev.pendingSyncCount ?? 0) + 1
+          : prev.pendingSyncCount,
+      }));
+
+      await technicianOfflineDb.updateCachedAssignmentSummary(assignmentId, {
+        status: "IN_PROGRESS",
+        startedAt: startedAt.toISOString(),
+      });
+    },
+    [assignmentId, updateAssignmentLocally]
+  );
+
   const startAssignment = useCallback(async (): Promise<boolean> => {
     if (!assignmentId || isSubmitting) return false;
     setIsSubmitting(true);
     setActiveAction("start");
     setActionError(null);
 
+    const now = new Date();
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
     try {
-      const res = await routeAssignmentRepository.startAssignment(assignmentId);
+      if (isOffline) {
+        await applyLocalStart(now, true);
+        appToast.info(
+          "Asignación iniciada sin conexión",
+          "Se sincronizará automáticamente al recuperar internet."
+        );
+        return true;
+      }
+
+      const res = await routeAssignmentRepository.startAssignment(assignmentId, now);
       if (!res.ok) {
+        if (isNetworkOrTransientError(res.statusCode)) {
+          await applyLocalStart(now, true);
+          appToast.info(
+            "Asignación iniciada sin conexión",
+            "Guardado localmente; se enviará al recuperar señal."
+          );
+          return true;
+        }
         const message = res.errors?.[0] || "No se pudo iniciar la asignación.";
         setActionError(message);
         appToast.error("Error al iniciar", message);
         return false;
       }
 
-      // 1. Actualización local inmediata libre de parpadeos
-      updateAssignmentLocally?.((prev) => ({
-        ...prev,
-        status: "IN_PROGRESS",
-        startedAt: new Date(),
-      }));
-
+      await applyLocalStart(now, false);
       appToast.success("Asignación iniciada", "Puedes comenzar con las paradas de la ruta.");
-
-      // 2. Sincronización silenciosa en background sin recargar la pantalla
       await refetch?.();
       return true;
     } catch {
-      const fallback = "Fallo de conexión al iniciar la asignación.";
-      setActionError(fallback);
-      appToast.error("Error", fallback);
-      return false;
+      await applyLocalStart(now, true);
+      appToast.info(
+        "Asignación iniciada sin conexión",
+        "Guardado localmente para sincronizar al recuperar señal."
+      );
+      return true;
     } finally {
       setIsSubmitting(false);
       setActiveAction(null);
     }
-  }, [assignmentId, isSubmitting, refetch, updateAssignmentLocally]);
+  }, [assignmentId, isSubmitting, applyLocalStart, refetch]);
 
   const startTransit = useCallback(
     async (
@@ -84,20 +134,13 @@ export function useTechnicianAssignmentExecution({
       setActiveAction("transit");
       setActionError(null);
 
-      try {
-        const res = await routeAssignmentRepository.startStopTransit(assignmentId, stopId);
-        if (!res.ok) {
-          const message = res.errors?.[0] || "No se pudo iniciar el traslado a la parada.";
-          setActionError(message);
-          appToast.error("Error al iniciar traslado", message);
-          return false;
-        }
+      const now = new Date();
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
+      const applyLocalTransit = () => {
         if (latitude != null && longitude != null) {
           openGoogleMapsNavigation(latitude, longitude);
         }
-
-        // 1. Actualización local inmediata libre de parpadeos
         updateAssignmentLocally?.((prev) => ({
           ...prev,
           stops: prev.stops.map((s) =>
@@ -105,22 +148,41 @@ export function useTechnicianAssignmentExecution({
               ? {
                   ...s,
                   status: "IN_TRANSIT" as const,
-                  inTransitAt: new Date(),
+                  inTransitAt: s.inTransitAt ?? now,
                 }
               : s
           ),
         }));
+      };
 
+      try {
+        if (isOffline) {
+          applyLocalTransit();
+          appToast.info("En camino (Modo sin conexión)", "Progreso guardado en el dispositivo.");
+          return true;
+        }
+
+        const res = await routeAssignmentRepository.startStopTransit(assignmentId, stopId);
+        if (!res.ok) {
+          if (isNetworkOrTransientError(res.statusCode)) {
+            applyLocalTransit();
+            appToast.info("En camino (Sin señal)", "Estado actualizado localmente.");
+            return true;
+          }
+          const message = res.errors?.[0] || "No se pudo iniciar el traslado a la parada.";
+          setActionError(message);
+          appToast.error("Error al iniciar traslado", message);
+          return false;
+        }
+
+        applyLocalTransit();
         appToast.success("En camino", "Navegación abierta en Google Maps.");
-
-        // 2. Sincronización silenciosa en background sin recargar la pantalla
         await refetch?.();
         return true;
       } catch {
-        const fallback = "Fallo de conexión al iniciar traslado.";
-        setActionError(fallback);
-        appToast.error("Error", fallback);
-        return false;
+        applyLocalTransit();
+        appToast.info("En camino (Sin señal)", "Estado actualizado localmente.");
+        return true;
       } finally {
         setIsSubmitting(false);
         setActiveAction(null);
@@ -140,16 +202,10 @@ export function useTechnicianAssignmentExecution({
       setActiveAction("arrive");
       setActionError(null);
 
-      try {
-        const res = await routeAssignmentRepository.arriveAtStop(assignmentId, stopId);
-        if (!res.ok) {
-          const message = res.errors?.[0] || "No se pudo registrar el arribo.";
-          setActionError(message);
-          appToast.error("Error al registrar arribo", message);
-          return false;
-        }
+      const now = new Date();
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
-        // 1. Actualización local inmediata libre de parpadeos
+      const applyLocalArrive = () => {
         updateAssignmentLocally?.((prev) => ({
           ...prev,
           stops: prev.stops.map((s) =>
@@ -157,28 +213,140 @@ export function useTechnicianAssignmentExecution({
               ? {
                   ...s,
                   status: "ARRIVED" as const,
-                  arrivedAt: new Date(),
+                  arrivedAt: s.arrivedAt ?? now,
                 }
               : s
           ),
         }));
+      };
 
+      try {
+        if (isOffline) {
+          applyLocalArrive();
+          appToast.info("Arribo registrado localmente", "Puedes finalizar la parada sin conexión.");
+          return true;
+        }
+
+        const res = await routeAssignmentRepository.arriveAtStop(assignmentId, stopId);
+        if (!res.ok) {
+          if (isNetworkOrTransientError(res.statusCode)) {
+            applyLocalArrive();
+            appToast.info("Arribo registrado sin señal", "Puedes finalizar la parada normalmente.");
+            return true;
+          }
+          const message = res.errors?.[0] || "No se pudo registrar el arribo.";
+          setActionError(message);
+          appToast.error("Error al registrar arribo", message);
+          return false;
+        }
+
+        applyLocalArrive();
         appToast.success("Arribo registrado", "Ahora puedes realizar la inspección y finalizar la parada.");
-
-        // 2. Sincronización silenciosa en background sin recargar la pantalla
         await refetch?.();
         return true;
       } catch {
-        const fallback = "Fallo de conexión al registrar arribo.";
-        setActionError(fallback);
-        appToast.error("Error", fallback);
-        return false;
+        applyLocalArrive();
+        appToast.info("Arribo registrado sin señal", "Puedes finalizar la parada normalmente.");
+        return true;
       } finally {
         setIsSubmitting(false);
         setActiveAction(null);
       }
     },
     [assignmentId, isSubmitting, refetch, updateAssignmentLocally]
+  );
+
+  const applyLocalCompleteStop = useCallback(
+    async (
+      stopId: string,
+      data: CompleteStopInput,
+      timestamps: { inTransitAt: Date | null; arrivedAt: Date | null; completedAt: Date },
+      options: {
+        enqueue: boolean;
+        evidencePhotoUrl?: string | null;
+        serverStatus?: AssignmentStopDetail["status"];
+        knownDetail?: AssignmentDetail | null;
+      }
+    ) => {
+      if (options.enqueue) {
+        await technicianOfflineDb.enqueueSyncItem({
+          actionType: "COMPLETE_STOP",
+          assignmentId,
+          stopId,
+          payload: {
+            status: data.status,
+            meterReading: data.meterReading ?? null,
+            observation: data.observation ?? null,
+            evidenceBlob: data.evidenceFile ?? null,
+            evidenceFileName: data.evidenceFile?.name ?? null,
+            inTransitAt: timestamps.inTransitAt?.toISOString() ?? null,
+            arrivedAt: timestamps.arrivedAt?.toISOString() ?? null,
+            completedAt: timestamps.completedAt.toISOString(),
+          },
+        });
+        await offlineSyncQueue.refreshPendingCount();
+      }
+
+      const newStopStatus: AssignmentStopDetail["status"] =
+        options.serverStatus ?? (data.status === "SUCCESS" ? "COMPLETED" : "FAILED");
+
+      const baseDetail =
+        options.knownDetail ?? (await technicianOfflineDb.getAssignmentDetail(assignmentId));
+      const allDoneAfter = Boolean(
+        baseDetail &&
+          baseDetail.totalStops > 0 &&
+          baseDetail.stops.filter((s) =>
+            s.id === stopId ? true : s.status === "COMPLETED" || s.status === "FAILED"
+          ).length >= baseDetail.totalStops
+      );
+
+      updateAssignmentLocally?.((prev) => {
+        const updatedStops = prev.stops.map((s) =>
+          s.id === stopId
+            ? {
+                ...s,
+                status: newStopStatus,
+                inTransitAt: timestamps.inTransitAt ?? s.inTransitAt,
+                arrivedAt: timestamps.arrivedAt ?? s.arrivedAt,
+                completedAt: timestamps.completedAt,
+                meterReading: data.meterReading ?? s.meterReading,
+                observation: data.observation ?? s.observation,
+                evidencePhotoUrl: options.evidencePhotoUrl ?? s.evidencePhotoUrl,
+                pendingSync: options.enqueue,
+              }
+            : s
+        );
+
+        const newCompletedCount = updatedStops.filter(
+          (s) => s.status === "COMPLETED" || s.status === "FAILED"
+        ).length;
+        const isAssignmentCompleted = newCompletedCount >= prev.totalStops;
+
+        return {
+          ...prev,
+          completedStops: newCompletedCount,
+          status: isAssignmentCompleted
+            ? "COMPLETED"
+            : prev.status === "ASSIGNED"
+            ? "IN_PROGRESS"
+            : prev.status,
+          completedAt: isAssignmentCompleted ? timestamps.completedAt : prev.completedAt,
+          startedAt: prev.startedAt ?? timestamps.inTransitAt ?? timestamps.completedAt,
+          pendingSyncCount: options.enqueue
+            ? (prev.pendingSyncCount ?? 0) + 1
+            : prev.pendingSyncCount,
+          stops: updatedStops,
+        };
+      });
+
+      if (allDoneAfter) {
+        await technicianOfflineDb.updateCachedAssignmentSummary(assignmentId, {
+          status: "COMPLETED",
+          completedAt: timestamps.completedAt.toISOString(),
+        });
+      }
+    },
+    [assignmentId, updateAssignmentLocally]
   );
 
   const completeStop = useCallback(
@@ -188,44 +356,92 @@ export function useTechnicianAssignmentExecution({
       setActiveAction("complete");
       setActionError(null);
 
+      const now = new Date();
+      const cachedDetail = await technicianOfflineDb.getAssignmentDetail(assignmentId);
+      const cachedStop = cachedDetail?.stops.find((s) => s.id === stopId);
+
+      const inTransitAt = cachedStop?.inTransitAt ?? now;
+      const arrivedAt = cachedStop?.arrivedAt ?? now;
+      const completedAt = now;
+
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+      const queueItems = await technicianOfflineDb.getPendingQueueItems();
+      const hasActiveQueueItems = queueItems.some((item) => item.syncStatus !== "ERROR");
+
       try {
-        const res = await routeAssignmentRepository.completeStop(assignmentId, stopId, data);
+        // Si estamos sin internet o existen operaciones activas en la cola FIFO (excluyendo ítems bloqueados en ERROR),
+        // encolamos respetando estrictamente el orden FIFO para evitar adelantos fuera de secuencia.
+        if (isOffline || hasActiveQueueItems) {
+          await applyLocalCompleteStop(
+            stopId,
+            data,
+            { inTransitAt, arrivedAt, completedAt },
+            { enqueue: true, knownDetail: cachedDetail }
+          );
+
+          if (isOffline) {
+            appToast.info(
+              "Parada completada sin conexión",
+              "Guardada en cola como pendiente de sincronización."
+            );
+          } else {
+            appToast.info(
+              "Parada encolada para sincronización",
+              "Se enviará en orden secuencial tras las operaciones pendientes."
+            );
+            void offlineSyncQueue.processQueue();
+          }
+          return true;
+        }
+
+        const res = await routeAssignmentRepository.completeStop(assignmentId, stopId, {
+          ...data,
+          inTransitAt,
+          arrivedAt,
+          completedAt,
+        });
+
         if (!res.ok) {
+          if (isNetworkOrTransientError(res.statusCode)) {
+            await applyLocalCompleteStop(
+              stopId,
+              data,
+              { inTransitAt, arrivedAt, completedAt },
+              { enqueue: true, knownDetail: cachedDetail }
+            );
+            appToast.info(
+              "Guardada como pendiente de sincronización",
+              "Se enviará al recuperar conexión estable."
+            );
+            return true;
+          }
+
           const message = res.errors?.[0] || "No se pudo concluir la parada.";
           setActionError(message);
           appToast.error("Error al concluir parada", message);
           return false;
         }
 
-        // 1. Actualización local inmediata libre de parpadeos
         const completedData = res.data;
-        const newStopStatus = completedData?.status ?? (data.status === "SUCCESS" ? "COMPLETED" : "FAILED");
-        updateAssignmentLocally?.((prev) => {
-          const updatedStops = prev.stops.map((s) =>
-            s.id === stopId
-              ? {
-                  ...s,
-                  status: newStopStatus as AssignmentStopDetail["status"],
-                  completedAt: completedData?.completedAt ?? new Date(),
-                  meterReading: completedData?.meterReading ?? data.meterReading ?? s.meterReading,
-                  observation: completedData?.observation ?? data.observation ?? s.observation,
-                  evidencePhotoUrl: completedData?.evidencePhotoUrl ?? s.evidencePhotoUrl,
-                }
-              : s
-          );
-          const newCompletedCount = updatedStops.filter(
-            (s) => s.status === "COMPLETED" || s.status === "FAILED"
-          ).length;
-          const isAllDone = newCompletedCount >= prev.totalStops;
-
-          return {
-            ...prev,
-            completedStops: newCompletedCount,
-            status: isAllDone ? "COMPLETED" : prev.status,
-            completedAt: isAllDone ? new Date() : prev.completedAt,
-            stops: updatedStops,
-          };
-        });
+        await applyLocalCompleteStop(
+          stopId,
+          {
+            ...data,
+            meterReading: completedData?.meterReading ?? data.meterReading,
+            observation: completedData?.observation ?? data.observation,
+          },
+          {
+            inTransitAt,
+            arrivedAt,
+            completedAt: completedData?.completedAt ?? completedAt,
+          },
+          {
+            enqueue: false,
+            serverStatus: completedData?.status,
+            evidencePhotoUrl: completedData?.evidencePhotoUrl ?? null,
+            knownDetail: cachedDetail,
+          }
+        );
 
         const outcomeMsg =
           data.status === "SUCCESS"
@@ -233,20 +449,26 @@ export function useTechnicianAssignmentExecution({
             : "Visita registrada como fallida.";
         appToast.success("Parada finalizada", outcomeMsg);
 
-        // 2. Sincronización silenciosa en background sin recargar la pantalla
         await refetch?.();
         return true;
       } catch {
-        const fallback = "Fallo de conexión al concluir la parada.";
-        setActionError(fallback);
-        appToast.error("Error", fallback);
-        return false;
+        await applyLocalCompleteStop(
+          stopId,
+          data,
+          { inTransitAt, arrivedAt, completedAt },
+          { enqueue: true, knownDetail: cachedDetail }
+        );
+        appToast.info(
+          "Guardada como pendiente de sincronización",
+          "Se enviará automáticamente cuando vuelva internet."
+        );
+        return true;
       } finally {
         setIsSubmitting(false);
         setActiveAction(null);
       }
     },
-    [assignmentId, isSubmitting, refetch, updateAssignmentLocally]
+    [assignmentId, isSubmitting, applyLocalCompleteStop, refetch]
   );
 
   return {

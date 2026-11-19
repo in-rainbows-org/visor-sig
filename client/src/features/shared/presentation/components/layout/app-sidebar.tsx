@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,6 +8,8 @@ import { authClient } from "@/lib/auth-client";
 import { AppRole, DEFAULT_ROLE } from "@/lib/auth-roles";
 import { getRoutesForRole } from "@/features/shared/config/routes.config";
 import { clearJWT } from "@/features/shared/infrastructure/http/jwt-manager";
+import { technicianSessionCache } from "@/features/route-assignments/infrastructure/offline/technician-session-cache";
+import { technicianOfflineDb } from "@/features/route-assignments/infrastructure/offline/technician-offline-db";
 import { recordLogoutAuditAction } from "@/features/audit-logs/presentation/hooks/use-audit-auth-log";
 import { appToast } from "../notifications/toast";
 import { useMagnifyingDock } from "./use-magnifying-dock";
@@ -21,8 +23,16 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
+  const cachedSession = useSyncExternalStore(
+    technicianSessionCache.subscribe,
+    technicianSessionCache.get,
+    technicianSessionCache.getServerSnapshot
+  );
 
-  const userRole = (session?.user?.role as AppRole) || DEFAULT_ROLE;
+  const userRole =
+    (session?.user?.role as AppRole) ||
+    (cachedSession?.role as AppRole | undefined) ||
+    DEFAULT_ROLE;
   const navigationRoutes = getRoutesForRole(userRole);
 
   const { bindBar, barRef, hover, getItemTransform } = useMagnifyingDock({
@@ -36,6 +46,8 @@ export function AppSidebar({ className }: AppSidebarProps) {
     try {
       await recordLogoutAuditAction();
       clearJWT();
+      technicianSessionCache.clear();
+      await technicianOfflineDb.clearAllCaches();
       const { error } = await authClient.signOut();
       if (error) {
         appToast.error(

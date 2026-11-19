@@ -25,6 +25,7 @@ export interface TechnicianAssignmentItem {
   startedAt: string | null;
   completedAt: string | null;
   createdDate: string;
+  pendingSyncCount?: number;
 }
 
 /**
@@ -40,6 +41,7 @@ export interface ActiveAssignmentProgress {
   totalDistanceKm?: number;
   status: "IN_PROGRESS";
   targetUrl?: string;
+  pendingSyncCount?: number;
 }
 
 /**
@@ -77,5 +79,6 @@ export interface TechnicianFeedItem {
   totalStops: number;
   distanceKm: number;
   status: TechnicianAssignmentStatus;
+  pendingSyncCount?: number;
 }
 

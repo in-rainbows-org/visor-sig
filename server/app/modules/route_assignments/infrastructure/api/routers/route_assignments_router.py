@@ -395,6 +395,22 @@ def get_my_assignments(
     ]
 
 
+def _parse_optional_datetime(raw: object) -> datetime | None:
+    """Convierte de forma segura un texto ISO 8601 proveniente de un formulario en datetime UTC."""
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        return None
+
+
 @router.post(
     "/assignments/{assignment_id}/start",
     response_model=AssignmentRead,
@@ -405,18 +421,30 @@ def get_my_assignments(
     response_model=AssignmentRead,
     include_in_schema=False,
 )
-def start_assignment(
+async def start_assignment(
     assignment_id: UUID,
+    request: Request,
     db: DBSession,
     uow: UoWDep,
     current_user: TechnicianUser,
 ) -> AssignmentRead:
     """Inicia la jornada de trabajo de la asignación tras validar propiedad, fecha y no concurrencia."""
+    started_at: datetime | None = None
+    try:
+        body_bytes = await request.body()
+        if body_bytes:
+            body_json = await request.json()
+            if isinstance(body_json, dict):
+                started_at = _parse_optional_datetime(body_json.get("started_at"))
+    except Exception:
+        started_at = None
+
     repo = SQLModelAssignmentRepository(db)
     use_case = StartAssignmentUseCase(assignment_repo=repo, uow=uow)
     command = StartAssignmentCommand(
         assignment_id=assignment_id,
         technician_id=current_user.id,
+        started_at=started_at,
     )
     started = use_case.execute(command)
 
@@ -624,6 +652,9 @@ async def complete_stop(
     image_bytes: bytes | None = None
     image_filename: str | None = None
     evidence_photo_url: str | None = None
+    in_transit_at: datetime | None = None
+    arrived_at: datetime | None = None
+    completed_at: datetime | None = None
 
     if "multipart/form-data" in content_type:
         form = await request.form()
@@ -634,6 +665,9 @@ async def complete_stop(
         meter_reading = str(mr_val).strip() if mr_val is not None and str(mr_val).strip() else None
         ep_val = form.get("evidence_photo_url")
         evidence_photo_url = str(ep_val).strip() if ep_val is not None and str(ep_val).strip() else None
+        in_transit_at = _parse_optional_datetime(form.get("in_transit_at"))
+        arrived_at = _parse_optional_datetime(form.get("arrived_at"))
+        completed_at = _parse_optional_datetime(form.get("completed_at"))
 
         file_obj = form.get("file") or form.get("evidence_file")
         if hasattr(file_obj, "read"):
@@ -646,6 +680,9 @@ async def complete_stop(
         observation = req.observation
         meter_reading = req.meter_reading
         evidence_photo_url = req.evidence_photo_url
+        in_transit_at = req.in_transit_at
+        arrived_at = req.arrived_at
+        completed_at = req.completed_at
 
     assignment_repo = SQLModelAssignmentRepository(db)
     stop_repo = SQLModelAssignmentStopRepository(db)
@@ -669,6 +706,9 @@ async def complete_stop(
         image_bytes=image_bytes,
         image_filename=image_filename,
         evidence_photo_url=evidence_photo_url,
+        in_transit_at=in_transit_at,
+        arrived_at=arrived_at,
+        completed_at=completed_at,
     )
     updated_stop = use_case.execute(command)
 

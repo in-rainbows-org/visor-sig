@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { CloudOff, Loader2, RefreshCw } from "lucide-react";
 import { PageHero } from "@/features/shared/presentation/components/layout/page-hero";
 import { ActiveAssignmentCard } from "../elements/technician-portal/active-assignment-card";
 import { PendingSummaryCard } from "../elements/technician-portal/pending-summary-card";
@@ -10,9 +11,11 @@ import { TechnicianAssignmentsFeed } from "../elements/technician-portal/technic
 import { TechnicianPortalSkeleton } from "../elements/technician-portal/technician-portal-skeleton";
 import { MOCK_TECHNICIAN_BARS } from "../../data/mock-technician-dashboard";
 import { useTechnicianPortal } from "../../hooks/use-technician-portal";
+import { useOfflineSync } from "../../hooks/use-offline-sync";
 
 export function TechnicianPortalView() {
   const router = useRouter();
+  const syncState = useOfflineSync();
   const {
     activeAssignment,
     pendingSummary,
@@ -20,6 +23,9 @@ export function TechnicianPortalView() {
     completedFeed,
     isLoading,
   } = useTechnicianPortal();
+
+  const showSyncStatus =
+    !syncState.isOnline || syncState.isSyncing || syncState.pendingCount > 0;
 
   return (
     <div className="h-full w-full lg:-ml-[32px] lg:pl-[32px] lg:w-[calc(100%+32px)] overflow-y-auto bg-slate-50/70 overscroll-contain">
@@ -34,6 +40,43 @@ export function TechnicianPortalView() {
 
       {/* Contenedor principal de secciones */}
       <div className="w-full space-y-6 sm:space-y-8 p-3.5 sm:p-6 md:p-8 pb-28 lg:pb-12 max-w-7xl mx-auto">
+        {showSyncStatus && (
+          <div
+            className={`rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold select-none ${
+              syncState.isSyncing
+                ? "bg-blue-50 text-[#0e4dcb]"
+                : "bg-amber-50 text-amber-800"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {syncState.isSyncing ? (
+                <Loader2 className="size-4 animate-spin shrink-0" />
+              ) : (
+                <CloudOff className="size-4 shrink-0" />
+              )}
+              <span className="truncate">
+                {syncState.isSyncing
+                  ? `Sincronizando cola (${Math.min(syncState.syncedInBatch + 1, Math.max(syncState.totalInBatch, 1))}/${syncState.totalInBatch})...`
+                  : !syncState.isOnline && syncState.pendingCount > 0
+                  ? `Modo sin conexión • ${syncState.pendingCount} ${syncState.pendingCount === 1 ? "operación pendiente" : "operaciones pendientes"} de sincronizar`
+                  : !syncState.isOnline
+                  ? "Modo sin conexión • Mostrando rutas guardadas localmente"
+                  : `${syncState.pendingCount} ${syncState.pendingCount === 1 ? "operación pendiente" : "operaciones pendientes"} de sincronizar`}
+              </span>
+            </div>
+            {syncState.isOnline && !syncState.isSyncing && syncState.pendingCount > 0 && (
+              <button
+                type="button"
+                onClick={() => void syncState.triggerSync()}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 cursor-pointer border-0 transition active:scale-95"
+              >
+                <RefreshCw className="size-3.5" />
+                <span>Sincronizar</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <TechnicianPortalSkeleton />
         ) : (

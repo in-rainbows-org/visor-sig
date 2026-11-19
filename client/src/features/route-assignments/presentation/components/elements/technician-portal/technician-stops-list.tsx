@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, CheckCircle2, Inbox } from "lucide-react";
+import { Calendar, CheckCircle2, CloudOff, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   AssignmentStopDetail,
@@ -170,8 +170,14 @@ export function TechnicianStopsList({
           <h6 className="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 break-words flex-1 min-w-0">
             {stop.name || "Sin titular registrado"}
           </h6>
-          <div className="shrink-0 pt-0.5">
+          <div className="shrink-0 pt-0.5 flex flex-col items-end gap-1">
             <StopStatusBadge status={stop.status} />
+            {stop.pendingSync && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-none shrink-0">
+                <CloudOff className="size-3 shrink-0" />
+                <span>Pendiente de sincronizar</span>
+              </span>
+            )}
           </div>
         </div>
 

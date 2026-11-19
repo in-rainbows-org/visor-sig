@@ -175,6 +175,18 @@ class CompleteStopRequest(BaseModel):
         default=None,
         description="URL pública de la fotografía de evidencia de visita",
     )
+    in_transit_at: datetime | None = Field(
+        default=None,
+        description="Marca de tiempo opcional cuando inició el traslado en campo",
+    )
+    arrived_at: datetime | None = Field(
+        default=None,
+        description="Marca de tiempo opcional cuando arribó al domicilio en campo",
+    )
+    completed_at: datetime | None = Field(
+        default=None,
+        description="Marca de tiempo opcional cuando finalizó la parada en campo",
+    )
 
     @model_validator(mode="after")
     def validate_stop_data(self) -> Self:

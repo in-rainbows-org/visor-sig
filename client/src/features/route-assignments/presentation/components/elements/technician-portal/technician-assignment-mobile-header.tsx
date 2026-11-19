@@ -3,13 +3,15 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronDown, CloudOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AssignmentDetail } from "@/features/route-assignments/domain/entities/assignment-detail.entity";
+import type { OfflineSyncState } from "@/features/route-assignments/domain/entities/offline-sync.entity";
 import { AssignmentDetailProgress } from "../detail/assignment-detail-progress";
 
 export interface TechnicianAssignmentMobileHeaderProps {
   assignment: AssignmentDetail;
+  syncState?: OfflineSyncState;
   className?: string;
 }
 
@@ -62,10 +64,14 @@ function AssignmentStatusBadge({ status }: { status: AssignmentDetail["status"] 
 
 export function TechnicianAssignmentMobileHeader({
   assignment,
+  syncState,
   className = "",
 }: TechnicianAssignmentMobileHeaderProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isCut = assignment.assignmentType === "CUT";
+  const showOfflineBanner =
+    syncState &&
+    (!syncState.isOnline || syncState.isSyncing || syncState.pendingCount > 0);
 
   return (
     <div
@@ -168,6 +174,35 @@ export function TechnicianAssignmentMobileHeader({
           isCollapsed ? "pt-0 space-y-1.5" : "pt-0.5 space-y-2"
         )}
       />
+
+      {/* 4. Indicador discreto de modo offline / cola de sincronización FIFO */}
+      {showOfflineBanner && syncState && (
+        <div
+          className={cn(
+            "mx-2.5 px-3 py-1.5 rounded-2xl text-[11px] font-bold flex items-center justify-between gap-2 select-none",
+            syncState.isSyncing
+              ? "bg-blue-50 text-[#0e4dcb]"
+              : "bg-amber-50 text-amber-800"
+          )}
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
+            {syncState.isSyncing ? (
+              <Loader2 className="size-3.5 animate-spin shrink-0" />
+            ) : (
+              <CloudOff className="size-3.5 shrink-0" />
+            )}
+            <span className="truncate">
+              {syncState.isSyncing
+                ? `Sincronizando (${Math.min(syncState.syncedInBatch + 1, Math.max(syncState.totalInBatch, 1))}/${syncState.totalInBatch})...`
+                : !syncState.isOnline && syncState.pendingCount > 0
+                ? `Sin conexión • ${syncState.pendingCount} pendiente(s) de sincronizar`
+                : !syncState.isOnline
+                ? "Trabajando sin conexión (caché local)"
+                : `${syncState.pendingCount} pendiente(s) por sincronizar`}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

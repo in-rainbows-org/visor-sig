@@ -128,11 +128,22 @@ export class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository 
     });
   }
 
-  async startAssignment(assignmentId: string): Promise<ApiActionResult> {
+  async startAssignment(
+    assignmentId: string,
+    startedAt?: Date | string | null
+  ): Promise<ApiActionResult> {
     const url = `${this.baseUrl}/assignments/${encodeURIComponent(assignmentId)}/start`;
+    const startedAtIso =
+      startedAt instanceof Date
+        ? startedAt.toISOString()
+        : typeof startedAt === "string" && startedAt.trim()
+        ? startedAt.trim()
+        : undefined;
+
     return apiRequestStatus({
       url,
       method: "POST",
+      ...(startedAtIso ? { body: { started_at: startedAtIso } } : {}),
       fallbackMessage: "No se pudo iniciar la asignación de ruta.",
     });
   }
@@ -176,6 +187,16 @@ export class RouteAssignmentRepositoryImpl implements RouteAssignmentRepository 
     if (data.evidencePhotoUrl && data.evidencePhotoUrl.trim()) {
       formData.append("evidence_photo_url", data.evidencePhotoUrl.trim());
     }
+    const appendOptionalDate = (key: string, value: Date | string | null | undefined) => {
+      if (!value) return;
+      const iso = value instanceof Date ? value.toISOString() : value.trim();
+      if (iso) {
+        formData.append(key, iso);
+      }
+    };
+    appendOptionalDate("in_transit_at", data.inTransitAt);
+    appendOptionalDate("arrived_at", data.arrivedAt);
+    appendOptionalDate("completed_at", data.completedAt);
 
     return apiRequestFormData({
       url,
